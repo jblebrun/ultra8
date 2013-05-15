@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/test"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+    <TextView  
+    	android:layout_width="fill_parent" 
+    	android:layout_height="wrap_content" 
+    	android:text="@string/hello"
+    />
+    <ImageView
+        android:id="@+id/graphics"
+    	android:scaleType="fitCenter"
+    	android:layout_width = "480px"
+    	android:layout_height = "240px"
+    />
+    <FrameLayout
+            android:id="@+id/button_touch_area"
+            android:layout_width = "fill_parent"
+            android:layout_height = "wrap_content"
+        >
+        <TableLayout
+            android:id="@+id/button_area"
+            android:layout_width = "fill_parent"
+            android:layout_height = "wrap_content"
+            android:stretchColumns = "*"
+        >
+        </TableLayout>
+        <View
+            android:layout_width = "fill_parent" 
+            android:layout_height = "fill_parent"
+        />
+    </FrameLayout>
+</LinearLayout>

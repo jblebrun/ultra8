@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_open" android:title="@string/open" android:icon="@drawable/ic_menu_agenda"></item>
+    <item android:id="@+id/menu_edit" android:title="@string/edit" android:icon="@drawable/ic_menu_edit"></item>
+    <item android:id="@+id/menu_settings" android:title="@string/prefs" android:icon="@drawable/ic_menu_preferences"></item>
+    <item android:title="@string/reset" android:icon="@drawable/ic_menu_refresh" android:id="@+id/menu_reset"></item>
+</menu>

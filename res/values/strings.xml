@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reset">Reset</string>
+    <string name="prefs">Prefs</string>
+    <string name="edit">Edit</string>
+    <string name="open">Open</string>
+    <string name="quit">Quit</string>
+    <string name="new_file">New</string>
+    <string name="hello">Hello World, Ultra8!</string>
+    <string name="app_name">ultra8</string>
+
+<string name="not_yet_imp">Not yet implemented.</string>
+</resources>
