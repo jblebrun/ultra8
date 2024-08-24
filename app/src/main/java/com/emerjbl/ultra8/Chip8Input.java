@@ -11,6 +11,8 @@ public class Chip8Input {
         return keys[x];
     }
 
+    private final Object monitor = new Object();
+
     public synchronized void reset() {
         reset = true;
         notify();
@@ -36,6 +38,20 @@ public class Chip8Input {
 
     public void resetKey(int x) {
         keys[x] = false;
+    }
+
+    public int awaitPress() {
+        int pressed = checkForPress();
+        if (pressed >= 0) {
+            return pressed;
+        }
+
+        try {
+            monitor.wait();
+        } catch(InterruptedException ex) {
+           return -1;
+        }
+        return checkForPress();
     }
 
     public int checkForPress() {
