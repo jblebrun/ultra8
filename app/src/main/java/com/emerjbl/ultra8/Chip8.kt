@@ -6,8 +6,9 @@ import android.os.SystemClock
 import android.util.Log
 import java.io.IOException
 import java.io.InputStream
-import java.util.Arrays
 import java.util.Random
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 private val font: IntArray = intArrayOf(
     0xF0, 0x90, 0x90, 0x90, 0xF0,
@@ -52,6 +53,16 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     private var startTime: Long = 0
     private var endTime: Long = 0
     private var running: Boolean = false
+    private val lock = ReentrantLock()
+    private val condition = lock.newCondition()
+    public var paused: Boolean = false
+        set(value) {
+            lock.withLock {
+                field = value
+                condition.signal()
+            }
+        }
+        get() = lock.withLock { field }
     private val execStart: Int = 0x200
     private val fontStart: Int = 0x100
 
@@ -101,15 +112,13 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
         gfx.hires = false
         gfx.start()
         while (running) {
-            Thread.sleep(0, if (input.hurry) 100 else 50000)
-            if (input.reset) {
-                running = false
-                continue
-            }
-            if (input.pause) {
+            Thread.sleep(1)
+            if (paused) {
                 Log.i("ultra8", "Chip8 is waiting due to pause...")
                 gfx.stop()
-                input.awaitPress()
+                lock.withLock {
+                    while (paused) condition.await()
+                }
                 Log.i("ultra8", "Chip8 is restarting after pause...")
                 gfx.start()
             }
