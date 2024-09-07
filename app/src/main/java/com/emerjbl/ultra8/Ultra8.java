@@ -1,27 +1,23 @@
 package com.emerjbl.ultra8;
 
-import java.lang.reflect.Field;
-
 import android.app.Activity;
-
 import android.content.Context;
-
 import android.media.AudioManager;
-
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.SubMenu;
 import android.view.View;
-
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.Toast;
+
+import java.lang.reflect.Field;
 
 public class Ultra8 extends Activity implements View.OnTouchListener {
 
@@ -91,18 +87,14 @@ public class Ultra8 extends Activity implements View.OnTouchListener {
     public void onPause() {
         super.onPause();
         Log.i("ultra8", "on pause...");
-        synchronized (input) {
-            input.pause();
-        }
+        machine.setPaused(true);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         Log.i("ultra8", "on resume...");
-        synchronized (input) {
-            input.resume();
-        }
+        machine.setPaused(false);
         Log.i("ultra8", "finished resume");
     }
 
