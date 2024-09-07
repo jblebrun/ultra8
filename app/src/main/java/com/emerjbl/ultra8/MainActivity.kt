@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.input.pointer.pointerInput
@@ -47,8 +47,7 @@ class BitmapHolder(val bitmap: Bitmap)
 data class Program(val name: String, val id: Int)
 class MainActivity : ComponentActivity() {
     val gfx: Chip8Graphics = Chip8Graphics()
-    var input: Chip8Input = Chip8Input()
-    var machine: Chip8 = Chip8(gfx, input)
+    var machine: Chip8 = Chip8(gfx)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,7 +68,7 @@ class MainActivity : ComponentActivity() {
             Screen(bitmap.value, programs, {
                 machine.loadProgram(resources.openRawResource(it))
                 machine.reset()
-            }, { input.setKey(it) }, { input.resetKey(it) })
+            }, { machine.keyDown(it) }, { machine.keyUp(it) })
         }
         machine.loadProgram(resources.openRawResource(R.raw.blinky))
         machine.reset()
@@ -100,13 +99,14 @@ fun Screen(
 
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(innerPadding)
             ) {
                 Box {
                     Button(onClick = { expanded = !expanded }) { Text("Programs") }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { /*TODO*/ }) {
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         for (program in programs) {
                             DropdownMenuItem(text = { Text(program.name) }, onClick = {
                                 onSelectProgram(program.id)
@@ -145,7 +145,7 @@ fun RowScope.Chip8Button(value: Int, onKeyDown: () -> Unit, onKeyUp: () -> Unit)
         modifier = Modifier
             .weight(1f)
             .padding(5.dp)
-            .border(1.dp, Color.Companion.Black, RoundedCornerShape(10f, 10f, 10f, 10f))
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10f, 10f, 10f, 10f))
             .aspectRatio(1.0f)
             .pointerInput(Unit) {
                 interceptOutOfBoundsChildEvents = true

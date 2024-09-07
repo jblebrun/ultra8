@@ -39,7 +39,7 @@ class Chip8Machine {
     var pc = 0x200
 }
 
-class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
+class Chip8(val gfx: Chip8Graphics) {
     private val mem: IntArray = IntArray(4096)
 
     private val random: Random = Random()
@@ -53,8 +53,9 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     private var endTime: Long = 0
     private var running: Boolean = false
     private val lock = ReentrantLock()
+    private val keys = BooleanArray(16)
     private val condition = lock.newCondition()
-    public var paused: Boolean = false
+    var paused: Boolean = false
         set(value) {
             lock.withLock {
                 field = value
@@ -68,6 +69,34 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     init {
         System.arraycopy(font, 0, mem, fontStart, font.size)
     }
+
+    fun keyDown(idx: Int) {
+        lock.withLock {
+            keys[idx] = true
+            condition.signal()
+        }
+    }
+
+    fun keyUp(idx: Int) {
+        lock.withLock {
+            keys[idx] = false
+            condition.signal()
+        }
+    }
+
+    private fun awaitKey(): Int {
+        var pressed = firstPressedKey()
+        lock.withLock {
+            while (pressed < 0) {
+                condition.signal()
+                pressed = firstPressedKey()
+            }
+        }
+        return pressed
+    }
+
+    private fun firstPressedKey(): Int =
+        keys.withIndex().firstOrNull { it.value }?.index ?: -1
 
     @Throws(InterruptedException::class)
     fun stop() {
@@ -271,11 +300,11 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                     if (gfx.putSprite(state.v[x], state.v[y], mem, state.i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
-                    0x9E -> if (input.keyPressed(state.v[x])) {
+                    0x9E -> if (keys[state.v[x]]) {
                         state.pc += 2
                     }
 
-                    0xA1 -> if (!input.keyPressed(state.v[x])) {
+                    0xA1 -> if (!keys[state.v[x]]) {
                         state.pc += 2
                     }
 
@@ -288,12 +317,10 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                 0xF0 -> when (b2) {
                     0x07 -> state.v[x] = timer.value
                     0x0A -> {
-                        synchronized(input) {
-                            Log.i("ultra8", "WAITING FOR PRESS")
-                            val pressed = input.awaitPress()
-                            Log.i("ultra8", "Waited and got key $pressed")
-                            state.v[x] = pressed
-                        }
+                        Log.i("ultra8", "WAITING FOR PRESS")
+                        val pressed = awaitKey()
+                        Log.i("ultra8", "Waited and got key $pressed")
+                        state.v[x] = pressed
                     }
 
                     0x15 -> timer.value = state.v[x]
