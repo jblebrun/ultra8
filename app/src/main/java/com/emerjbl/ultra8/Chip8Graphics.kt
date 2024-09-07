@@ -4,14 +4,13 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.SystemClock
 import android.util.Log
-import android.widget.ImageView
 import java.util.Arrays
 
-class Chip8Graphics(var v: ImageView) {
-    private val b: Bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888).apply {
+class Chip8Graphics() {
+    val b: Bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888).apply {
         density = 4
     }
-    private val hb: Bitmap = Bitmap.createBitmap(HWIDTH, HHEIGHT, Bitmap.Config.ARGB_8888).apply {
+    val hb: Bitmap = Bitmap.createBitmap(HWIDTH, HHEIGHT, Bitmap.Config.ARGB_8888).apply {
         density = 2
     }
 
@@ -63,9 +62,7 @@ class Chip8Graphics(var v: ImageView) {
                 }
             }
             bitmap.setPixels(fb, 0, width, 0, 0, width, height)
-            v.setImageBitmap(bitmap)
 
-            v.postInvalidate()
             lastDraw = lastDraw + 15
             if (!stopped) {
                 h.postAtTime(this, lastDraw + 15)
@@ -94,10 +91,10 @@ class Chip8Graphics(var v: ImageView) {
         val bytesPerRow = if (linesIn == 0) 2 else 1
         var unset = false
         val height = if (hires) HHEIGHT else HEIGHT
-        val width = if(hires) HWIDTH else WIDTH
-        val fb: IntArray = if(hires) hframebuffer else framebuffer
+        val width = if (hires) HWIDTH else WIDTH
+        val fb: IntArray = if (hires) hframebuffer else framebuffer
 
-        for(yoffset in 0 until lines step bytesPerRow) {
+        for (yoffset in 0 until lines step bytesPerRow) {
             for (bpr in 0 until bytesPerRow) {
                 val row = data[offset + yoffset + bpr]
                 //Log.i("ultra8","doing sprite byte "+Integer.toHexString(row)+" from "+(offset+yoffset+bpr));
