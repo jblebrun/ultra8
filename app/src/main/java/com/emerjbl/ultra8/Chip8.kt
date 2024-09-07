@@ -41,7 +41,6 @@ class Chip8Machine {
 
 class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     private val mem: IntArray = IntArray(4096)
-    val state = Chip8Machine()
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer()
@@ -108,6 +107,7 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     }
 
     fun runOps(): Int {
+        val state = Chip8Machine()
         gfx.clearScreen()
         gfx.hires = false
         gfx.start()
@@ -289,6 +289,7 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                     0x07 -> state.v[x] = timer.value
                     0x0A -> {
                         synchronized(input) {
+                            Log.i("ultra8", "WAITING FOR PRESS")
                             val pressed = input.awaitPress()
                             Log.i("ultra8", "Waited and got key $pressed")
                             state.v[x] = pressed
