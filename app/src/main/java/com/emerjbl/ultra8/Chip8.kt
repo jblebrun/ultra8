@@ -28,13 +28,23 @@ private val font: IntArray = intArrayOf(
     0xF0, 0x80, 0xE0, 0x80, 0x80
 )
 
+/** The registers of a Chip8 machine. */
+class Chip8Machine {
+    val v = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val hp = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val stack = IntArray(64)
+    var i: Int = 0
+    var sp = 0
+    var pc = 0x200
+}
+
 class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     private val mem: IntArray = IntArray(4096)
+    val state = Chip8Machine()
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer()
     private val tg: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-
 
     private var runThread: Thread? = null
 
@@ -42,7 +52,6 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     private var startTime: Long = 0
     private var endTime: Long = 0
     private var running: Boolean = false
-    private var calling: Boolean = false
     private val execStart: Int = 0x200
     private val fontStart: Int = 0x100
 
@@ -88,35 +97,10 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
     }
 
     fun runOps(): Int {
-        var regX: Int
-        var regY: Int
-        var i: Int
-        var b1: Int
-        var b2: Int
-        var word: Int
-        var majOp: Int
-        var subOp: Int
-        var nnn: Int
-        var tmp: Int
-        val regV = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        val regHP = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
-        val stack = IntArray(64)
-        val timeCounts = IntArray(100)
-        var opTime: Int
-        Arrays.fill(timeCounts, 0, 99, 0)
-        var regSP = 0
-        var regI = 0
-        var regPC = 0x200
-        var opEndMillis: Long
-        var opStartMillis: Long = 0
         gfx.clearScreen()
         gfx.hires = false
         gfx.start()
         while (running) {
-            opEndMillis = SystemClock.uptimeMillis()
-            opTime = (opEndMillis - opStartMillis).toInt()
-            timeCounts[if (opTime > 99) 99 else opTime]++
-            opStartMillis = SystemClock.uptimeMillis()
             Thread.sleep(0, if (input.hurry) 100 else 50000)
             if (input.reset) {
                 running = false
@@ -129,15 +113,14 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                 Log.i("ultra8", "Chip8 is restarting after pause...")
                 gfx.start()
             }
-            calling = false
-            b1 = mem[regPC++]
-            b2 = mem[regPC++]
-            word = (b1 shl 8) or b2
-            majOp = b1 and 0xF0
-            nnn = word and 0xFFF
-            subOp = b2 and 0x0F
-            regX = b1 and 0xF
-            regY = (b2 shr 4)
+            val b1 = mem[state.pc++]
+            val b2 = mem[state.pc++]
+            val word = (b1 shl 8) or b2
+            val majOp = b1 and 0xF0
+            val nnn = word and 0xFFF
+            val subOp = b2 and 0x0F
+            val x = b1 and 0xF
+            val y = (b2 shr 4)
             opCount++
 
             when (majOp) {
@@ -145,12 +128,12 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                     0xE0 -> gfx.clearScreen()
 
                     0xEE -> {
-                        if (regSP < 0) {
+                        if (state.sp < 0) {
                             running = false
-                            Log.i("ultra8", "FATAL: RET when stack is empty")
+                            Log.i("ultra8", "FATAL: RET when state.stack is empty")
                             break
                         }
-                        regPC = stack[--regSP]
+                        state.pc = state.stack[--state.sp]
                     }
 
                     0xFB -> gfx.rscroll()
@@ -164,7 +147,7 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
 
                     0xFF -> gfx.hires = true
 
-                    else -> if (regY == 0xC) {
+                    else -> if (y == 0xC) {
                         gfx.scrolldown(subOp)
                     } else {
                         Log.i(
@@ -176,87 +159,86 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                 }
 
                 0x20 -> {
-                    calling = true
-                    stack[regSP++] = regPC
+                    state.stack[state.sp++] = state.pc
 
-                    if (regPC == nnn + 2) {
+                    if (state.pc == nnn + 2) {
                         Log.i(
                             "Ultra8",
                             "normal: would spin in endless loop, stopping emulation"
                         )
                         running = false
                     } else {
-                        regPC = nnn
+                        state.pc = nnn
                     }
                 }
 
                 0x10 ->
-                    if (regPC == nnn + 2) {
+                    if (state.pc == nnn + 2) {
                         Log.i(
                             "Ultra8",
                             "normal: would spin in endless loop, stopping emulation"
                         )
                         running = false
                     } else {
-                        regPC = nnn
+                        state.pc = nnn
                     }
 
-                0x30 -> if (regV[regX] == b2) regPC += 2
+                0x30 -> if (state.v[x] == b2) state.pc += 2
 
-                0x40 -> if (regV[regX] != b2) regPC += 2
+                0x40 -> if (state.v[x] != b2) state.pc += 2
 
                 0x50 -> {
                     if (subOp != 0) {
                         Log.i("ultra8", "FATAL: Illegal opcode " + Integer.toHexString(word))
                         running = false
                     }
-                    if (regV[regX] == regV[regY]) {
-                        regPC += 2
+                    if (state.v[x] == state.v[y]) {
+                        state.pc += 2
                     }
                 }
 
-                0x60 -> regV[regX] = b2
+                0x60 -> state.v[x] = b2
 
                 0x70 -> {
-                    regV[regX] = regV[regX] + b2
-                    regV[15] = if (((regV[regX] and 0x100) != 0)) 1 else 0
-                    regV[regX] = regV[regX] and 0xFF
+                    state.v[x] = state.v[x] + b2
+                    state.v[15] = if (((state.v[x] and 0x100) != 0)) 1 else 0
+                    state.v[x] = state.v[x] and 0xFF
                 }
 
                 0x80 -> when (subOp) {
-                    0x00 -> regV[regX] = regV[regY]
+                    0x00 -> state.v[x] = state.v[y]
 
-                    0x01 -> regV[regX] = regV[regX] or regV[regY]
+                    0x01 -> state.v[x] = state.v[x] or state.v[y]
 
-                    0x02 -> regV[regX] = regV[regX] and regV[regY]
-                    0x03 -> regV[regX] = regV[regX] xor regV[regY]
+                    0x02 -> state.v[x] = state.v[x] and state.v[y]
+                    0x03 -> state.v[x] = state.v[x] xor state.v[y]
                     0x04 -> {
-                        regV[regX] += regV[regY]
-                        regV[regX] = regV[regX] and 0xFF
-                        regV[15] = if (((regV[regX] and 0x100) != 0)) 1 else 0
+                        state.v[x] += state.v[y]
+                        state.v[x] = state.v[x] and 0xFF
+                        state.v[15] = if (((state.v[x] and 0x100) != 0)) 1 else 0
                     }
 
                     0x05 -> {
-                        regV[regX] = (regV[regX] - regV[regY])
-                        regV[15] = (if ((regV[regX] and 0x100) == 0) 1 else 0)
-                        regV[regX] = regV[regX] and 0xFF
+                        state.v[x] = (state.v[x] - state.v[y])
+                        state.v[15] = (if ((state.v[x] and 0x100) == 0) 1 else 0)
+                        state.v[x] = state.v[x] and 0xFF
                     }
 
                     0x06 -> {
-                        regV[15] = (regV[regX] and 0x01)
-                        regV[regX] = regV[regX] ushr 1
+                        state.v[15] = (state.v[x] and 0x01)
+                        state.v[x] = state.v[x] ushr 1
                     }
 
                     0x07 -> {
-                        regV[regX] = (regV[regY] - regV[regX])
-                        regV[15] = (if ((regV[regX] and 0x100) == 0) 0 else 1)
-                        regV[regX] = regV[regX] and 0xFF
+                        state.v[x] = (state.v[y] - state.v[x])
+                        state.v[15] = (if ((state.v[x] and 0x100) == 0) 0 else 1)
+                        state.v[x] = state.v[x] and 0xFF
                     }
 
                     0x0E -> {
-                        regV[15] = (if ((regV[regX] and 0x80) == 0x80) 1 else 0)
-                        regV[regX] = regV[regX] shl 1
-                        regV[regX] = regV[regX] and 0xFF
+                        state.v[15] = (if ((state.v[x] and 0x80) == 0x80) 1 else 0)
+                        state.v[x] = state.v[x] shl 1
+                        state.v[x] = state.v[x] and 0xFF
                     }
 
                     else -> {
@@ -270,22 +252,22 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                         Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
                         running = false
                     }
-                    if (regV[regX] != regV[regY]) regPC += 2
+                    if (state.v[x] != state.v[y]) state.pc += 2
                 }
 
-                0xA0 -> regI = nnn
-                0xB0 -> regPC = regV[0] + nnn
-                0xC0 -> regV[regX] = random.nextInt(b2 + 1)
-                0xD0 -> regV[15] =
-                    if (gfx.putSprite(regV[regX], regV[regY], mem, regI, subOp)) 1 else 0
+                0xA0 -> state.i = nnn
+                0xB0 -> state.pc = state.v[0] + nnn
+                0xC0 -> state.v[x] = random.nextInt(b2 + 1)
+                0xD0 -> state.v[15] =
+                    if (gfx.putSprite(state.v[x], state.v[y], mem, state.i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
-                    0x9E -> if (input.keyPressed(regV[regX])) {
-                        regPC += 2
+                    0x9E -> if (input.keyPressed(state.v[x])) {
+                        state.pc += 2
                     }
 
-                    0xA1 -> if (!input.keyPressed(regV[regX])) {
-                        regPC += 2
+                    0xA1 -> if (!input.keyPressed(state.v[x])) {
+                        state.pc += 2
                     }
 
                     else -> {
@@ -295,47 +277,47 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                 }
 
                 0xF0 -> when (b2) {
-                    0x07 -> regV[regX] = timer.value
+                    0x07 -> state.v[x] = timer.value
                     0x0A -> {
                         synchronized(input) {
                             val pressed = input.awaitPress()
                             Log.i("ultra8", "Waited and got key $pressed")
-                            regV[regX] = pressed
+                            state.v[x] = pressed
                         }
                     }
 
-                    0x15 -> timer.value = regV[regX]
+                    0x15 -> timer.value = state.v[x]
 
                     0x18 -> {}
-                    0x1E -> regI += regV[regX]
-                    0x29 -> regI = (fontStart + regV[regX] * 5)
+                    0x1E -> state.i += state.v[x]
+                    0x29 -> state.i = (fontStart + state.v[x] * 5)
 
                     0x33 -> {
-                        tmp = regV[regX]
-                        i = 0
+                        var tmp = state.v[x]
+                        var i = 0
                         while (tmp > 99) {
                             tmp -= 100
                             i++
                         }
-                        mem[regI] = i
+                        mem[state.i] = i
                         i = 0
                         while (tmp > 9) {
                             tmp -= 10
                             i++
                         }
-                        mem[regI + 1] = i
+                        mem[state.i + 1] = i
                         i = 0
                         while (tmp > 0) {
                             tmp--
                             i++
                         }
-                        mem[regI + 2] = i
+                        mem[state.i + 2] = i
                     }
 
-                    0x55 -> System.arraycopy(regV, 0, mem, regI, regX + 1)
-                    0x65 -> System.arraycopy(mem, regI, regV, 0, regX + 1)
-                    0x75 -> System.arraycopy(regHP, 0, mem, regI, regX + 1)
-                    0x85 -> System.arraycopy(mem, regI, regHP, 0, regX + 1)
+                    0x55 -> System.arraycopy(state.v, 0, mem, state.i, x + 1)
+                    0x65 -> System.arraycopy(mem, state.i, state.v, 0, x + 1)
+                    0x75 -> System.arraycopy(state.hp, 0, mem, state.i, x + 1)
+                    0x85 -> System.arraycopy(mem, state.i, state.hp, 0, x + 1)
 
                     else -> {
                         Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
@@ -349,8 +331,7 @@ class Chip8(val gfx: Chip8Graphics, val input: Chip8Input) {
                 }
             }
         }
-        Log.i("ultra8", timeCounts.toString())
-        return regPC
+        return state.pc
     }
 
     private inner class CPUThread : Thread() {
