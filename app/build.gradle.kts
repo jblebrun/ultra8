@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.emerjbl.ultra8"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 35
         versionCode = 4
         versionName = "0.3"

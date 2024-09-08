@@ -2,13 +2,12 @@ package com.emerjbl.ultra8
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,11 +33,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -160,50 +164,58 @@ fun Graphics(bitmapHolder: BitmapHolder) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RowScope.Chip8Button(value: Int, onKeyDown: () -> Unit, onKeyUp: () -> Unit) {
+fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
     val text = Integer.toHexString(value)
-    Box(
-        modifier = Modifier
-            .weight(1f)
-            .padding(5.dp)
-            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10f, 10f, 10f, 10f))
-            .aspectRatio(1.0f)
-            .pointerInput(Unit) {
-                interceptOutOfBoundsChildEvents = true
-                detectTapGestures(onPress = {
-                    Log.i("Chip8", "DOWN $value")
-                    onKeyDown()
-                    val released = tryAwaitRelease()
-                    Log.i("Chip8", "UP $value ($released)")
-                    onKeyUp()
-                })
-
-            }, contentAlignment = Alignment.Center
-    ) { Text(text) }
-}
-
-@Composable
-fun ButtonRow(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit, vararg buttons: Int) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        for (value in buttons) {
-            Chip8Button(value, { onKeyDown(value) }, { onKeyUp(value) })
+    // Outer box to get position including all padding so there are no touch gaps.
+    Box(modifier = Modifier
+        .weight(1f)
+        .onGloballyPositioned {
+            onPositioned(Rect(it.positionInWindow(), it.size.toSize()))
         }
+        .aspectRatio(1.0f)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(5.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary,
+                    RoundedCornerShape(10f, 10f, 10f, 10f)
+                ), contentAlignment = Alignment.Center
+        ) { Text(text) }
     }
 }
 
 @Composable
+fun ButtonRow(onPositioned: (Int, Rect) -> Unit, vararg buttons: Int) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        for (value in buttons) {
+            Chip8Button(value) { onPositioned(value, it) }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
 fun Buttons(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
+    val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .pointerInteropFilter { keyHitManager.onTouchEvent(it) }
             .padding(20.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            ButtonRow(onKeyDown, onKeyUp, 1, 2, 3, 12)
-            ButtonRow(onKeyDown, onKeyUp, 4, 5, 6, 13)
-            ButtonRow(onKeyDown, onKeyUp, 7, 8, 9, 14)
-            ButtonRow(onKeyDown, onKeyUp, 10, 0, 11, 15)
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            ButtonRow(keyHitManager::setKeyPosition, 1, 2, 3, 12)
+            ButtonRow(keyHitManager::setKeyPosition, 4, 5, 6, 13)
+            ButtonRow(keyHitManager::setKeyPosition, 7, 8, 9, 14)
+            ButtonRow(keyHitManager::setKeyPosition, 10, 0, 11, 15)
         }
     }
 }
