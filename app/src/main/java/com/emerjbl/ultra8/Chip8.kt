@@ -2,7 +2,6 @@ package com.emerjbl.ultra8
 
 import android.media.AudioManager
 import android.media.ToneGenerator
-import android.os.SystemClock
 import android.util.Log
 import java.util.Random
 import java.util.concurrent.locks.ReentrantLock
@@ -13,6 +12,9 @@ private val Int.b
     get() = toByte()
 private val Byte.i
     get() = toUByte().toInt()
+
+private const val EXEC_START: Int = 0x200
+private const val FONT_START: Int = 0x100
 
 private val font: ByteArray = byteArrayOf(
     0xF0.b, 0x90.b, 0x90.b, 0x90.b, 0xF0.b,
@@ -33,42 +35,10 @@ private val font: ByteArray = byteArrayOf(
     0xF0.b, 0x80.b, 0xE0.b, 0x80.b, 0x80.b
 )
 
-/** The registers of a Chip8 machine. */
-class Chip8Machine {
-    val v = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    val hp = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
-    val stack = IntArray(64)
-    var i: Int = 0
-    var sp = 0
-    var pc = 0x200
-}
-
-class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
-    private val mem: ByteArray = ByteArray(4096)
-
-    private val random: Random = Random()
-    private val timer: Chip8Timer = Chip8Timer(timeSource)
-    private val tg: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-
-    private var runThread: Thread? = null
-
-    private var opCount: Int = 0
-    private var startTime: Long = 0
-    private var endTime: Long = 0
-    private var running: Boolean = false
+class Chip8Keys {
     private val lock = ReentrantLock()
     private val keys = BooleanArray(16)
     private val condition = lock.newCondition()
-    var paused: Boolean = false
-        set(value) {
-            lock.withLock {
-                field = value
-                condition.signal()
-            }
-        }
-        get() = lock.withLock { field }
-    private val execStart: Int = 0x200
-    private val fontStart: Int = 0x100
 
     fun keyDown(idx: Int) {
         lock.withLock {
@@ -84,7 +54,9 @@ class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
         }
     }
 
-    private fun awaitKey(): Int {
+    fun pressed(idx: Int) = keys[idx]
+
+    fun awaitKey(): Int {
         var pressed = firstPressedKey()
         lock.withLock {
             while (pressed < 0) {
@@ -97,339 +69,265 @@ class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
 
     private fun firstPressedKey(): Int =
         keys.withIndex().firstOrNull { it.value }?.index ?: -1
+}
 
-    @Throws(InterruptedException::class)
-    fun stop() {
-        Log.i("ultra8", "stopping Chip8")
-        if (runThread != null) {
-            Log.i("ultra8", "there's a thread to stop")
-            running = false
-            runThread!!.interrupt()
-            Log.i("ultra8", "waiting for run thread to complete")
-            runThread!!.join()
-            runThread = null
-        }
-        Log.i("ultra8", "reset complete")
+/** The registers of a Chip8 machine. */
+class Chip8(
+    val keys: Chip8Keys,
+    val gfx: Chip8Graphics,
+    timeSource: TimeSource,
+    program: ByteArray
+) {
+    val v = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val hp = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val stack = IntArray(64)
+    var i: Int = 0
+    var sp = 0
+    var pc = 0x200
+    private val mem: ByteArray = ByteArray(4096).apply {
+        font.copyInto(this, FONT_START)
+        program.copyInto(this, EXEC_START)
     }
+    private val random: Random = Random()
+    private val timer: Chip8Timer = Chip8Timer(timeSource)
+    private val tg: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
 
-    fun reset() {
-        try {
-            Log.i("ultra8", "resetting")
-            stop()
-        } catch (e: InterruptedException) {
-            Log.i("ultra8", "interrupted while resetting")
-            e.printStackTrace()
-        }
-        startThread()
-    }
 
-    fun loadProgram(program: ByteArray) {
-        mem.fill(0)
-        font.copyInto(mem, fontStart)
-        program.copyInto(mem, execStart)
-    }
+    fun step(): Boolean {
+        val b1 = mem[pc++].i
+        val b2 = mem[pc++].i
+        val word = (b1 shl 8) or b2
+        val majOp = b1 and 0xF0
+        val nnn = word and 0xFFF
+        val subOp = b2 and 0x0F
+        val x = b1 and 0xF
+        val y = (b2 shr 4)
 
-    fun runOps(): Int {
-        val state = Chip8Machine()
-        gfx.clearScreen()
-        gfx.hires = false
-        gfx.start()
-        while (running) {
-            Thread.sleep(1)
-            if (paused) {
-                Log.i("ultra8", "Chip8 is waiting due to pause...")
-                gfx.stop()
-                lock.withLock {
-                    while (paused) condition.await()
+        when (majOp) {
+            0x00 -> when (b2) {
+                0xE0 -> gfx.clearScreen()
+
+                0xEE -> {
+                    if (sp < 0) {
+                        Log.i("ultra8", "FATAL: RET when stack is empty")
+                        return false
+                    }
+                    pc = stack[--sp]
                 }
-                Log.i("ultra8", "Chip8 is restarting after pause...")
-                gfx.start()
+
+                0xFB -> gfx.rscroll()
+                0xFC -> gfx.lscroll()
+                0xFD -> {
+                    Log.i("ultra8", "Normal: EXIT instruction")
+                    return false
+                }
+
+                0xFE -> gfx.hires = false
+
+                0xFF -> gfx.hires = true
+
+                else -> if (y == 0xC) {
+                    gfx.scrolldown(subOp)
+                } else {
+                    Log.i(
+                        "ultra8",
+                        "FATAL: trying to execute 0 byte, program missing halt"
+                    )
+                    return false
+                }
             }
-            val b1 = mem[state.pc++].i
-            val b2 = mem[state.pc++].i
-            val word = (b1 shl 8) or b2
-            val majOp = b1 and 0xF0
-            val nnn = word and 0xFFF
-            val subOp = b2 and 0x0F
-            val x = b1 and 0xF
-            val y = (b2 shr 4)
-            opCount++
 
-            when (majOp) {
-                0x00 -> when (b2) {
-                    0xE0 -> gfx.clearScreen()
+            0x20 -> {
+                stack[sp++] = pc
 
-                    0xEE -> {
-                        if (state.sp < 0) {
-                            running = false
-                            Log.i("ultra8", "FATAL: RET when state.stack is empty")
-                            break
-                        }
-                        state.pc = state.stack[--state.sp]
+                if (pc == nnn + 2) {
+                    Log.i(
+                        "Ultra8",
+                        "normal: would spin in endless loop, stopping emulation"
+                    )
+                    return false
+                } else {
+                    pc = nnn
+                }
+            }
+
+            0x10 ->
+                if (pc == nnn + 2) {
+                    Log.i(
+                        "Ultra8",
+                        "normal: would spin in endless loop, stopping emulation"
+                    )
+                    return false
+                } else {
+                    pc = nnn
+                }
+
+            0x30 -> if (v[x] == b2) pc += 2
+
+            0x40 -> if (v[x] != b2) pc += 2
+
+            0x50 -> {
+                if (subOp != 0) {
+                    Log.i("ultra8", "FATAL: Illegal opcode " + Integer.toHexString(word))
+                    return false
+                }
+                if (v[x] == v[y]) {
+                    pc += 2
+                }
+            }
+
+            0x60 -> v[x] = b2
+
+            0x70 -> {
+                v[x] = v[x] + b2
+                v[15] = if (((v[x] and 0x100) != 0)) 1 else 0
+                v[x] = v[x] and 0xFF
+            }
+
+            0x80 -> when (subOp) {
+                0x00 -> v[x] = v[y]
+
+                0x01 -> v[x] = v[x] or v[y]
+
+                0x02 -> v[x] = v[x] and v[y]
+                0x03 -> v[x] = v[x] xor v[y]
+                0x04 -> {
+                    v[x] += v[y]
+                    v[x] = v[x] and 0xFF
+                    v[15] = if (((v[x] and 0x100) != 0)) 1 else 0
+                }
+
+                0x05 -> {
+                    v[x] = (v[x] - v[y])
+                    v[15] = (if ((v[x] and 0x100) == 0) 1 else 0)
+                    v[x] = v[x] and 0xFF
+                }
+
+                0x06 -> {
+                    v[15] = (v[x] and 0x01)
+                    v[x] = v[x] ushr 1
+                }
+
+                0x07 -> {
+                    v[x] = (v[y] - v[x])
+                    v[15] = (if ((v[x] and 0x100) == 0) 0 else 1)
+                    v[x] = v[x] and 0xFF
+                }
+
+                0x0E -> {
+                    v[15] = (if ((v[x] and 0x80) == 0x80) 1 else 0)
+                    v[x] = v[x] shl 1
+                    v[x] = v[x] and 0xFF
+                }
+
+                else -> {
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    return false
+                }
+            }
+
+            0x90 -> {
+                if (subOp != 0) {
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    return false
+                }
+                if (v[x] != v[y]) pc += 2
+            }
+
+            0xA0 -> i = nnn
+            0xB0 -> pc = v[0] + nnn
+            0xC0 -> v[x] = random.nextInt(b2 + 1)
+            0xD0 -> v[15] =
+                if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
+
+            0xE0 -> when (b2) {
+                0x9E -> if (keys.pressed(v[x])) {
+                    pc += 2
+                }
+
+                0xA1 -> if (!keys.pressed(v[x])) {
+                    pc += 2
+                }
+
+                else -> {
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    return false
+                }
+            }
+
+            0xF0 -> when (b2) {
+                0x07 -> v[x] = timer.value
+                0x0A -> {
+                    Log.i("ultra8", "WAITING FOR PRESS")
+                    val pressed = keys.awaitKey()
+                    Log.i("ultra8", "Waited and got key $pressed")
+                    v[x] = pressed
+                }
+
+                0x15 -> timer.value = v[x]
+
+                0x18 -> {}
+                0x1E -> i += v[x]
+                0x29 -> i = (FONT_START + v[x] * 5)
+
+                0x33 -> {
+                    var tmp = v[x]
+                    var ctr = 0
+                    while (tmp > 99) {
+                        tmp -= 100
+                        ctr++
                     }
-
-                    0xFB -> gfx.rscroll()
-                    0xFC -> gfx.lscroll()
-                    0xFD -> {
-                        running = false
-                        Log.i("ultra8", "Normal: EXIT instruction")
+                    mem[i] = ctr.b
+                    ctr = 0
+                    while (tmp > 9) {
+                        tmp -= 10
+                        ctr++
                     }
+                    mem[i + 1] = ctr.b
+                    ctr = 0
+                    while (tmp > 0) {
+                        tmp--
+                        ctr++
+                    }
+                    mem[i + 2] = ctr.b
+                }
 
-                    0xFE -> gfx.hires = false
-
-                    0xFF -> gfx.hires = true
-
-                    else -> if (y == 0xC) {
-                        gfx.scrolldown(subOp)
-                    } else {
-                        Log.i(
-                            "ultra8",
-                            "FATAL: trying to execute 0 byte, program missing halt"
-                        )
-                        running = false
+                0x55 -> {
+                    for (j in 0..x) {
+                        mem[i + j] = v[j].b
                     }
                 }
 
-                0x20 -> {
-                    state.stack[state.sp++] = state.pc
-
-                    if (state.pc == nnn + 2) {
-                        Log.i(
-                            "Ultra8",
-                            "normal: would spin in endless loop, stopping emulation"
-                        )
-                        running = false
-                    } else {
-                        state.pc = nnn
+                0x65 -> {
+                    for (j in 0..x) {
+                        v[j] = mem[i + j].i
                     }
                 }
 
-                0x10 ->
-                    if (state.pc == nnn + 2) {
-                        Log.i(
-                            "Ultra8",
-                            "normal: would spin in endless loop, stopping emulation"
-                        )
-                        running = false
-                    } else {
-                        state.pc = nnn
-                    }
-
-                0x30 -> if (state.v[x] == b2) state.pc += 2
-
-                0x40 -> if (state.v[x] != b2) state.pc += 2
-
-                0x50 -> {
-                    if (subOp != 0) {
-                        Log.i("ultra8", "FATAL: Illegal opcode " + Integer.toHexString(word))
-                        running = false
-                    }
-                    if (state.v[x] == state.v[y]) {
-                        state.pc += 2
+                0x75 -> {
+                    for (j in 0..x) {
+                        mem[i + j] = hp[j].b
                     }
                 }
 
-                0x60 -> state.v[x] = b2
-
-                0x70 -> {
-                    state.v[x] = state.v[x] + b2
-                    state.v[15] = if (((state.v[x] and 0x100) != 0)) 1 else 0
-                    state.v[x] = state.v[x] and 0xFF
-                }
-
-                0x80 -> when (subOp) {
-                    0x00 -> state.v[x] = state.v[y]
-
-                    0x01 -> state.v[x] = state.v[x] or state.v[y]
-
-                    0x02 -> state.v[x] = state.v[x] and state.v[y]
-                    0x03 -> state.v[x] = state.v[x] xor state.v[y]
-                    0x04 -> {
-                        state.v[x] += state.v[y]
-                        state.v[x] = state.v[x] and 0xFF
-                        state.v[15] = if (((state.v[x] and 0x100) != 0)) 1 else 0
-                    }
-
-                    0x05 -> {
-                        state.v[x] = (state.v[x] - state.v[y])
-                        state.v[15] = (if ((state.v[x] and 0x100) == 0) 1 else 0)
-                        state.v[x] = state.v[x] and 0xFF
-                    }
-
-                    0x06 -> {
-                        state.v[15] = (state.v[x] and 0x01)
-                        state.v[x] = state.v[x] ushr 1
-                    }
-
-                    0x07 -> {
-                        state.v[x] = (state.v[y] - state.v[x])
-                        state.v[15] = (if ((state.v[x] and 0x100) == 0) 0 else 1)
-                        state.v[x] = state.v[x] and 0xFF
-                    }
-
-                    0x0E -> {
-                        state.v[15] = (if ((state.v[x] and 0x80) == 0x80) 1 else 0)
-                        state.v[x] = state.v[x] shl 1
-                        state.v[x] = state.v[x] and 0xFF
-                    }
-
-                    else -> {
-                        Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
-                        running = false
-                    }
-                }
-
-                0x90 -> {
-                    if (subOp != 0) {
-                        Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
-                        running = false
-                    }
-                    if (state.v[x] != state.v[y]) state.pc += 2
-                }
-
-                0xA0 -> state.i = nnn
-                0xB0 -> state.pc = state.v[0] + nnn
-                0xC0 -> state.v[x] = random.nextInt(b2 + 1)
-                0xD0 -> state.v[15] =
-                    if (gfx.putSprite(state.v[x], state.v[y], mem, state.i, subOp)) 1 else 0
-
-                0xE0 -> when (b2) {
-                    0x9E -> if (keys[state.v[x]]) {
-                        state.pc += 2
-                    }
-
-                    0xA1 -> if (!keys[state.v[x]]) {
-                        state.pc += 2
-                    }
-
-                    else -> {
-                        Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
-                        running = false
-                    }
-                }
-
-                0xF0 -> when (b2) {
-                    0x07 -> state.v[x] = timer.value
-                    0x0A -> {
-                        Log.i("ultra8", "WAITING FOR PRESS")
-                        val pressed = awaitKey()
-                        Log.i("ultra8", "Waited and got key $pressed")
-                        state.v[x] = pressed
-                    }
-
-                    0x15 -> timer.value = state.v[x]
-
-                    0x18 -> {}
-                    0x1E -> state.i += state.v[x]
-                    0x29 -> state.i = (fontStart + state.v[x] * 5)
-
-                    0x33 -> {
-                        var tmp = state.v[x]
-                        var i = 0
-                        while (tmp > 99) {
-                            tmp -= 100
-                            i++
-                        }
-                        mem[state.i] = i.b
-                        i = 0
-                        while (tmp > 9) {
-                            tmp -= 10
-                            i++
-                        }
-                        mem[state.i + 1] = i.b
-                        i = 0
-                        while (tmp > 0) {
-                            tmp--
-                            i++
-                        }
-                        mem[state.i + 2] = i.b
-                    }
-
-                    0x55 -> {
-                        for (i in 0..x) {
-                            mem[state.i + i] = state.v[i].b
-                        }
-                    }
-
-                    0x65 -> {
-                        for (i in 0..x) {
-                            state.v[i] = mem[state.i + i].i
-                        }
-                    }
-
-                    0x75 -> {
-                        for (i in 0..x) {
-                            mem[state.i + i] = state.hp[i].b
-                        }
-                    }
-
-                    0x85 -> {
-                        for (i in 0..x) {
-                            state.hp[i] = mem[state.i + i].i
-                        }
-                    }
-
-                    else -> {
-                        Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
-                        running = false
+                0x85 -> {
+                    for (j in 0..x) {
+                        hp[j] = mem[i + j].i
                     }
                 }
 
                 else -> {
                     Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
-                    running = false
+                    return false
                 }
             }
-        }
-        return state.pc
-    }
 
-    private inner class CPUThread : Thread() {
-        override fun run() {
-            var PC = 0
-            try {
-                running = true
-                startTime = SystemClock.uptimeMillis()
-                PC = runOps()
-                //Wait for last pixels to fade.
-                sleep(2000)
-                gfx.stop()
-                runThread = null
-            } catch (ex: InterruptedException) {
-                Log.i("ultra8", "machine was interrupted. That's fine.")
-                gfx.stop()
+            else -> {
+                Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                return false
             }
-            endTime = SystemClock.uptimeMillis()
-            Log.i("ultra8", "Finished at PC $PC")
-            Log.i("ultra8", "Executed " + opCount + " ops in " + (endTime - startTime) + "ms")
-            Log.i("ultra8", (1000L * opCount / (endTime - startTime)).toString() + "ops/sec")
-
-            val SETCOLOR = -0xff0100
-            val FADERATE = 0x08000000
-            val temp = SETCOLOR - FADERATE
-            val lmask = 0xFFFFFFFFL
-            Log.i("utlra8", "btw, temp is " + Integer.toHexString(temp))
-            Log.i("utlra8", "btw, temp > FADERATE is " + (temp > FADERATE))
-            Log.i(
-                "utlra8",
-                "btw, cast temp > FADERATE is " + ((temp.toLong() and lmask) > (FADERATE.toLong() and lmask))
-            )
-            Log.i("utlra8", "btw, temp < SETCOLOR is " + (temp > SETCOLOR))
-            Log.i(
-                "utlra8",
-                "btw, cast temp < SETCOLOR is " + ((temp.toLong() and lmask) > (SETCOLOR.toLong() and lmask))
-            )
         }
-    }
-
-    fun startThread() {
-        Log.i("ultra8", "starting Chip8")
-        if (runThread == null) {
-            Log.i("ultra8", "creating new machine thread")
-            runThread = CPUThread().apply {
-                start()
-            }
-            Log.i("ultra8", "started cpu")
-        }
+        return true
     }
 }
+

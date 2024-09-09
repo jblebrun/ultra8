@@ -6,7 +6,7 @@ import android.os.SystemClock
 import android.util.Log
 import java.util.Arrays
 
-class Chip8Graphics() {
+class Chip8Graphics {
     val b: Bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888).apply {
         density = 4
     }
