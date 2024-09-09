@@ -56,7 +56,8 @@ data class Program(val name: String, val id: Int)
 
 class MainActivity : ComponentActivity() {
     private val gfx: Chip8Graphics = Chip8Graphics()
-    private val machine: Chip8 = Chip8(gfx, TimeSource.Monotonic)
+    private val keys: Chip8Keys = Chip8Keys()
+    private val runner: Chip8Runner = Chip8Runner(keys, gfx, TimeSource.Monotonic)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,30 +80,29 @@ class MainActivity : ComponentActivity() {
                 bitmap.value,
                 programs,
                 onSelectProgram = ::loadAndReset,
-                onKeyDown = machine::keyDown,
-                onKeyUp = machine::keyUp,
+                onKeyDown = keys::keyDown,
+                onKeyUp = keys::keyUp,
             )
         }
         loadAndReset(R.raw.blinky)
     }
 
     private fun loadAndReset(programId: Int) {
-        machine.loadProgram(
+        runner.runProgram(
             resources.openRawResource(programId).use {
                 it.readBytes()
             }
         )
-        machine.reset()
     }
 
     override fun onPause() {
         super.onPause()
-        machine.paused = true
+        runner.paused = true
     }
 
     override fun onResume() {
         super.onResume()
-        machine.paused = false
+        runner.paused = false
     }
 }
 
