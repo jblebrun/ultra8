@@ -9,6 +9,7 @@ import java.io.InputStream
 import java.util.Random
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.time.TimeSource
 
 private val font: IntArray = intArrayOf(
     0xF0, 0x90, 0x90, 0x90, 0xF0,
@@ -39,11 +40,11 @@ class Chip8Machine {
     var pc = 0x200
 }
 
-class Chip8(val gfx: Chip8Graphics) {
+class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
     private val mem: IntArray = IntArray(4096)
 
     private val random: Random = Random()
-    private val timer: Chip8Timer = Chip8Timer()
+    private val timer: Chip8Timer = Chip8Timer(timeSource)
     private val tg: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
 
     private var runThread: Thread? = null
