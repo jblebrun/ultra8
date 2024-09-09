@@ -86,7 +86,7 @@ class Chip8Graphics() {
         h.postAtTime(r, lastDraw + 50)
     }
 
-    fun putSprite(xbase: Int, ybase: Int, data: IntArray, offset: Int, linesIn: Int): Boolean {
+    fun putSprite(xbase: Int, ybase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean {
         val lines = if (linesIn == 0) 16 else linesIn
         val bytesPerRow = if (linesIn == 0) 2 else 1
         var unset = false
@@ -96,7 +96,7 @@ class Chip8Graphics() {
 
         for (yoffset in 0 until lines step bytesPerRow) {
             for (bpr in 0 until bytesPerRow) {
-                val row = data[offset + yoffset + bpr]
+                val row = data[offset + yoffset + bpr].toInt()
                 //Log.i("ultra8","doing sprite byte "+Integer.toHexString(row)+" from "+(offset+yoffset+bpr));
                 for (xoffset in 0..7) {
                     val mask = 0x80 shr xoffset

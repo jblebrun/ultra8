@@ -75,12 +75,23 @@ class MainActivity : ComponentActivity() {
                     delay(33)
                 }
             }
-            Screen(bitmap.value, programs, {
-                machine.loadProgram(resources.openRawResource(it))
-                machine.reset()
-            }, { machine.keyDown(it) }, { machine.keyUp(it) })
+            Screen(
+                bitmap.value,
+                programs,
+                onSelectProgram = ::loadAndReset,
+                onKeyDown = machine::keyDown,
+                onKeyUp = machine::keyUp,
+            )
         }
-        machine.loadProgram(resources.openRawResource(R.raw.blinky))
+        loadAndReset(R.raw.blinky)
+    }
+
+    private fun loadAndReset(programId: Int) {
+        machine.loadProgram(
+            resources.openRawResource(programId).use {
+                it.readBytes()
+            }
+        )
         machine.reset()
     }
 
