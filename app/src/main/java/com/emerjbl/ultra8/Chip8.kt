@@ -88,7 +88,7 @@ class Chip8(val gfx: Chip8Graphics) {
         var pressed = firstPressedKey()
         lock.withLock {
             while (pressed < 0) {
-                condition.signal()
+                condition.await()
                 pressed = firstPressedKey()
             }
         }
