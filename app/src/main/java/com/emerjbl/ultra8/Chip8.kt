@@ -4,30 +4,33 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.SystemClock
 import android.util.Log
-import java.io.IOException
-import java.io.InputStream
 import java.util.Random
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.time.TimeSource
 
-private val font: IntArray = intArrayOf(
-    0xF0, 0x90, 0x90, 0x90, 0xF0,
-    0x20, 0x60, 0x20, 0x20, 0x70,
-    0xF0, 0x10, 0xF0, 0x80, 0xF0,
-    0xF0, 0x10, 0x70, 0x10, 0xF0,
-    0xA0, 0xA0, 0xF0, 0x20, 0x20,
-    0xF0, 0x80, 0xF0, 0x10, 0xF0,
-    0xF0, 0x80, 0xF0, 0x90, 0xF0,
-    0xF0, 0x10, 0x10, 0x10, 0x10,
-    0x60, 0x90, 0x60, 0x90, 0x60,
-    0xF0, 0x90, 0xF0, 0x10, 0x10,
-    0x60, 0x90, 0xF0, 0x90, 0x90,
-    0xE0, 0x90, 0xE0, 0x90, 0xE0,
-    0xF0, 0x80, 0x80, 0x80, 0xF0,
-    0xE0, 0x90, 0x90, 0x90, 0xE0,
-    0xF0, 0x80, 0xF0, 0x80, 0xF0,
-    0xF0, 0x80, 0xE0, 0x80, 0x80
+private val Int.b
+    get() = toByte()
+private val Byte.i
+    get() = toUByte().toInt()
+
+private val font: ByteArray = byteArrayOf(
+    0xF0.b, 0x90.b, 0x90.b, 0x90.b, 0xF0.b,
+    0x20.b, 0x60.b, 0x20.b, 0x20.b, 0x70.b,
+    0xF0.b, 0x10.b, 0xF0.b, 0x80.b, 0xF0.b,
+    0xF0.b, 0x10.b, 0x70.b, 0x10.b, 0xF0.b,
+    0xA0.b, 0xA0.b, 0xF0.b, 0x20.b, 0x20.b,
+    0xF0.b, 0x80.b, 0xF0.b, 0x10.b, 0xF0.b,
+    0xF0.b, 0x80.b, 0xF0.b, 0x90.b, 0xF0.b,
+    0xF0.b, 0x10.b, 0x10.b, 0x10.b, 0x10.b,
+    0x60.b, 0x90.b, 0x60.b, 0x90.b, 0x60.b,
+    0xF0.b, 0x90.b, 0xF0.b, 0x10.b, 0x10.b,
+    0x60.b, 0x90.b, 0xF0.b, 0x90.b, 0x90.b,
+    0xE0.b, 0x90.b, 0xE0.b, 0x90.b, 0xE0.b,
+    0xF0.b, 0x80.b, 0x80.b, 0x80.b, 0xF0.b,
+    0xE0.b, 0x90.b, 0x90.b, 0x90.b, 0xE0.b,
+    0xF0.b, 0x80.b, 0xF0.b, 0x80.b, 0xF0.b,
+    0xF0.b, 0x80.b, 0xE0.b, 0x80.b, 0x80.b
 )
 
 /** The registers of a Chip8 machine. */
@@ -41,7 +44,7 @@ class Chip8Machine {
 }
 
 class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
-    private val mem: IntArray = IntArray(4096)
+    private val mem: ByteArray = ByteArray(4096)
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
@@ -66,10 +69,6 @@ class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
         get() = lock.withLock { field }
     private val execStart: Int = 0x200
     private val fontStart: Int = 0x100
-
-    init {
-        System.arraycopy(font, 0, mem, fontStart, font.size)
-    }
 
     fun keyDown(idx: Int) {
         lock.withLock {
@@ -124,16 +123,10 @@ class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
         startThread()
     }
 
-    fun loadProgram(file: InputStream) {
-        var at = execStart
-        var next: Int
-        try {
-            while ((file.read().also { next = it }) != -1) {
-                mem[at++] = next
-            }
-        } catch (ex: IOException) {
-            //???
-        }
+    fun loadProgram(program: ByteArray) {
+        mem.fill(0)
+        font.copyInto(mem, fontStart)
+        program.copyInto(mem, execStart)
     }
 
     fun runOps(): Int {
@@ -152,8 +145,8 @@ class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
                 Log.i("ultra8", "Chip8 is restarting after pause...")
                 gfx.start()
             }
-            val b1 = mem[state.pc++]
-            val b2 = mem[state.pc++]
+            val b1 = mem[state.pc++].i
+            val b2 = mem[state.pc++].i
             val word = (b1 shl 8) or b2
             val majOp = b1 and 0xF0
             val nnn = word and 0xFFF
@@ -337,25 +330,44 @@ class Chip8(val gfx: Chip8Graphics, timeSource: TimeSource) {
                             tmp -= 100
                             i++
                         }
-                        mem[state.i] = i
+                        mem[state.i] = i.b
                         i = 0
                         while (tmp > 9) {
                             tmp -= 10
                             i++
                         }
-                        mem[state.i + 1] = i
+                        mem[state.i + 1] = i.b
                         i = 0
                         while (tmp > 0) {
                             tmp--
                             i++
                         }
-                        mem[state.i + 2] = i
+                        mem[state.i + 2] = i.b
                     }
 
-                    0x55 -> System.arraycopy(state.v, 0, mem, state.i, x + 1)
-                    0x65 -> System.arraycopy(mem, state.i, state.v, 0, x + 1)
-                    0x75 -> System.arraycopy(state.hp, 0, mem, state.i, x + 1)
-                    0x85 -> System.arraycopy(mem, state.i, state.hp, 0, x + 1)
+                    0x55 -> {
+                        for (i in 0..x) {
+                            mem[state.i + i] = state.v[i].b
+                        }
+                    }
+
+                    0x65 -> {
+                        for (i in 0..x) {
+                            state.v[i] = mem[state.i + i].i
+                        }
+                    }
+
+                    0x75 -> {
+                        for (i in 0..x) {
+                            mem[state.i + i] = state.hp[i].b
+                        }
+                    }
+
+                    0x85 -> {
+                        for (i in 0..x) {
+                            state.hp[i] = mem[state.i + i].i
+                        }
+                    }
 
                     else -> {
                         Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
