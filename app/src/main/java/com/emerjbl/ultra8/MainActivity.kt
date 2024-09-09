@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.toSize
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlin.time.TimeSource
 
 /** Wrap the Bitmap in a class to trigger updates. */
 class BitmapHolder(val bitmap: Bitmap)
@@ -55,7 +56,7 @@ data class Program(val name: String, val id: Int)
 
 class MainActivity : ComponentActivity() {
     private val gfx: Chip8Graphics = Chip8Graphics()
-    private val machine: Chip8 = Chip8(gfx)
+    private val machine: Chip8 = Chip8(gfx, TimeSource.Monotonic)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
