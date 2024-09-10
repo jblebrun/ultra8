@@ -27,7 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,8 +44,6 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlin.time.TimeSource
 
 /** Wrap the Bitmap in a class to trigger updates. */
@@ -55,8 +53,11 @@ class BitmapHolder(val bitmap: Bitmap)
 data class Program(val name: String, val id: Int)
 
 class MainActivity : ComponentActivity() {
-    private val gfx: Chip8Graphics = Chip8Graphics()
     private val keys: Chip8Keys = Chip8Keys()
+    private val bitmapState: MutableState<BitmapHolder?> = mutableStateOf(null)
+    private val gfx: Chip8Graphics = Chip8Graphics {
+        bitmapState.value = BitmapHolder(it)
+    }
     private val runner: Chip8Runner = Chip8Runner(keys, gfx, TimeSource.Monotonic)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,15 +70,9 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.b)) }
-            LaunchedEffect(Unit) {
-                while (isActive) {
-                    bitmap.value = BitmapHolder(gfx.b)
-                    delay(33)
-                }
-            }
+            val bitmap = remember { bitmapState }
             Screen(
-                bitmap.value,
+                bitmapState.value,
                 programs,
                 onSelectProgram = ::loadAndReset,
                 onKeyDown = keys::keyDown,
@@ -108,7 +103,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Screen(
-    bitmapHolder: BitmapHolder,
+    bitmapHolder: BitmapHolder?,
     programs: List<Program>,
     onSelectProgram: (Int) -> Unit,
     onKeyDown: (Int) -> Unit,
@@ -165,15 +160,21 @@ fun TopBar(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
 }
 
 @Composable
-fun Graphics(bitmapHolder: BitmapHolder) {
-    Image(
-        bitmap = bitmapHolder.bitmap.asImageBitmap(),
-        contentDescription = "Main Screen",
+fun Graphics(bitmapHolder: BitmapHolder?) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(2f),
-        filterQuality = FilterQuality.Low
-    )
+            .aspectRatio(2f)
+    ) {
+        bitmapHolder?.let {
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                bitmap = bitmapHolder.bitmap.asImageBitmap(),
+                contentDescription = "Main Screen",
+                filterQuality = FilterQuality.Low
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

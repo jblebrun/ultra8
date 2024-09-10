@@ -6,7 +6,7 @@ import android.os.SystemClock
 import android.util.Log
 import java.util.Arrays
 
-class Chip8Graphics {
+class Chip8Graphics(val update: (Bitmap) -> Unit) {
     val b: Bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888).apply {
         density = 4
     }
@@ -62,6 +62,7 @@ class Chip8Graphics {
                 }
             }
             bitmap.setPixels(fb, 0, width, 0, 0, width, height)
+            update(bitmap)
 
             lastDraw = lastDraw + 15
             if (!stopped) {
