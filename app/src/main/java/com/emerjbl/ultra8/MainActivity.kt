@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -44,7 +45,6 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.time.TimeSource
 
@@ -69,11 +69,12 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.b)) }
+            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.getFrame(0))) }
             LaunchedEffect(Unit) {
                 while (isActive) {
-                    bitmap.value = BitmapHolder(gfx.b)
-                    delay(33)
+                    withFrameMillis {
+                        bitmap.value = BitmapHolder(gfx.getFrame(it))
+                    }
                 }
             }
             Screen(

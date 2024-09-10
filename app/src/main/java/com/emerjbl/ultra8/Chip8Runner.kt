@@ -52,17 +52,14 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
     fun runOps(machine: Chip8): Int {
         gfx.clearScreen()
         gfx.hires = false
-        gfx.start()
         while (running) {
             Thread.sleep(2)
             if (paused) {
                 Log.i("ultra8", "Chip8 is waiting due to pause...")
-                gfx.stop()
                 lock.withLock {
                     while (paused) condition.await()
                 }
                 Log.i("ultra8", "Chip8 is restarting after pause...")
-                gfx.start()
             }
             opCount++
             running = machine.step()
@@ -80,11 +77,9 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
                 PC = runOps(machine)
                 //Wait for last pixels to fade.
                 sleep(2000)
-                gfx.stop()
                 runThread = null
             } catch (ex: InterruptedException) {
                 Log.i("ultra8", "machine was interrupted. That's fine.")
-                gfx.stop()
             }
             endTime = SystemClock.uptimeMillis()
             Log.i("ultra8", "Finished at PC $PC")
