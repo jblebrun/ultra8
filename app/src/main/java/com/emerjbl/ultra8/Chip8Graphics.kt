@@ -1,9 +1,15 @@
 package com.emerjbl.ultra8
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Handler
 import android.os.SystemClock
 import android.util.Log
+import android.view.animation.AccelerateInterpolator
+import androidx.core.graphics.alpha
+import androidx.core.graphics.blue
+import androidx.core.graphics.green
+import androidx.core.graphics.red
 import java.util.Arrays
 
 class Chip8Graphics {
@@ -13,6 +19,14 @@ class Chip8Graphics {
     val hb: Bitmap = Bitmap.createBitmap(HWIDTH, HHEIGHT, Bitmap.Config.ARGB_8888).apply {
         density = 2
     }
+
+    val framebuffer: IntArray = IntArray(WIDTH * HEIGHT)
+    val hframebuffer: IntArray = IntArray(HWIDTH * HHEIGHT)
+
+    // Time buffers track the fade time for the interpolator.
+    // They store the number of frames before the pixel is fully off.
+    val timebuffer = ByteArray(WIDTH * HEIGHT)
+    val htimebuffer = ByteArray(HWIDTH * HHEIGHT)
 
     private var stopped: Boolean = true
 
@@ -35,37 +49,48 @@ class Chip8Graphics {
             val start = SystemClock.uptimeMillis()
             val bitmap: Bitmap
             val fb: IntArray
-            val len: Int
+            val tb: ByteArray
             val width: Int
             val height: Int
             if (hires) {
-                len = hfblen
                 fb = hframebuffer
+                tb = htimebuffer
                 bitmap = hb
                 width = HWIDTH
                 height = HHEIGHT
             } else {
                 bitmap = b
                 fb = framebuffer
-                len = fblen
+                tb = timebuffer
                 width = WIDTH
                 height = HEIGHT
             }
 
-            for (i in 0 until len) {
-                if (fb[i] != SETCOLOR && fb[i] != 0) {
-                    if ((fb[i].toLong() and lmask) > (FADEFLOOR and lmask)) {
-                        fb[i] -= FADERATE
+            val interpolator = AccelerateInterpolator(2f)
+
+            for (i in tb.indices) {
+                if (tb[i] > 0) {
+                    tb[i] = (tb[i] - 1).toByte()
+                    val newAlpha = if (tb[i] <= 0) {
+                        0
                     } else {
-                        fb[i] = 0
+                        val frameFrac = tb[i].toFloat() / FADE_FRAMES
+                        val frac = interpolator.getInterpolation(frameFrac)
+                        (fb[i].alpha * frac).toInt()
                     }
+                    fb[i] = Color.argb(
+                        newAlpha,
+                        fb[i].red,
+                        fb[i].green,
+                        fb[i].blue
+                    )
                 }
             }
             bitmap.setPixels(fb, 0, width, 0, 0, width, height)
 
-            lastDraw = lastDraw + 15
+            lastDraw += FRAME_PERIOD
             if (!stopped) {
-                h.postAtTime(this, lastDraw + 15)
+                h.postAtTime(this, lastDraw + FRAME_PERIOD)
             }
             val end = SystemClock.uptimeMillis()
             frameTime += (end - start).toInt()
@@ -83,7 +108,7 @@ class Chip8Graphics {
 
     fun start() {
         stopped = false
-        h.postAtTime(r, lastDraw + 50)
+        h.post(r)
     }
 
     fun putSprite(xbase: Int, ybase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean {
@@ -93,18 +118,19 @@ class Chip8Graphics {
         val height = if (hires) HHEIGHT else HEIGHT
         val width = if (hires) HWIDTH else WIDTH
         val fb: IntArray = if (hires) hframebuffer else framebuffer
+        val tb: ByteArray = if (hires) htimebuffer else timebuffer
 
         for (yoffset in 0 until lines step bytesPerRow) {
             for (bpr in 0 until bytesPerRow) {
                 val row = data[offset + yoffset + bpr].toInt()
-                //Log.i("ultra8","doing sprite byte "+Integer.toHexString(row)+" from "+(offset+yoffset+bpr));
                 for (xoffset in 0..7) {
                     val mask = 0x80 shr xoffset
                     if ((row and mask) != 0) {
                         val i =
                             (ybase + yoffset and height - 1) * width + ((xbase + xoffset + bpr * 8) and (width - 1))
                         unset = unset or (fb[i] == SETCOLOR)
-                        fb[i] = if (fb[i] == SETCOLOR) SETCOLOR - FADERATE else SETCOLOR
+                        fb[i] = if (fb[i] == SETCOLOR) CLEARCOLOR else SETCOLOR
+                        tb[i] = if (fb[i] == CLEARCOLOR) FADE_FRAMES else 0.toByte()
                     }
                 }
             }
@@ -122,15 +148,15 @@ class Chip8Graphics {
     companion object {
         const val WIDTH: Int = 64
         const val HEIGHT: Int = 32
-        const val fblen: Int = WIDTH * HEIGHT
         const val HWIDTH: Int = 128
         const val HHEIGHT: Int = 64
-        const val hfblen: Int = HWIDTH * HHEIGHT
-        const val FADERATE: Int = 0x08000000
-        const val SETCOLOR: Int = -0xff0100
-        const val lmask: Long = 0xFFFFFFFFL
-        const val FADEFLOOR: Long = (SETCOLOR - 2 * FADERATE).toLong()
-        val framebuffer: IntArray = IntArray(WIDTH * HEIGHT)
-        val hframebuffer: IntArray = IntArray(HWIDTH * HHEIGHT)
+        const val SETCOLOR: Int = 0xFF00FF00.toInt()
+        const val CLEARCOLOR: Int = 0xFE00FF00.toInt()
+
+        // The inverse of the render frame rate
+        const val FRAME_PERIOD = 33
+
+        // The number of frames to fade out a pixel
+        const val FADE_FRAMES: Byte = 30
     }
 }

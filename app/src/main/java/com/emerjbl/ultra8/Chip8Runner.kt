@@ -54,7 +54,7 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
         gfx.hires = false
         gfx.start()
         while (running) {
-            Thread.sleep(1)
+            Thread.sleep(2)
             if (paused) {
                 Log.i("ultra8", "Chip8 is waiting due to pause...")
                 gfx.stop()

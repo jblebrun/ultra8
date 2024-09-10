@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
                 onKeyUp = keys::keyUp,
             )
         }
-        loadAndReset(R.raw.blinky)
+        loadAndReset(R.raw.breakout)
     }
 
     private fun loadAndReset(programId: Int) {
