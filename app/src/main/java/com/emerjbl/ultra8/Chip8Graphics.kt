@@ -2,6 +2,7 @@ package com.emerjbl.ultra8
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import android.view.animation.AccelerateInterpolator
 import androidx.core.graphics.alpha
 import androidx.core.graphics.blue
@@ -29,12 +30,52 @@ class Chip8Graphics {
 
         private val interpolator = AccelerateInterpolator(2f)
 
-        fun scrollRight() {}
-        fun scrollLeft() {}
-        fun scrollDown(n: Int) {}
+        fun scrollRight() = lock.withLock {
+            for (row in 0 until 64) {
+                val rowStart = row * width
+                val startIndex = rowStart
+                val destinationOffset = rowStart + 4
+                val endIndex = rowStart + 124
+                pixels.copyInto(pixels, destinationOffset, startIndex, endIndex)
+                pixels.fill(0, 0, 4)
+                timeBuffer.copyInto(timeBuffer, destinationOffset, startIndex, endIndex)
+                timeBuffer.fill(0, 0, 4)
+            }
+        }
+
+        fun scrollLeft() = lock.withLock {
+            for (row in 0 until height) {
+                val rowStart = row * width
+                val startIndex = rowStart + 4
+                val destinationOffset = rowStart
+                val endIndex = rowStart + (width)
+                if (row < 4) {
+                    Log.i("Chip8", "SCL $startIndex-$endIndex into $destinationOffset")
+                }
+                pixels.copyInto(pixels, destinationOffset, startIndex, endIndex)
+                pixels.fill(0, endIndex - 4, endIndex)
+                timeBuffer.copyInto(timeBuffer, destinationOffset, startIndex, endIndex)
+                timeBuffer.fill(0, endIndex - 4, endIndex)
+            }
+        }
+
+        fun scrollDown(n: Int) = lock.withLock {
+            val destinationOffset = n * width
+            val startIndex = 0
+            val endIndex = (height - n) * width
+            // The fade messes things up here
+            // Something is still wrong:
+            //   Car seems to collide unexpectedly
+            //   Occasional pixel glitches near bottom
+            //   Even with timebuffer copy, car vibrates
+            pixels.copyInto(pixels, destinationOffset, startIndex, endIndex)
+            pixels.fill(0, 0, n * width)
+            timeBuffer.copyInto(timeBuffer, destinationOffset, startIndex, endIndex)
+            timeBuffer.fill(0, 0, n * width)
+        }
 
 
-        fun nextFrame(frameTime: Long): Bitmap {
+        fun nextFrame(frameTime: Long): Bitmap = lock.withLock {
             val frameDiff = (frameTime - lastFrameTime).toInt()
             lastFrameTime = frameTime
 
@@ -62,10 +103,11 @@ class Chip8Graphics {
             return bitmap
         }
 
-        fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean {
-            val lines = if (linesIn == 0) 16 else linesIn
-            val bytesPerRow = if (linesIn == 0) 2 else 1
-            var unset = false
+        fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean =
+            lock.withLock {
+                val lines = if (linesIn == 0) 16 else linesIn
+                val bytesPerRow = if (linesIn == 0) 2 else 1
+                var unset = false
 
             lock.withLock {
                 for (yOffset in 0 until lines) {
@@ -113,6 +155,7 @@ class Chip8Graphics {
 
     companion object {
         const val SET_COLOR: Int = 0xFF00FF00.toInt()
+
         const val CLEAR_COLOR: Int = 0xFE00FF00.toInt()
 
         // The number of frames to fade out a pixel
