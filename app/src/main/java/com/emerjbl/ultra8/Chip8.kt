@@ -93,6 +93,7 @@ class Chip8(
     private val tg: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
 
 
+    @OptIn(ExperimentalStdlibApi::class)
     fun step(): Boolean {
         val b1 = mem[pc++].i
         val b2 = mem[pc++].i
@@ -221,14 +222,14 @@ class Chip8(
                 }
 
                 else -> {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
                     return false
                 }
             }
 
             0x90 -> {
                 if (subOp != 0) {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
                     return false
                 }
                 if (v[x] != v[y]) pc += 2
@@ -250,7 +251,7 @@ class Chip8(
                 }
 
                 else -> {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
                     return false
                 }
             }
@@ -317,13 +318,13 @@ class Chip8(
                 }
 
                 else -> {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
                     return false
                 }
             }
 
             else -> {
-                Log.i("Ultra8", "FATAL: Illegal opcdoe $word")
+                Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
                 return false
             }
         }
