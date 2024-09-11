@@ -105,7 +105,7 @@ class Chip8(
 
         when (majOp) {
             0x00 -> when (b2) {
-                0xE0 -> gfx.clearScreen()
+                0xE0 -> gfx.frameBuffer.clear()
 
                 0xEE -> {
                     if (sp < 0) {
@@ -115,8 +115,8 @@ class Chip8(
                     pc = stack[--sp]
                 }
 
-                0xFB -> gfx.rscroll()
-                0xFC -> gfx.lscroll()
+                0xFB -> gfx.frameBuffer.scrollRight()
+                0xFC -> gfx.frameBuffer.scrollLeft()
                 0xFD -> {
                     Log.i("ultra8", "Normal: EXIT instruction")
                     return false
@@ -127,7 +127,7 @@ class Chip8(
                 0xFF -> gfx.hires = true
 
                 else -> if (y == 0xC) {
-                    gfx.scrolldown(subOp)
+                    gfx.frameBuffer.scrollDown(subOp)
                 } else {
                     Log.i(
                         "ultra8",
@@ -238,7 +238,7 @@ class Chip8(
             0xB0 -> pc = v[0] + nnn
             0xC0 -> v[x] = random.nextInt(b2 + 1)
             0xD0 -> v[15] =
-                if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
+                if (gfx.frameBuffer.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
             0xE0 -> when (b2) {
                 0x9E -> if (keys.pressed(v[x])) {

@@ -50,7 +50,7 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
     }
 
     fun runOps(machine: Chip8): Int {
-        gfx.clearScreen()
+        gfx.frameBuffer.clear()
         gfx.hires = false
         while (running) {
             Thread.sleep(2)

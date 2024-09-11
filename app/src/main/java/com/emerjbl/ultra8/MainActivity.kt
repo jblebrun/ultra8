@@ -69,11 +69,11 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.getFrame(0))) }
+            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.frameBuffer.nextFrame(0))) }
             LaunchedEffect(Unit) {
                 while (isActive) {
                     withFrameMillis {
-                        bitmap.value = BitmapHolder(gfx.getFrame(it))
+                        bitmap.value = BitmapHolder(gfx.frameBuffer.nextFrame(it))
                     }
                 }
             }
