@@ -103,11 +103,10 @@ class Chip8Graphics {
             return bitmap
         }
 
-        fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean =
-            lock.withLock {
-                val lines = if (linesIn == 0) 16 else linesIn
-                val bytesPerRow = if (linesIn == 0) 2 else 1
-                var unset = false
+        fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean {
+            val lines = if (linesIn == 0) 16 else linesIn
+            val bytesPerRow = if (linesIn == 0) 2 else 1
+            var unset = false
 
             lock.withLock {
                 for (yOffset in 0 until lines) {
