@@ -180,8 +180,8 @@ class Chip8(
             0x60 -> v[x] = b2
 
             0x70 -> {
+                // 0x70NN does *not* set the flag
                 v[x] = v[x] + b2
-                v[15] = if (((v[x] and 0x100) != 0)) 1 else 0
                 v[x] = v[x] and 0xFF
             }
 
@@ -199,9 +199,8 @@ class Chip8(
                 }
 
                 0x05 -> {
-                    v[x] = (v[x] - v[y])
-                    v[15] = (if ((v[x] and 0x100) == 0) 1 else 0)
-                    v[x] = v[x] and 0xFF
+                    v[15] = if (v[x] >= v[y]) 1 else 0
+                    v[x] = (v[x] - v[y]) and 0xFF
                 }
 
                 0x06 -> {
@@ -210,9 +209,8 @@ class Chip8(
                 }
 
                 0x07 -> {
-                    v[x] = (v[y] - v[x])
-                    v[15] = (if ((v[x] and 0x100) == 0) 0 else 1)
-                    v[x] = v[x] and 0xFF
+                    v[15] = if (v[y] >= v[x]) 1 else 0
+                    v[x] = (v[y] - v[x]) and 0xFF
                 }
 
                 0x0E -> {
@@ -237,7 +235,7 @@ class Chip8(
 
             0xA0 -> i = nnn
             0xB0 -> pc = v[0] + nnn
-            0xC0 -> v[x] = random.nextInt(b2 + 1)
+            0xC0 -> v[x] = random.nextInt(0xFF) and b2
             0xD0 -> v[15] =
                 if (gfx.frameBuffer.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
