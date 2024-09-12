@@ -4,8 +4,6 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.util.Log
 import java.util.Random
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 import kotlin.time.TimeSource
 
 private val Int.b
@@ -34,42 +32,6 @@ private val font: ByteArray = byteArrayOf(
     0xF0.b, 0x80.b, 0xF0.b, 0x80.b, 0xF0.b,
     0xF0.b, 0x80.b, 0xE0.b, 0x80.b, 0x80.b
 )
-
-class Chip8Keys {
-    private val lock = ReentrantLock()
-    private val keys = BooleanArray(16)
-    private val condition = lock.newCondition()
-
-    fun keyDown(idx: Int) {
-        lock.withLock {
-            keys[idx] = true
-            condition.signal()
-        }
-    }
-
-    fun keyUp(idx: Int) {
-        lock.withLock {
-            keys[idx] = false
-            condition.signal()
-        }
-    }
-
-    fun pressed(idx: Int) = keys[idx]
-
-    fun awaitKey(): Int {
-        var pressed = firstPressedKey()
-        lock.withLock {
-            while (pressed < 0) {
-                condition.await()
-                pressed = firstPressedKey()
-            }
-        }
-        return pressed
-    }
-
-    private fun firstPressedKey(): Int =
-        keys.withIndex().firstOrNull { it.value }?.index ?: -1
-}
 
 /** The registers of a Chip8 machine. */
 class Chip8(
