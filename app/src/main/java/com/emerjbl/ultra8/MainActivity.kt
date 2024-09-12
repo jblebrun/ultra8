@@ -80,16 +80,19 @@ class MainActivity : ComponentActivity() {
             Screen(
                 bitmap.value,
                 programs,
-                onSelectProgram = ::loadAndReset,
+                onSelectProgram = {
+                    load(it)
+                    runner.resume()
+                },
                 onKeyDown = keys::keyDown,
                 onKeyUp = keys::keyUp,
             )
         }
-        loadAndReset(R.raw.breakout)
+        load(R.raw.breakout)
     }
 
-    private fun loadAndReset(programId: Int) {
-        runner.runProgram(
+    private fun load(programId: Int) {
+        runner.load(
             resources.openRawResource(programId).use {
                 it.readBytes()
             }
@@ -98,12 +101,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
-        runner.paused = true
+        runner.pause()
     }
 
     override fun onResume() {
         super.onResume()
-        runner.paused = false
+        runner.resume()
     }
 }
 
