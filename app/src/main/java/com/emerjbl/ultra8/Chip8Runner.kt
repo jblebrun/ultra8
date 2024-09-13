@@ -33,10 +33,12 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
         runThread?.join()
         runThread = thread {
             try {
-                while (machine.step()) {
+                var halt: Halt? = null
+                while (halt == null) {
+                    halt = machine.step()
                     Thread.sleep(2)
                 }
-                Log.i("Chip8", "Finished at ${machine.pc}")
+                Log.i("Chip8", "Finished with: ${halt}")
             } catch (ex: InterruptedException) {
                 Log.i("Chip8", "Thread interrupted at ${machine.pc}")
             }

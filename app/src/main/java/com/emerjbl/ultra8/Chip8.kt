@@ -31,7 +31,37 @@ private val font: ByteArray = byteArrayOf(
     0xF0.b, 0x80.b, 0xE0.b, 0x80.b, 0x80.b
 )
 
-/** The registers of a Chip8 machine. */
+/** The various halt conditions that can happen during execution. */
+@OptIn(ExperimentalStdlibApi::class)
+sealed class Halt(val pc: Int) {
+    /** The EXIT command was encountered. */
+    class Exit(pc: Int) : Halt(pc) {
+        override fun toString() = "EXIT at ${pc.toShort().toHexString()}"
+    }
+
+    /** A spin-jump was encountered (JMP to self). */
+    class Spin(pc: Int) : Halt(pc) {
+        override fun toString() = "SPIN at 0x${pc.toShort().toHexString()}"
+    }
+
+    /** Unknown or unimplemented opcode. */
+    class IllegalOpcode(pc: Int, val opcode: Int) : Halt(pc) {
+        override fun toString() =
+            "ILLOP 0x${opcode.toShort().toHexString()} at 0x${pc.toShort().toHexString()}"
+    }
+
+    /** A return underflowed the stack. */
+    class StackUnderflow(pc: Int) : Halt(pc) {
+        override fun toString() = "UNDERFLOW at 0x${pc.toShort().toHexString()}"
+    }
+
+    /** A call overflowed the stack. */
+    class StackOverflow(pc: Int) : Halt(pc) {
+        override fun toString() = "UNDERFLOW at 0x${pc.toShort().toHexString()}"
+    }
+}
+
+/** All state of a running Chip8 Machine. */
 class Chip8(
     val keys: Chip8Keys,
     val gfx: Chip8Graphics,
@@ -52,8 +82,7 @@ class Chip8(
     private val timer: Chip8Timer = Chip8Timer(timeSource)
     val sound: Chip8Sound = Chip8Sound()
 
-    @OptIn(ExperimentalStdlibApi::class)
-    fun step(): Boolean {
+    fun step(): Halt? {
         val b1 = mem[pc++].i
         val b2 = mem[pc++].i
         val word = (b1 shl 8) or b2
@@ -68,69 +97,45 @@ class Chip8(
                 0xE0 -> gfx.frameBuffer.clear()
 
                 0xEE -> {
-                    if (sp < 0) {
-                        Log.i("ultra8", "FATAL: RET when stack is empty")
-                        return false
-                    }
+                    if (sp < 0) return Halt.StackUnderflow(pc - 2)
                     pc = stack[--sp]
                 }
 
                 0xFB -> gfx.frameBuffer.scrollRight()
                 0xFC -> gfx.frameBuffer.scrollLeft()
-                0xFD -> {
-                    Log.i("ultra8", "Normal: EXIT instruction")
-                    return false
-                }
+                0xFD -> return Halt.Exit(pc - 2)
 
                 0xFE -> gfx.hires = false
-
                 0xFF -> gfx.hires = true
 
                 else -> if (y == 0xC) {
                     gfx.frameBuffer.scrollDown(subOp)
                 } else {
-                    Log.i(
-                        "ultra8",
-                        "FATAL: trying to execute 0 byte, program missing halt"
-                    )
-                    return false
+                    return Halt.IllegalOpcode(pc - 2, word)
                 }
             }
 
             0x20 -> {
+                if (sp == stack.size - 1) return Halt.StackOverflow(pc - 2)
                 stack[sp++] = pc
 
-                if (pc == nnn + 2) {
-                    Log.i(
-                        "Ultra8",
-                        "normal: would spin in endless loop, stopping emulation"
-                    )
-                    return false
-                } else {
-                    pc = nnn
-                }
+                if (pc == nnn + 2) return Halt.Spin(pc - 2)
+
+                pc = nnn
             }
 
-            0x10 ->
-                if (pc == nnn + 2) {
-                    Log.i(
-                        "Ultra8",
-                        "normal: would spin in endless loop, stopping emulation"
-                    )
-                    return false
-                } else {
-                    pc = nnn
-                }
+            0x10 -> if (pc == nnn + 2) {
+                return Halt.Spin(pc - 2)
+            } else {
+                pc = nnn
+            }
 
             0x30 -> if (v[x] == b2) pc += 2
-
             0x40 -> if (v[x] != b2) pc += 2
 
             0x50 -> {
-                if (subOp != 0) {
-                    Log.i("ultra8", "FATAL: Illegal opcode " + Integer.toHexString(word))
-                    return false
-                }
+                if (subOp != 0) Halt.IllegalOpcode(pc - 2, word)
+
                 if (v[x] == v[y]) {
                     pc += 2
                 }
@@ -148,9 +153,9 @@ class Chip8(
                 0x00 -> v[x] = v[y]
 
                 0x01 -> v[x] = v[x] or v[y]
-
                 0x02 -> v[x] = v[x] and v[y]
                 0x03 -> v[x] = v[x] xor v[y]
+
                 0x04 -> {
                     v[x] += v[y]
                     v[x] = v[x] and 0xFF
@@ -178,17 +183,11 @@ class Chip8(
                     v[x] = v[x] and 0xFF
                 }
 
-                else -> {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
-                    return false
-                }
+                else -> return Halt.IllegalOpcode(pc - 2, word)
             }
 
             0x90 -> {
-                if (subOp != 0) {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
-                    return false
-                }
+                if (subOp != 0) return Halt.IllegalOpcode(pc - 2, word)
                 if (v[x] != v[y]) pc += 2
             }
 
@@ -199,32 +198,21 @@ class Chip8(
                 if (gfx.frameBuffer.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
             0xE0 -> when (b2) {
-                0x9E -> if (keys.pressed(v[x])) {
-                    pc += 2
-                }
-
-                0xA1 -> if (!keys.pressed(v[x])) {
-                    pc += 2
-                }
-
-                else -> {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
-                    return false
-                }
+                0x9E -> if (keys.pressed(v[x])) pc += 2
+                0xA1 -> if (!keys.pressed(v[x])) pc += 2
+                else -> return Halt.IllegalOpcode(pc - 2, word)
             }
 
             0xF0 -> when (b2) {
                 0x07 -> v[x] = timer.value
                 0x0A -> {
                     Log.i("ultra8", "WAITING FOR PRESS")
-                    val pressed = keys.awaitKey()
-                    Log.i("ultra8", "Waited and got key $pressed")
-                    v[x] = pressed
+                    v[x] = keys.awaitKey()
                 }
 
                 0x15 -> timer.value = v[x]
-
                 0x18 -> sound.play(v[x])
+
                 0x1E -> i += v[x]
                 0x29 -> i = (FONT_START + v[x] * 5)
 
@@ -274,18 +262,12 @@ class Chip8(
                     }
                 }
 
-                else -> {
-                    Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
-                    return false
-                }
+                else -> return Halt.IllegalOpcode(pc - 2, word)
             }
 
-            else -> {
-                Log.i("Ultra8", "FATAL: Illegal opcdoe ${word.toHexString()}")
-                return false
-            }
+            else -> return Halt.IllegalOpcode(pc - 2, word)
         }
-        return true
+        return null
     }
 }
 
