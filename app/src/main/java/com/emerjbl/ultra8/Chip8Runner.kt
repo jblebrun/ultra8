@@ -11,7 +11,7 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
     fun load(program: ByteArray) {
         Log.i("Chip8", "Resetting machine")
         gfx.hires = false
-        gfx.frameBuffer.clear()
+        gfx.clear()
         machine = Chip8(keys, gfx, timeSource, program)
     }
 

@@ -55,7 +55,7 @@ class BitmapHolder(val bitmap: Bitmap)
 data class Program(val name: String, val id: Int)
 
 class MainActivity : ComponentActivity() {
-    private val gfx: Chip8Graphics = Chip8Graphics()
+    private val gfx = FadeBitmapChip8Graphics()
     private val keys: Chip8Keys = Chip8Keys()
     private val runner: Chip8Runner = Chip8Runner(keys, gfx, TimeSource.Monotonic)
 
@@ -69,11 +69,11 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.frameBuffer.nextFrame(0))) }
+            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.nextFrame(0))) }
             LaunchedEffect(Unit) {
                 while (isActive) {
                     withFrameMillis {
-                        bitmap.value = BitmapHolder(gfx.frameBuffer.nextFrame(it))
+                        bitmap.value = BitmapHolder(gfx.nextFrame(it))
                     }
                 }
             }
