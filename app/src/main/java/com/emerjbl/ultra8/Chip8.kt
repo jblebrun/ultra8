@@ -1,7 +1,5 @@
 package com.emerjbl.ultra8
 
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.util.Log
 import java.util.Random
 import kotlin.time.TimeSource
@@ -52,8 +50,7 @@ class Chip8(
     }
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
-    private val tg: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-
+    val sound: Chip8Sound = Chip8Sound()
 
     @OptIn(ExperimentalStdlibApi::class)
     fun step(): Boolean {
@@ -227,7 +224,7 @@ class Chip8(
 
                 0x15 -> timer.value = v[x]
 
-                0x18 -> {}
+                0x18 -> sound.play(v[x])
                 0x1E -> i += v[x]
                 0x29 -> i = (FONT_START + v[x] * 5)
 
