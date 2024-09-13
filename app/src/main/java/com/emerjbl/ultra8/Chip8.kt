@@ -87,22 +87,22 @@ class Chip8(
         inst.run {
             when (majOp) {
                 0x00 -> when (b2) {
-                    0xE0 -> gfx.frameBuffer.clear()
+                    0xE0 -> gfx.clear()
 
                     0xEE -> {
                         if (sp < 0) return Halt.StackUnderflow(pc - 2)
                         pc = stack[--sp]
                     }
 
-                    0xFB -> gfx.frameBuffer.scrollRight()
-                    0xFC -> gfx.frameBuffer.scrollLeft()
+                    0xFB -> gfx.scrollRight()
+                    0xFC -> gfx.scrollLeft()
                     0xFD -> return Halt.Exit(pc - 2)
 
                     0xFE -> gfx.hires = false
                     0xFF -> gfx.hires = true
 
                     else -> if (y == 0xC) {
-                        gfx.frameBuffer.scrollDown(subOp)
+                        gfx.scrollDown(subOp)
                     } else {
                         return Halt.IllegalOpcode(pc - 2, word)
                     }
@@ -188,7 +188,7 @@ class Chip8(
                 0xB0 -> pc = v[0] + nnn
                 0xC0 -> v[x] = random.nextInt(0xFF) and b2
                 0xD0 -> v[15] =
-                    if (gfx.frameBuffer.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
+                    if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
                     0x9E -> if (keys.pressed(v[x])) pc += 2

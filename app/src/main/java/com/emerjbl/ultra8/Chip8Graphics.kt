@@ -11,7 +11,48 @@ import androidx.core.graphics.red
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class Chip8Graphics {
+/** The interface provided to Chip8 to control graphics. */
+interface Chip8Graphics {
+    fun clear()
+    fun scrollRight()
+    fun scrollLeft()
+    fun scrollDown(n: Int)
+    fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean
+    var hires: Boolean
+}
+
+/** The interface provided to renderers of Chip8 graphics. */
+interface Chip8Render<FT> {
+    fun nextFrame(frameTime: Long): FT
+}
+
+class FadeBitmapChip8Graphics : Chip8Graphics, Chip8Render<Bitmap> {
+    override fun clear() {
+        frameBuffer.clear()
+    }
+
+    override fun scrollRight() {
+        frameBuffer.scrollRight()
+    }
+
+    override fun scrollLeft() {
+        frameBuffer.scrollLeft()
+    }
+
+    override fun scrollDown(n: Int) {
+        frameBuffer.scrollDown(n)
+    }
+
+    override fun putSprite(
+        xBase: Int,
+        yBase: Int,
+        data: ByteArray,
+        offset: Int,
+        linesIn: Int
+    ): Boolean = frameBuffer.putSprite(xBase, yBase, data, offset, linesIn)
+
+    override fun nextFrame(frameTime: Long) = frameBuffer.nextFrame(frameTime)
+
     class FrameBuffer(val width: Int, val height: Int, density: Int) {
         private val bitmap: Bitmap =
             Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
@@ -146,7 +187,7 @@ class Chip8Graphics {
     var frameBuffer: FrameBuffer = FrameBuffer.LowRes()
         private set
 
-    var hires: Boolean = false
+    override var hires: Boolean = false
         set(value) {
             field = value
             frameBuffer = if (field) FrameBuffer.HiRes() else FrameBuffer.LowRes()
