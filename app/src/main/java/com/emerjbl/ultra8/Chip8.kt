@@ -83,189 +83,183 @@ class Chip8(
     val sound: Chip8Sound = Chip8Sound()
 
     fun step(): Halt? {
-        val b1 = mem[pc++].i
-        val b2 = mem[pc++].i
-        val word = (b1 shl 8) or b2
-        val majOp = b1 and 0xF0
-        val nnn = word and 0xFFF
-        val subOp = b2 and 0x0F
-        val x = b1 and 0xF
-        val y = (b2 shr 4)
+        val inst = Chip8Instruction(mem[pc++].i, mem[pc++].i)
+        inst.run {
+            when (majOp) {
+                0x00 -> when (b2) {
+                    0xE0 -> gfx.frameBuffer.clear()
 
-        when (majOp) {
-            0x00 -> when (b2) {
-                0xE0 -> gfx.frameBuffer.clear()
+                    0xEE -> {
+                        if (sp < 0) return Halt.StackUnderflow(pc - 2)
+                        pc = stack[--sp]
+                    }
 
-                0xEE -> {
-                    if (sp < 0) return Halt.StackUnderflow(pc - 2)
-                    pc = stack[--sp]
+                    0xFB -> gfx.frameBuffer.scrollRight()
+                    0xFC -> gfx.frameBuffer.scrollLeft()
+                    0xFD -> return Halt.Exit(pc - 2)
+
+                    0xFE -> gfx.hires = false
+                    0xFF -> gfx.hires = true
+
+                    else -> if (y == 0xC) {
+                        gfx.frameBuffer.scrollDown(subOp)
+                    } else {
+                        return Halt.IllegalOpcode(pc - 2, word)
+                    }
                 }
 
-                0xFB -> gfx.frameBuffer.scrollRight()
-                0xFC -> gfx.frameBuffer.scrollLeft()
-                0xFD -> return Halt.Exit(pc - 2)
+                0x20 -> {
+                    if (sp == stack.size - 1) return Halt.StackOverflow(pc - 2)
+                    stack[sp++] = pc
 
-                0xFE -> gfx.hires = false
-                0xFF -> gfx.hires = true
+                    if (pc == nnn + 2) return Halt.Spin(pc - 2)
 
-                else -> if (y == 0xC) {
-                    gfx.frameBuffer.scrollDown(subOp)
+                    pc = nnn
+                }
+
+                0x10 -> if (pc == nnn + 2) {
+                    return Halt.Spin(pc - 2)
                 } else {
-                    return Halt.IllegalOpcode(pc - 2, word)
-                }
-            }
-
-            0x20 -> {
-                if (sp == stack.size - 1) return Halt.StackOverflow(pc - 2)
-                stack[sp++] = pc
-
-                if (pc == nnn + 2) return Halt.Spin(pc - 2)
-
-                pc = nnn
-            }
-
-            0x10 -> if (pc == nnn + 2) {
-                return Halt.Spin(pc - 2)
-            } else {
-                pc = nnn
-            }
-
-            0x30 -> if (v[x] == b2) pc += 2
-            0x40 -> if (v[x] != b2) pc += 2
-
-            0x50 -> {
-                if (subOp != 0) Halt.IllegalOpcode(pc - 2, word)
-
-                if (v[x] == v[y]) {
-                    pc += 2
-                }
-            }
-
-            0x60 -> v[x] = b2
-
-            0x70 -> {
-                // 0x70NN does *not* set the flag
-                v[x] = v[x] + b2
-                v[x] = v[x] and 0xFF
-            }
-
-            0x80 -> when (subOp) {
-                0x00 -> v[x] = v[y]
-
-                0x01 -> v[x] = v[x] or v[y]
-                0x02 -> v[x] = v[x] and v[y]
-                0x03 -> v[x] = v[x] xor v[y]
-
-                0x04 -> {
-                    v[x] += v[y]
-                    v[x] = v[x] and 0xFF
-                    v[15] = if (((v[x] and 0x100) != 0)) 1 else 0
+                    pc = nnn
                 }
 
-                0x05 -> {
-                    v[15] = if (v[x] >= v[y]) 1 else 0
-                    v[x] = (v[x] - v[y]) and 0xFF
+                0x30 -> if (v[x] == b2) pc += 2
+                0x40 -> if (v[x] != b2) pc += 2
+
+                0x50 -> {
+                    if (subOp != 0) Halt.IllegalOpcode(pc - 2, word)
+
+                    if (v[x] == v[y]) {
+                        pc += 2
+                    }
                 }
 
-                0x06 -> {
-                    v[15] = (v[x] and 0x01)
-                    v[x] = v[x] ushr 1
-                }
+                0x60 -> v[x] = b2
 
-                0x07 -> {
-                    v[15] = if (v[y] >= v[x]) 1 else 0
-                    v[x] = (v[y] - v[x]) and 0xFF
-                }
-
-                0x0E -> {
-                    v[15] = (if ((v[x] and 0x80) == 0x80) 1 else 0)
-                    v[x] = v[x] shl 1
+                0x70 -> {
+                    // 0x70NN does *not* set the flag
+                    v[x] = v[x] + b2
                     v[x] = v[x] and 0xFF
                 }
 
+                0x80 -> when (subOp) {
+                    0x00 -> v[x] = v[y]
+
+                    0x01 -> v[x] = v[x] or v[y]
+                    0x02 -> v[x] = v[x] and v[y]
+                    0x03 -> v[x] = v[x] xor v[y]
+
+                    0x04 -> {
+                        v[x] += v[y]
+                        v[x] = v[x] and 0xFF
+                        v[15] = if (((v[x] and 0x100) != 0)) 1 else 0
+                    }
+
+                    0x05 -> {
+                        v[15] = if (v[x] >= v[y]) 1 else 0
+                        v[x] = (v[x] - v[y]) and 0xFF
+                    }
+
+                    0x06 -> {
+                        v[15] = (v[x] and 0x01)
+                        v[x] = v[x] ushr 1
+                    }
+
+                    0x07 -> {
+                        v[15] = if (v[y] >= v[x]) 1 else 0
+                        v[x] = (v[y] - v[x]) and 0xFF
+                    }
+
+                    0x0E -> {
+                        v[15] = (if ((v[x] and 0x80) == 0x80) 1 else 0)
+                        v[x] = v[x] shl 1
+                        v[x] = v[x] and 0xFF
+                    }
+
+                    else -> return Halt.IllegalOpcode(pc - 2, word)
+                }
+
+                0x90 -> {
+                    if (subOp != 0) return Halt.IllegalOpcode(pc - 2, word)
+                    if (v[x] != v[y]) pc += 2
+                }
+
+                0xA0 -> i = nnn
+                0xB0 -> pc = v[0] + nnn
+                0xC0 -> v[x] = random.nextInt(0xFF) and b2
+                0xD0 -> v[15] =
+                    if (gfx.frameBuffer.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
+
+                0xE0 -> when (b2) {
+                    0x9E -> if (keys.pressed(v[x])) pc += 2
+                    0xA1 -> if (!keys.pressed(v[x])) pc += 2
+                    else -> return Halt.IllegalOpcode(pc - 2, word)
+                }
+
+                0xF0 -> when (b2) {
+                    0x07 -> v[x] = timer.value
+                    0x0A -> {
+                        Log.i("ultra8", "WAITING FOR PRESS")
+                        v[x] = keys.awaitKey()
+                    }
+
+                    0x15 -> timer.value = v[x]
+                    0x18 -> sound.play(v[x])
+
+                    0x1E -> i += v[x]
+                    0x29 -> i = (FONT_START + v[x] * 5)
+
+                    0x33 -> {
+                        var tmp = v[x]
+                        var ctr = 0
+                        while (tmp > 99) {
+                            tmp -= 100
+                            ctr++
+                        }
+                        mem[i] = ctr.b
+                        ctr = 0
+                        while (tmp > 9) {
+                            tmp -= 10
+                            ctr++
+                        }
+                        mem[i + 1] = ctr.b
+                        ctr = 0
+                        while (tmp > 0) {
+                            tmp--
+                            ctr++
+                        }
+                        mem[i + 2] = ctr.b
+                    }
+
+                    0x55 -> {
+                        for (j in 0..x) {
+                            mem[i + j] = v[j].b
+                        }
+                    }
+
+                    0x65 -> {
+                        for (j in 0..x) {
+                            v[j] = mem[i + j].i
+                        }
+                    }
+
+                    0x75 -> {
+                        for (j in 0..x) {
+                            mem[i + j] = hp[j].b
+                        }
+                    }
+
+                    0x85 -> {
+                        for (j in 0..x) {
+                            hp[j] = mem[i + j].i
+                        }
+                    }
+
+                    else -> return Halt.IllegalOpcode(pc - 2, word)
+                }
+
                 else -> return Halt.IllegalOpcode(pc - 2, word)
             }
-
-            0x90 -> {
-                if (subOp != 0) return Halt.IllegalOpcode(pc - 2, word)
-                if (v[x] != v[y]) pc += 2
-            }
-
-            0xA0 -> i = nnn
-            0xB0 -> pc = v[0] + nnn
-            0xC0 -> v[x] = random.nextInt(0xFF) and b2
-            0xD0 -> v[15] =
-                if (gfx.frameBuffer.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
-
-            0xE0 -> when (b2) {
-                0x9E -> if (keys.pressed(v[x])) pc += 2
-                0xA1 -> if (!keys.pressed(v[x])) pc += 2
-                else -> return Halt.IllegalOpcode(pc - 2, word)
-            }
-
-            0xF0 -> when (b2) {
-                0x07 -> v[x] = timer.value
-                0x0A -> {
-                    Log.i("ultra8", "WAITING FOR PRESS")
-                    v[x] = keys.awaitKey()
-                }
-
-                0x15 -> timer.value = v[x]
-                0x18 -> sound.play(v[x])
-
-                0x1E -> i += v[x]
-                0x29 -> i = (FONT_START + v[x] * 5)
-
-                0x33 -> {
-                    var tmp = v[x]
-                    var ctr = 0
-                    while (tmp > 99) {
-                        tmp -= 100
-                        ctr++
-                    }
-                    mem[i] = ctr.b
-                    ctr = 0
-                    while (tmp > 9) {
-                        tmp -= 10
-                        ctr++
-                    }
-                    mem[i + 1] = ctr.b
-                    ctr = 0
-                    while (tmp > 0) {
-                        tmp--
-                        ctr++
-                    }
-                    mem[i + 2] = ctr.b
-                }
-
-                0x55 -> {
-                    for (j in 0..x) {
-                        mem[i + j] = v[j].b
-                    }
-                }
-
-                0x65 -> {
-                    for (j in 0..x) {
-                        v[j] = mem[i + j].i
-                    }
-                }
-
-                0x75 -> {
-                    for (j in 0..x) {
-                        mem[i + j] = hp[j].b
-                    }
-                }
-
-                0x85 -> {
-                    for (j in 0..x) {
-                        hp[j] = mem[i + j].i
-                    }
-                }
-
-                else -> return Halt.IllegalOpcode(pc - 2, word)
-            }
-
-            else -> return Halt.IllegalOpcode(pc - 2, word)
         }
         return null
     }
