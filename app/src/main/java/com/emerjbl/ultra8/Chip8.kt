@@ -4,60 +4,47 @@ import android.util.Log
 import java.util.Random
 import kotlin.time.TimeSource
 
-private val Int.b
-    get() = toByte()
-private val Byte.i
-    get() = toUByte().toInt()
-
 private const val EXEC_START: Int = 0x200
-private const val FONT_START: Int = 0x100
+private const val FONT_START: Int = 0x000
+private const val HIRES_FONT_START: Int = 0x100
 
-private val font: ByteArray = byteArrayOf(
-    0xF0.b, 0x90.b, 0x90.b, 0x90.b, 0xF0.b,
-    0x20.b, 0x60.b, 0x20.b, 0x20.b, 0x70.b,
-    0xF0.b, 0x10.b, 0xF0.b, 0x80.b, 0xF0.b,
-    0xF0.b, 0x10.b, 0x70.b, 0x10.b, 0xF0.b,
-    0xA0.b, 0xA0.b, 0xF0.b, 0x20.b, 0x20.b,
-    0xF0.b, 0x80.b, 0xF0.b, 0x10.b, 0xF0.b,
-    0xF0.b, 0x80.b, 0xF0.b, 0x90.b, 0xF0.b,
-    0xF0.b, 0x10.b, 0x10.b, 0x10.b, 0x10.b,
-    0x60.b, 0x90.b, 0x60.b, 0x90.b, 0x60.b,
-    0xF0.b, 0x90.b, 0xF0.b, 0x10.b, 0x10.b,
-    0x60.b, 0x90.b, 0xF0.b, 0x90.b, 0x90.b,
-    0xE0.b, 0x90.b, 0xE0.b, 0x90.b, 0xE0.b,
-    0xF0.b, 0x80.b, 0x80.b, 0x80.b, 0xF0.b,
-    0xE0.b, 0x90.b, 0x90.b, 0x90.b, 0xE0.b,
-    0xF0.b, 0x80.b, 0xF0.b, 0x80.b, 0xF0.b,
-    0xF0.b, 0x80.b, 0xE0.b, 0x80.b, 0x80.b
-)
+@OptIn(ExperimentalStdlibApi::class)
+private val Int.sx: String
+    get() = "0x${toShort().toHexString()}"
+
+private val Int.b: Byte
+    get() = toByte()
+
+private val Byte.i: Int
+    get() = toUByte().toInt()
 
 /** The various halt conditions that can happen during execution. */
 @OptIn(ExperimentalStdlibApi::class)
 sealed class Halt(val pc: Int) {
     /** The EXIT command was encountered. */
     class Exit(pc: Int) : Halt(pc) {
-        override fun toString() = "EXIT at ${pc.toShort().toHexString()}"
+        override fun toString() = "EXIT at ${pc.sx}"
     }
 
     /** A spin-jump was encountered (JMP to self). */
     class Spin(pc: Int) : Halt(pc) {
-        override fun toString() = "SPIN at 0x${pc.toShort().toHexString()}"
+        override fun toString() = "SPIN at 0x${pc.sx}"
     }
 
     /** Unknown or unimplemented opcode. */
     class IllegalOpcode(pc: Int, val opcode: Int) : Halt(pc) {
         override fun toString() =
-            "ILLOP 0x${opcode.toShort().toHexString()} at 0x${pc.toShort().toHexString()}"
+            "ILLOP 0x${opcode.sx} at 0x${pc.sx}"
     }
 
     /** A return underflowed the stack. */
     class StackUnderflow(pc: Int) : Halt(pc) {
-        override fun toString() = "UNDERFLOW at 0x${pc.toShort().toHexString()}"
+        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
     }
 
     /** A call overflowed the stack. */
     class StackOverflow(pc: Int) : Halt(pc) {
-        override fun toString() = "UNDERFLOW at 0x${pc.toShort().toHexString()}"
+        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
     }
 }
 
@@ -65,9 +52,11 @@ sealed class Halt(val pc: Int) {
 class Chip8(
     val keys: Chip8Keys,
     val gfx: Chip8Graphics,
+    val font: Chip8Font,
     timeSource: TimeSource,
     program: ByteArray
 ) {
+
     val v = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     val hp = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
     val stack = IntArray(64)
@@ -75,7 +64,8 @@ class Chip8(
     var sp = 0
     var pc = 0x200
     private val mem: ByteArray = ByteArray(4096).apply {
-        font.copyInto(this, FONT_START)
+        font.lo.copyInto(this, FONT_START)
+        font.hi.copyInto(this, HIRES_FONT_START)
         program.copyInto(this, EXEC_START)
     }
     private val random: Random = Random()
@@ -208,6 +198,7 @@ class Chip8(
 
                     0x1E -> i += v[x]
                     0x29 -> i = (FONT_START + v[x] * 5)
+                    0x30 -> i = (HIRES_FONT_START + v[x] * 10)
 
                     0x33 -> {
                         var tmp = v[x]
@@ -245,13 +236,13 @@ class Chip8(
 
                     0x75 -> {
                         for (j in 0..x) {
-                            mem[i + j] = hp[j].b
+                            hp[i + j] = v[j]
                         }
                     }
 
                     0x85 -> {
                         for (j in 0..x) {
-                            hp[j] = mem[i + j].i
+                            v[j] = hp[i + j]
                         }
                     }
 

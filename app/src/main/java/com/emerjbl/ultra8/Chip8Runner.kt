@@ -12,7 +12,7 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
         Log.i("Chip8", "Resetting machine")
         gfx.hires = false
         gfx.clear()
-        machine = Chip8(keys, gfx, timeSource, program)
+        machine = Chip8(keys, gfx, StandardChip8Font, timeSource, program)
     }
 
     fun pause() {
