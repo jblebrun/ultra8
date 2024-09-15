@@ -140,30 +140,34 @@ class Chip8(
                     0x03 -> v[x] = v[x] xor v[y]
 
                     0x04 -> {
-                        v[x] += v[y]
-                        v[x] = v[x] and 0xFF
-                        v[15] = if (((v[x] and 0x100) != 0)) 1 else 0
+                        val result = v[x] + v[y]
+                        v[x] = result and 0xFF
+                        v[0xF] = if (result > 0xFF) 1 else 0
                     }
 
                     0x05 -> {
-                        v[15] = if (v[x] >= v[y]) 1 else 0
-                        v[x] = (v[x] - v[y]) and 0xFF
+                        val result = v[x] - v[y]
+                        v[x] = result and 0xFF
+                        v[0xF] = if (result >= 0) 1 else 0
                     }
 
                     0x06 -> {
-                        v[15] = (v[x] and 0x01)
+                        val vf = (v[x] and 0x01)
                         v[x] = v[x] ushr 1
+                        v[0xF] = vf
                     }
 
                     0x07 -> {
-                        v[15] = if (v[y] >= v[x]) 1 else 0
-                        v[x] = (v[y] - v[x]) and 0xFF
+                        val result = v[y] - v[x]
+                        v[x] = result and 0xFF
+                        v[0xF] = if (result >= 0) 1 else 0
                     }
 
                     0x0E -> {
-                        v[15] = (if ((v[x] and 0x80) == 0x80) 1 else 0)
+                        val vf = (if ((v[x] and 0x80) == 0x80) 1 else 0)
                         v[x] = v[x] shl 1
                         v[x] = v[x] and 0xFF
+                        v[0xF] = vf
                     }
 
                     else -> return Halt.IllegalOpcode(pc - 2, word)
@@ -177,7 +181,7 @@ class Chip8(
                 0xA0 -> i = nnn
                 0xB0 -> pc = v[0] + nnn
                 0xC0 -> v[x] = random.nextInt(0xFF) and b2
-                0xD0 -> v[15] =
+                0xD0 -> v[0xF] =
                     if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
