@@ -8,10 +8,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -97,6 +100,8 @@ class MainActivity : ComponentActivity() {
                 },
                 onKeyDown = keys::keyDown,
                 onKeyUp = keys::keyUp,
+                onStartTurbo = { runner.turbo = true },
+                onStopTurbo = { runner.turbo = false },
             )
         }
         load(R.raw.breakout)
@@ -127,7 +132,9 @@ fun Screen(
     programs: List<Program>,
     onSelectProgram: (Int) -> Unit,
     onKeyDown: (Int) -> Unit,
-    onKeyUp: (Int) -> Unit
+    onKeyUp: (Int) -> Unit,
+    onStartTurbo: () -> Unit,
+    onStopTurbo: () -> Unit,
 ) {
 
     Ultra8Theme {
@@ -146,6 +153,19 @@ fun Screen(
                 }
                 Box(modifier = Modifier.padding(20.dp)) {
                     Buttons(onKeyDown, onKeyUp)
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+                Box(modifier = Modifier.pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = {
+                            onStartTurbo()
+                            awaitRelease()
+                            onStopTurbo()
+                        }
+                    )
+                }) {
+                    Text("Turbo")
                 }
             }
         }
@@ -179,7 +199,9 @@ fun TopBar(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
             titleContentColor = MaterialTheme.colorScheme.primary,
         ),
         title = { Text("Ultra8") },
-        actions = { ProgramsDropdown(programs, onSelectProgram) },
+        actions = {
+            ProgramsDropdown(programs, onSelectProgram)
+        },
     )
 }
 
