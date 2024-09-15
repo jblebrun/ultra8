@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,16 +35,28 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
+import androidx.graphics.shapes.CornerRounding
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.toPath
+import com.emerjbl.ultra8.ui.theme.Gray20
+import com.emerjbl.ultra8.ui.theme.Gray200
+import com.emerjbl.ultra8.ui.theme.Gray40
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import kotlinx.coroutines.isActive
+import java.util.Locale
+import kotlin.math.sqrt
 import kotlin.time.TimeSource
 
 /** Wrap the Bitmap in a class to trigger updates. */
@@ -130,8 +141,12 @@ fun Screen(
                     .fillMaxWidth()
                     .padding(innerPadding)
             ) {
-                Graphics(bitmapHolder)
-                Buttons(onKeyDown, onKeyUp)
+                Box(modifier = Modifier.padding(20.dp)) {
+                    Graphics(bitmapHolder)
+                }
+                Box(modifier = Modifier.padding(20.dp)) {
+                    Buttons(onKeyDown, onKeyUp)
+                }
             }
         }
     }
@@ -183,12 +198,16 @@ fun Graphics(bitmapHolder: BitmapHolder) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
-    val text = Integer.toHexString(value)
+    val text = Integer.toHexString(value).uppercase(Locale.getDefault())
+    val buttonColor = Gray20
+    val keyCapTextSize = remember { mutableStateOf(16.sp) }
+
     // Outer box to get position including all padding so there are no touch gaps.
     Box(modifier = Modifier
         .weight(1f)
         .onGloballyPositioned {
             onPositioned(Rect(it.positionInWindow(), it.size.toSize()))
+            keyCapTextSize.value = (it.size.width / 4f).sp
         }
         .aspectRatio(1.0f)
     ) {
@@ -196,12 +215,26 @@ fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(5.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(10f, 10f, 10f, 10f)
-                ), contentAlignment = Alignment.Center
-        ) { Text(text) }
+                .drawWithCache {
+                    val path = RoundedPolygon(
+                        numVertices = 4,
+                        radius = sqrt(2f) * size.minDimension / 2,
+                        centerX = size.width / 2,
+                        centerY = size.height / 2,
+                        rounding = CornerRounding(
+                            size.minDimension / 3f,
+                            smoothing = 0.2f
+                        )
+                    )
+                        .toPath()
+                        .asComposePath()
+                    onDrawBehind {
+                        rotate(45f) {
+                            drawPath(path, color = buttonColor)
+                        }
+                    }
+                }, contentAlignment = Alignment.Center
+        ) { Text(text, color = Gray200, fontSize = keyCapTextSize.value) }
     }
 }
 
@@ -221,9 +254,11 @@ fun Buttons(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
 
     Box(
         modifier = Modifier
+            .padding(5.dp)
             .fillMaxWidth()
+            .background(color = Gray40)
             .pointerInteropFilter { keyHitManager.onTouchEvent(it) }
-            .padding(20.dp)
+            .padding(5.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
