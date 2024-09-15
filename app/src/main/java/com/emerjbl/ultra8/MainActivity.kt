@@ -102,6 +102,8 @@ class MainActivity : ComponentActivity() {
                 onKeyUp = keys::keyUp,
                 onStartTurbo = { runner.turbo = true },
                 onStopTurbo = { runner.turbo = false },
+                onLowSpeed = { runner.period = Chip8Runner.Period(2, 0) },
+                onHiSpeed = { runner.period = Chip8Runner.Period(1, 0) }
             )
         }
         load(R.raw.breakout)
@@ -135,6 +137,8 @@ fun Screen(
     onKeyUp: (Int) -> Unit,
     onStartTurbo: () -> Unit,
     onStopTurbo: () -> Unit,
+    onLowSpeed: () -> Unit,
+    onHiSpeed: () -> Unit,
 ) {
 
     Ultra8Theme {
@@ -165,7 +169,17 @@ fun Screen(
                         }
                     )
                 }) {
-                    Text("Turbo")
+                    Row() {
+                        Button(onLowSpeed) {
+                            Text("LowSpeed")
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text("Turbo")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(onHiSpeed) {
+                            Text("HiSpeed")
+                        }
+                    }
                 }
             }
         }

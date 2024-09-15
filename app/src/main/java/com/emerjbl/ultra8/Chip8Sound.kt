@@ -60,7 +60,7 @@ class Chip8Sound {
             track.reloadStaticData()
         }
         // The marker notification triggers the sound stop
-        val samples = (timer * SAMPLE_RATE / 60).toInt()
+        val samples = (timer * SAMPLE_RATE / 60)
         track.notificationMarkerPosition = samples
         track.play()
     }
