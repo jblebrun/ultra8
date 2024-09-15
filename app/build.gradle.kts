@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "com.emerjbl.ultra8"
-        minSdk = 29
+        minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3"
+        versionCode = 7
+        versionName = "0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
