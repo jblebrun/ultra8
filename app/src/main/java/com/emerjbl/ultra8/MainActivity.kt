@@ -84,7 +84,6 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-
             Screen(
                 programs,
                 onSelectProgram = {

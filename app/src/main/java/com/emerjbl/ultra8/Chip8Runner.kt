@@ -19,6 +19,7 @@ class Chip8Runner(
 
     fun load(program: ByteArray) {
         Log.i("Chip8", "Resetting machine")
+        pause()
         gfx.hires = false
         gfx.clear()
         machine = Chip8(keys, gfx, sound, StandardChip8Font, timeSource, program)
