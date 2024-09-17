@@ -52,6 +52,7 @@ sealed class Halt(val pc: Int) {
 class Chip8(
     val keys: Chip8Keys,
     val gfx: Chip8Graphics,
+    val sound: Chip8Sound,
     val font: Chip8Font,
     timeSource: TimeSource,
     program: ByteArray
@@ -70,7 +71,6 @@ class Chip8(
     }
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
-    val sound: Chip8Sound = Chip8Sound()
 
     fun step(): Halt? {
         val inst = Chip8Instruction(mem[pc++].i, mem[pc++].i)
@@ -259,4 +259,3 @@ class Chip8(
         return null
     }
 }
-
