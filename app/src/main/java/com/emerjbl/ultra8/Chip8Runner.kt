@@ -4,7 +4,12 @@ import android.util.Log
 import kotlin.concurrent.thread
 import kotlin.time.TimeSource
 
-class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: TimeSource) {
+class Chip8Runner(
+    val keys: Chip8Keys,
+    val gfx: Chip8Graphics,
+    val sound: Chip8Sound,
+    val timeSource: TimeSource
+) {
     data class Period(val millis: Long, val nanos: Int)
 
     private var machine: Chip8? = null
@@ -16,7 +21,7 @@ class Chip8Runner(val keys: Chip8Keys, val gfx: Chip8Graphics, val timeSource: T
         Log.i("Chip8", "Resetting machine")
         gfx.hires = false
         gfx.clear()
-        machine = Chip8(keys, gfx, StandardChip8Font, timeSource, program)
+        machine = Chip8(keys, gfx, sound, StandardChip8Font, timeSource, program)
     }
 
     fun pause() {

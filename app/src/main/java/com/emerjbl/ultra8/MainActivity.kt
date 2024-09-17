@@ -71,7 +71,8 @@ data class Program(val name: String, val id: Int)
 class MainActivity : ComponentActivity() {
     private val gfx = FadeBitmapChip8Graphics()
     private val keys: Chip8Keys = Chip8Keys()
-    private val runner: Chip8Runner = Chip8Runner(keys, gfx, TimeSource.Monotonic)
+    private val sound = AudioTrackSynthSound()
+    private val runner: Chip8Runner = Chip8Runner(keys, gfx, sound, TimeSource.Monotonic)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
