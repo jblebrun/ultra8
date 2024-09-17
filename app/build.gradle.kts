@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.graphics.shapes.android)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
     testImplementation(libs.strikt.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
