@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,7 +61,6 @@ import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import kotlinx.coroutines.isActive
 import java.util.Locale
 import kotlin.math.sqrt
-import kotlin.time.TimeSource
 
 /** Wrap the Bitmap in a class to trigger updates. */
 class BitmapHolder(val bitmap: Bitmap)
@@ -69,10 +69,8 @@ class BitmapHolder(val bitmap: Bitmap)
 data class Program(val name: String, val id: Int)
 
 class MainActivity : ComponentActivity() {
-    private val gfx = FadeBitmapChip8Graphics()
-    private val keys: Chip8Keys = Chip8Keys()
-    private val sound = AudioTrackSynthSound()
-    private val runner: Chip8Runner = Chip8Runner(keys, gfx, sound, TimeSource.Monotonic)
+
+    private val chip8ViewModel: Chip8ViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,37 +85,28 @@ class MainActivity : ComponentActivity() {
             Screen(
                 programs,
                 onSelectProgram = {
-                    load(it)
-                    runner.resume()
+                    chip8ViewModel.load(it)
+                    chip8ViewModel.resume()
                 },
-                nextFrame = gfx::nextFrame,
-                onKeyDown = keys::keyDown,
-                onKeyUp = keys::keyUp,
-                onStartTurbo = { runner.turbo = true },
-                onStopTurbo = { runner.turbo = false },
-                onLowSpeed = { runner.period = Chip8Runner.Period(2, 0) },
-                onHiSpeed = { runner.period = Chip8Runner.Period(1, 0) }
+                nextFrame = chip8ViewModel::nextFrame,
+                onKeyDown = chip8ViewModel::keyDown,
+                onKeyUp = chip8ViewModel::keyUp,
+                onStartTurbo = { chip8ViewModel.turbo = true },
+                onStopTurbo = { chip8ViewModel.turbo = false },
+                onLowSpeed = { chip8ViewModel.period = Chip8Runner.Period(2, 0) },
+                onHiSpeed = { chip8ViewModel.period = Chip8Runner.Period(1, 0) }
             )
         }
-        load(R.raw.breakout)
-    }
-
-    private fun load(programId: Int) {
-        runner.load(
-            resources.openRawResource(programId).use {
-                it.readBytes()
-            }
-        )
     }
 
     override fun onPause() {
         super.onPause()
-        runner.pause()
+        chip8ViewModel.pause()
     }
 
     override fun onResume() {
         super.onResume()
-        runner.resume()
+        chip8ViewModel.resume()
     }
 }
 
