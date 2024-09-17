@@ -83,21 +83,14 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-            val bitmap = remember { mutableStateOf(BitmapHolder(gfx.nextFrame(0))) }
-            LaunchedEffect(Unit) {
-                while (isActive) {
-                    withFrameMillis {
-                        bitmap.value = BitmapHolder(gfx.nextFrame(it))
-                    }
-                }
-            }
+
             Screen(
-                bitmap.value,
                 programs,
                 onSelectProgram = {
                     load(it)
                     runner.resume()
                 },
+                nextFrame = gfx::nextFrame,
                 onKeyDown = keys::keyDown,
                 onKeyUp = keys::keyUp,
                 onStartTurbo = { runner.turbo = true },
@@ -130,9 +123,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Screen(
-    bitmapHolder: BitmapHolder,
     programs: List<Program>,
     onSelectProgram: (Int) -> Unit,
+    nextFrame: (Long) -> Bitmap,
     onKeyDown: (Int) -> Unit,
     onKeyUp: (Int) -> Unit,
     onStartTurbo: () -> Unit,
@@ -153,7 +146,7 @@ fun Screen(
                     .padding(innerPadding)
             ) {
                 Box(modifier = Modifier.padding(20.dp)) {
-                    Graphics(bitmapHolder)
+                    Graphics(nextFrame)
                 }
                 Box(modifier = Modifier.padding(20.dp)) {
                     Buttons(onKeyDown, onKeyUp)
@@ -220,9 +213,17 @@ fun TopBar(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
 }
 
 @Composable
-fun Graphics(bitmapHolder: BitmapHolder) {
+fun Graphics(nextFrame: (Long) -> Bitmap) {
+    val bitmapHolder = remember { mutableStateOf(BitmapHolder(nextFrame(0))) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            withFrameMillis {
+                bitmapHolder.value = BitmapHolder(nextFrame(it))
+            }
+        }
+    }
     Image(
-        bitmap = bitmapHolder.bitmap.asImageBitmap(),
+        bitmap = bitmapHolder.value.bitmap.asImageBitmap(),
         contentDescription = "Main Screen",
         modifier = Modifier
             .fillMaxWidth()
