@@ -1,8 +1,9 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.ui.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
+import com.emerjbl.ultra8.R
 import com.emerjbl.ultra8.chip8.graphics.FadeBitmapChip8Graphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.runner.Chip8Runner

@@ -25,10 +25,14 @@ class Chip8ThreadRunner(
 
     override fun load(program: ByteArray) {
         Log.i("Chip8", "Resetting machine")
+        val running = runThread != null
         pause()
         gfx.hires = false
         gfx.clear()
         machine = Chip8(keys, gfx, sound, StandardChip8Font, timeSource, program)
+        if (running) {
+            resume()
+        }
     }
 
     override fun pause() {

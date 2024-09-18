@@ -2,7 +2,6 @@ package com.emerjbl.ultra8.ui.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,26 +10,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.emerjbl.ultra8.Chip8ViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.emerjbl.ultra8.ui.component.BottomBar
 import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
 import com.emerjbl.ultra8.ui.component.TopBar
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
+import com.emerjbl.ultra8.ui.viewmodel.Chip8ViewModel
+
 
 @Composable
-fun MainScreen(
-    viewModel: Chip8ViewModel,
-) {
-    val onLoadProgram = { id: Int ->
-        viewModel.load(id)
+fun MainScreen() {
+    val viewModel = viewModel<Chip8ViewModel>()
+
+    LifecycleResumeEffect(Unit) {
         viewModel.resume()
+
+        onPauseOrDispose {
+            viewModel.pause()
+        }
     }
 
     Ultra8Theme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            topBar = { TopBar(viewModel.programs, onLoadProgram) },
+            topBar = { TopBar(viewModel.programs, viewModel::load) },
             bottomBar = {
                 BottomBar(
                     viewModel::lowSpeed,
@@ -52,10 +57,6 @@ fun MainScreen(
                 Box(modifier = Modifier.padding(20.dp)) {
                     Keypad(viewModel::keyDown, viewModel::keyUp)
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-
             }
         }
     }
