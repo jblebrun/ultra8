@@ -1,6 +1,10 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.machine
 
 import android.util.Log
+import com.emerjbl.ultra8.chip8.graphics.Chip8Font
+import com.emerjbl.ultra8.chip8.graphics.Chip8Graphics
+import com.emerjbl.ultra8.chip8.input.Chip8Keys
+import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import java.util.Random
 import kotlin.time.TimeSource
 

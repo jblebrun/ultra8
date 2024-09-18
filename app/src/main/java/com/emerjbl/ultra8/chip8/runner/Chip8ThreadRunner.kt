@@ -1,23 +1,29 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.runner
 
 import android.util.Log
+import com.emerjbl.ultra8.chip8.graphics.Chip8Graphics
+import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
+import com.emerjbl.ultra8.chip8.input.Chip8Keys
+import com.emerjbl.ultra8.chip8.machine.Chip8
+import com.emerjbl.ultra8.chip8.machine.Halt
+import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import kotlin.concurrent.thread
 import kotlin.time.TimeSource
 
-class Chip8Runner(
+class Chip8ThreadRunner(
     val keys: Chip8Keys,
     val gfx: Chip8Graphics,
     val sound: Chip8Sound,
     val timeSource: TimeSource
-) {
-    data class Period(val millis: Long, val nanos: Int)
+) : Chip8Runner {
 
     private var machine: Chip8? = null
-    var runThread: Thread? = null
-    var period: Period = Period(2, 0)
-    var turbo: Boolean = false
+    private var runThread: Thread? = null
 
-    fun load(program: ByteArray) {
+    override var period: Chip8Runner.Period = Chip8Runner.Period(2, 0)
+    override var turbo: Boolean = false
+
+    override fun load(program: ByteArray) {
         Log.i("Chip8", "Resetting machine")
         pause()
         gfx.hires = false
@@ -25,13 +31,13 @@ class Chip8Runner(
         machine = Chip8(keys, gfx, sound, StandardChip8Font, timeSource, program)
     }
 
-    fun pause() {
+    override fun pause() {
         Log.i("Chip8", "Pausing machine")
         runThread?.interrupt()
         runThread = null
     }
 
-    fun resume() {
+    override fun resume() {
         machine?.let {
             Log.i("Chip8", "Resuming machine at ${it.pc}")
             run(it)

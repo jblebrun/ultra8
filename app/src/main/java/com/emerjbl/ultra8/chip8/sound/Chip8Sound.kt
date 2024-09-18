@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.sound
 
 /** A component that can handle the sound commands on Chip8. */
 interface Chip8Sound {

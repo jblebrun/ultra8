@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.sound
 
 import android.media.AudioFormat
 import android.media.AudioTrack

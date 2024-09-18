@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
+import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.ui.theme.Gray20
 import com.emerjbl.ultra8.ui.theme.Gray200
 import com.emerjbl.ultra8.ui.theme.Gray40
