@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.input
 
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock

@@ -1,6 +1,11 @@
 package com.emerjbl.ultra8
 
 import androidx.core.graphics.get
+import com.emerjbl.ultra8.chip8.graphics.FadeBitmapChip8Graphics
+import com.emerjbl.ultra8.chip8.input.Chip8Keys
+import com.emerjbl.ultra8.chip8.runner.Chip8Runner
+import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
+import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -17,7 +22,7 @@ class ScreenThreadTest {
     @Test
     fun reloadProgram_screenStartsClear() {
         val gfx = FadeBitmapChip8Graphics()
-        val runner = Chip8Runner(
+        val runner = Chip8ThreadRunner(
             Chip8Keys(),
             gfx,
             FakeSound(),

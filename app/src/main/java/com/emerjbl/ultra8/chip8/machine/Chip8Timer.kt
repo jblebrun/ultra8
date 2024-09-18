@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.machine
 
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeMark

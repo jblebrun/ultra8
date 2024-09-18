@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.graphics
 
 private val Int.b: Byte
     get() = toByte()

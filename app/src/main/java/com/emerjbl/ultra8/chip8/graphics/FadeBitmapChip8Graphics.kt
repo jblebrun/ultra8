@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8
+package com.emerjbl.ultra8.chip8.graphics
 
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -10,21 +10,6 @@ import androidx.core.graphics.green
 import androidx.core.graphics.red
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-
-/** The interface provided to Chip8 to control graphics. */
-interface Chip8Graphics {
-    fun clear()
-    fun scrollRight()
-    fun scrollLeft()
-    fun scrollDown(n: Int)
-    fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean
-    var hires: Boolean
-}
-
-/** The interface provided to renderers of Chip8 graphics. */
-interface Chip8Render<FT> {
-    fun nextFrame(frameTime: Long): FT
-}
 
 class FadeBitmapChip8Graphics : Chip8Graphics, Chip8Render<Bitmap> {
     override fun clear() {
