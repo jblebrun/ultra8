@@ -28,9 +28,21 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
         load(R.raw.breakout)
     }
 
-    var turbo: Boolean by runner::turbo
+    fun turboOn() {
+        runner.turbo = true
+    }
 
-    var period: Chip8Runner.Period by runner::period
+    fun turboOff() {
+        runner.turbo = false
+    }
+
+    fun lowSpeed() {
+        runner.period = Chip8Runner.Period(2, 0)
+    }
+
+    fun hiSpeed() {
+        runner.period = Chip8Runner.Period(1, 0)
+    }
 
     fun keyDown(idx: Int) {
         keys.keyDown(idx)
