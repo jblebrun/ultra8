@@ -51,25 +51,26 @@ fun MainScreen(
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
-                Box(modifier = Modifier.pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = {
-                            viewModel.turbo = true
-                            awaitRelease()
-                            viewModel.turbo = false
-                        }
-                    )
-                }) {
-                    Row() {
-                        Button({ viewModel.period = Chip8Runner.Period(2, 0) }) {
-                            Text("LowSpeed")
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
+
+                Row() {
+                    Button({ viewModel.period = Chip8Runner.Period(2, 0) }) {
+                        Text("LowSpeed")
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Box(modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                viewModel.turbo = true
+                                tryAwaitRelease()
+                                viewModel.turbo = false
+                            }
+                        )
+                    }) {
                         Text("Turbo")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button({ viewModel.period = Chip8Runner.Period(2, 0) }) {
-                            Text("HiSpeed")
-                        }
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Button({ viewModel.period = Chip8Runner.Period(2, 0) }) {
+                        Text("HiSpeed")
                     }
                 }
             }
