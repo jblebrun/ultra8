@@ -8,10 +8,13 @@ import androidx.core.graphics.alpha
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
+import com.emerjbl.ultra8.util.SimpleStats
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.system.measureNanoTime
 
 class FadeBitmapChip8Graphics : Chip8Graphics, Chip8Render<Bitmap> {
+
     override fun clear() {
         frameBuffer.clear()
     }
@@ -39,6 +42,7 @@ class FadeBitmapChip8Graphics : Chip8Graphics, Chip8Render<Bitmap> {
     override fun nextFrame(frameTime: Long) = frameBuffer.nextFrame(frameTime)
 
     class FrameBuffer(val width: Int, val height: Int, density: Int) {
+        val updateStats = SimpleStats()
         private val bitmap: Bitmap =
             Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
                 this.density = density
@@ -105,26 +109,32 @@ class FadeBitmapChip8Graphics : Chip8Graphics, Chip8Render<Bitmap> {
             val frameDiff = (frameTime - lastFrameTime).toInt()
             lastFrameTime = frameTime
 
-            lock.withLock {
-                for (i in timeBuffer.indices) {
-                    if (timeBuffer[i] > 0) {
-                        timeBuffer[i] = maxOf(0, timeBuffer[i] - frameDiff)
-                        val newAlpha = if (timeBuffer[i] <= 0) {
-                            0
-                        } else {
-                            val frameFrac = timeBuffer[i].toFloat() / FADE_TIME_MILLIS
-                            val frac = interpolator.getInterpolation(frameFrac)
-                            (pixels[i].alpha * frac).toInt()
+            val frameUpdateTime = measureNanoTime {
+                lock.withLock {
+                    for (i in timeBuffer.indices) {
+                        if (timeBuffer[i] > 0) {
+                            timeBuffer[i] = maxOf(0, timeBuffer[i] - frameDiff)
+                            val newAlpha = if (timeBuffer[i] <= 0) {
+                                0
+                            } else {
+                                val frameFrac = timeBuffer[i].toFloat() / FADE_TIME_MILLIS
+                                val frac = interpolator.getInterpolation(frameFrac)
+                                (pixels[i].alpha * frac).toInt()
+                            }
+                            pixels[i] = Color.argb(
+                                newAlpha,
+                                pixels[i].red,
+                                pixels[i].green,
+                                pixels[i].blue
+                            )
                         }
-                        pixels[i] = Color.argb(
-                            newAlpha,
-                            pixels[i].red,
-                            pixels[i].green,
-                            pixels[i].blue
-                        )
                     }
+                    bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
                 }
-                bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+            }
+            updateStats.add(frameUpdateTime / 1000)
+            updateStats.run_every(300) {
+                Log.i("Chip8", "Update stats (us): $it")
             }
             return bitmap
         }
