@@ -7,8 +7,8 @@ interface Chip8Runner {
 
     val running: Flow<Boolean>
 
-    /** The amount of time per instruction */
-    var period: Period
+    /** The number of instructions to run per second. */
+    var cyclesPerSecond: Int
 
     /** When true, run really really fast. */
     var turbo: Boolean

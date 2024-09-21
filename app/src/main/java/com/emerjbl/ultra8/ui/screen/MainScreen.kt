@@ -42,10 +42,7 @@ fun MainScreen() {
             topBar = { TopBar(viewModel.programs, viewModel::load) },
             bottomBar = {
                 BottomBar(
-                    viewModel::lowSpeed,
-                    viewModel::hiSpeed,
-                    viewModel::turboOn,
-                    viewModel::turboOff
+                    cyclesPerSecond = viewModel.cyclesPerSecond,
                 )
             }
         ) { innerPadding ->

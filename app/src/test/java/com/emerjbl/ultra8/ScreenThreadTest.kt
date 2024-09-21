@@ -2,7 +2,6 @@ package com.emerjbl.ultra8
 
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
-import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import org.junit.Test
@@ -34,7 +33,7 @@ class ScreenThreadTest {
 
         for (attempt in 0..100) {
             runner.load(program)
-            runner.period = Chip8Runner.Period(0, 10)
+            runner.cyclesPerSecond = 10000
             runner.resume()
             Thread.sleep(10)
             runner.load(program)

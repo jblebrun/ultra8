@@ -2,6 +2,7 @@ package com.emerjbl.ultra8.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.emerjbl.ultra8.R
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
@@ -9,6 +10,9 @@ import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlin.time.TimeSource
 
 /** Pre-loaded program entry */
@@ -23,28 +27,17 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     val running: Flow<Boolean>
         get() = runner.running
 
+    val cyclesPerSecond = MutableStateFlow(runner.cyclesPerSecond).apply {
+        onEach { runner.cyclesPerSecond = it }
+            .launchIn(viewModelScope)
+    }
+
     val programs = R.raw::class.java.fields.map {
         Program(it.name, it.getInt(null))
     }
 
     init {
         load(R.raw.breakout)
-    }
-
-    fun turboOn() {
-        runner.turbo = true
-    }
-
-    fun turboOff() {
-        runner.turbo = false
-    }
-
-    fun lowSpeed() {
-        runner.period = Chip8Runner.Period(2, 0)
-    }
-
-    fun hiSpeed() {
-        runner.period = Chip8Runner.Period(1, 0)
     }
 
     fun keyDown(idx: Int) {
