@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  build-and-unit-test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -27,8 +27,30 @@ jobs:
           configuration-cache-enabled: true
           arguments: assembleRelease
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Run Inspection
+        run: ./gradlew lint
 
   connected-test:
     runs-on: ubuntu-latest
