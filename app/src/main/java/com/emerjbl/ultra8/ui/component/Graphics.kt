@@ -1,6 +1,6 @@
 package com.emerjbl.ultra8.ui.component
 
-import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,18 +12,29 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
+import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.isActive
+import kotlin.time.measureTimedValue
 
-/** Wrap the Bitmap in a class to trigger updates. */
-class BitmapHolder(val bitmap: Bitmap)
+
+private val frameStats = SimpleStats()
 
 @Composable
-fun Graphics(nextFrame: (Long) -> Bitmap) {
-    val bitmapHolder = remember { mutableStateOf(BitmapHolder(nextFrame(0))) }
+fun Graphics(nextFrame: () -> SimpleGraphics.Frame) {
+    val bitmapHolder =
+        remember { mutableStateOf(null.next(nextFrame(), 0)) }
     LaunchedEffect(Unit) {
         while (isActive) {
-            withFrameMillis {
-                bitmapHolder.value = BitmapHolder(nextFrame(it))
+            withFrameMillis { ft ->
+                measureTimedValue {
+                    bitmapHolder.value = bitmapHolder.value.next(nextFrame(), ft)
+                }.let {
+                    frameStats.add(it.duration.inWholeMicroseconds)
+                    frameStats.run_every(300) {
+                        Log.i("Chip8", "Frame update: $it")
+                    }
+                }
             }
         }
     }

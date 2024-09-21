@@ -1,10 +1,9 @@
 package com.emerjbl.ultra8.ui.viewmodel
 
 import android.app.Application
-import android.graphics.Bitmap
 import androidx.lifecycle.AndroidViewModel
 import com.emerjbl.ultra8.R
-import com.emerjbl.ultra8.chip8.graphics.FadeBitmapChip8Graphics
+import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
@@ -16,7 +15,7 @@ data class Program(val name: String, val id: Int)
 
 /** A [androidx.lifecycle.ViewModel] maintaining the state of a running Chip8 machine. */
 class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
-    private val gfx = FadeBitmapChip8Graphics()
+    private val gfx = SimpleGraphics()
     private val keys: Chip8Keys = Chip8Keys()
     private val sound = AudioTrackSynthSound()
     private val runner: Chip8Runner = Chip8ThreadRunner(keys, gfx, sound, TimeSource.Monotonic)
@@ -66,6 +65,5 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
         runner.load(program)
     }
 
-    fun nextFrame(frameTime: Long): Bitmap =
-        gfx.nextFrame(frameTime)
+    fun nextFrame(): SimpleGraphics.Frame = gfx.nextFrame()
 }
