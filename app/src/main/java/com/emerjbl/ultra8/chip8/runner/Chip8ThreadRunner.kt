@@ -19,6 +19,7 @@ class Chip8ThreadRunner(
 
     private var machine: Chip8? = null
     private var runThread: Thread? = null
+    private var halt: Halt? = null
 
     override var period: Chip8Runner.Period = Chip8Runner.Period(2, 0)
     override var turbo: Boolean = false
@@ -27,6 +28,7 @@ class Chip8ThreadRunner(
         Log.i("Chip8", "Resetting machine")
         val running = runThread != null
         pause()
+        halt = null
         gfx.hires = false
         gfx.clear()
         machine = Chip8(keys, gfx, sound, StandardChip8Font, timeSource, program)
@@ -53,7 +55,6 @@ class Chip8ThreadRunner(
         runThread?.join()
         runThread = thread {
             try {
-                var halt: Halt? = null
                 while (halt == null) {
                     halt = machine.step()
                     if (turbo) {
