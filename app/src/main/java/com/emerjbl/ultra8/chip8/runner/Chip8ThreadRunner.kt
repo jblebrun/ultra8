@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.concurrent.thread
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 class Chip8ThreadRunner(
@@ -26,7 +28,12 @@ class Chip8ThreadRunner(
     override val running: Flow<Boolean>
         get() = _running.asStateFlow()
 
-    override var period: Chip8Runner.Period = Chip8Runner.Period(2, 0)
+    override var cyclesPerSecond: Int = 500
+        set(value) {
+            field = value
+            period = (1.0 / value).seconds
+        }
+    private var period: Duration = (1.0 / cyclesPerSecond).seconds
     override var turbo: Boolean = false
 
     override fun load(program: ByteArray) {
@@ -63,11 +70,9 @@ class Chip8ThreadRunner(
             try {
                 while (halt == null) {
                     halt = machine.step()
-                    if (turbo) {
-                        Thread.sleep(0, 10)
-                    } else {
-                        Thread.sleep(period.millis, period.nanos)
-                    }
+                    val nanos = (period.inWholeNanoseconds % 1000000).toInt()
+                    val millis = period.inWholeNanoseconds / 1000000
+                    Thread.sleep(millis, nanos)
                 }
                 Log.i("Chip8", "Finished with: ${halt}")
                 _running.value = false
