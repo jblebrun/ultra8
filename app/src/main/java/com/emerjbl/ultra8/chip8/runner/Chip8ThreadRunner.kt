@@ -7,6 +7,9 @@ import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.machine.Halt
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlin.concurrent.thread
 import kotlin.time.TimeSource
 
@@ -14,12 +17,14 @@ class Chip8ThreadRunner(
     val keys: Chip8Keys,
     val gfx: Chip8Graphics,
     val sound: Chip8Sound,
-    val timeSource: TimeSource
+    val timeSource: TimeSource,
 ) : Chip8Runner {
-
     private var machine: Chip8? = null
     private var runThread: Thread? = null
     private var halt: Halt? = null
+    private val _running = MutableStateFlow(false)
+    override val running: Flow<Boolean>
+        get() = _running.asStateFlow()
 
     override var period: Chip8Runner.Period = Chip8Runner.Period(2, 0)
     override var turbo: Boolean = false
@@ -54,6 +59,7 @@ class Chip8ThreadRunner(
         runThread?.interrupt()
         runThread?.join()
         runThread = thread {
+            _running.value = true
             try {
                 while (halt == null) {
                     halt = machine.step()
@@ -64,8 +70,10 @@ class Chip8ThreadRunner(
                     }
                 }
                 Log.i("Chip8", "Finished with: ${halt}")
+                _running.value = false
             } catch (ex: InterruptedException) {
                 Log.i("Chip8", "Thread interrupted at ${machine.pc}")
+                _running.value = false
             }
         }
     }

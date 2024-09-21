@@ -8,6 +8,7 @@ import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
+import kotlinx.coroutines.flow.Flow
 import kotlin.time.TimeSource
 
 /** Pre-loaded program entry */
@@ -19,6 +20,8 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     private val keys: Chip8Keys = Chip8Keys()
     private val sound = AudioTrackSynthSound()
     private val runner: Chip8Runner = Chip8ThreadRunner(keys, gfx, sound, TimeSource.Monotonic)
+    val running: Flow<Boolean>
+        get() = runner.running
 
     val programs = R.raw::class.java.fields.map {
         Program(it.name, it.getInt(null))
