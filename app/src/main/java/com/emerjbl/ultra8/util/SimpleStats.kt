@@ -1,6 +1,10 @@
 package com.emerjbl.ultra8.util
 
-class SimpleStats {
+class SimpleStats(
+    val unit: String,
+    val actionInterval: Int,
+    val action: (SimpleStats) -> Unit
+) {
     var count = 0L
         private set
     var total = 0L
@@ -18,9 +22,13 @@ class SimpleStats {
         min = minOf(min, value)
         max = maxOf(max, value)
         average = (total + value) / count
+        if (count >= actionInterval) {
+            action(this)
+            clear()
+        }
     }
 
-    fun clear() {
+    private fun clear() {
         count = 0L
         total = 0L
         min = Long.MAX_VALUE
@@ -29,12 +37,5 @@ class SimpleStats {
     }
 
     override fun toString() =
-        "min = $min; max = $max; avg = $average; count = $count; total = $total"
-
-    inline fun run_every(interval: Int, action: (SimpleStats) -> Unit) {
-        if (count >= interval) {
-            action(this)
-            clear()
-        }
-    }
+        "min = $min$unit; max = $max$unit; avg = $average$unit; count = $count"
 }
