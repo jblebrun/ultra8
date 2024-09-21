@@ -18,7 +18,9 @@ import kotlinx.coroutines.isActive
 import kotlin.time.measureTimedValue
 
 
-private val frameStats = SimpleStats()
+private val frameStats = SimpleStats(unit = "us", actionInterval = 300) {
+    Log.i("Chip8", "Frame update: $it")
+}
 
 @Composable
 fun Graphics(nextFrame: () -> SimpleGraphics.Frame) {
@@ -31,9 +33,6 @@ fun Graphics(nextFrame: () -> SimpleGraphics.Frame) {
                     bitmapHolder.value = bitmapHolder.value.next(nextFrame(), ft)
                 }.let {
                     frameStats.add(it.duration.inWholeMicroseconds)
-                    frameStats.run_every(300) {
-                        Log.i("Chip8", "Frame update: $it")
-                    }
                 }
             }
         }
