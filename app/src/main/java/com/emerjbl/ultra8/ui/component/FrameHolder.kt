@@ -23,8 +23,13 @@ class FrameHolder(
     val bitmap: Bitmap,
     val frameTime: Long,
 ) {
+    private var fadingPixels = 0
+    val stillFading: Boolean
+        get() = fadingPixels > 0
+
     /** Update this frame's data for the provided `frameDiff`. */
     fun update(frame: SimpleGraphics.Frame, frameDiff: Int) {
+        var currentlyFading = 0
         for (i in frame.data.indices) {
             // If the pixel is being unset, start its fade timer
             if (frame.data[i] == 0 && pixelData[i] == SET_COLOR) {
@@ -33,6 +38,7 @@ class FrameHolder(
 
             // Interpolate and fade
             if (fadeTimes[i] > 0) {
+                currentlyFading++
                 fadeTimes[i] = maxOf(0, fadeTimes[i] - frameDiff)
                 val newAlpha = if (fadeTimes[i] <= 0 || pixelData[i].alpha == 0) {
                     0
@@ -49,6 +55,7 @@ class FrameHolder(
                 fadeTimes[i] = 0
             }
         }
+        fadingPixels = currentlyFading
 
         bitmap.setPixels(
             pixelData, 0, frame.width, 0, 0, frame.width, frame.height

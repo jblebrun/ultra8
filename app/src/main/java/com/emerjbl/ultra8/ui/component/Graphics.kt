@@ -29,7 +29,7 @@ fun frameGrabber(running: Boolean, nextFrame: () -> SimpleGraphics.Frame): State
     val frameHolder =
         remember { mutableStateOf(null.next(nextFrame(), 0)) }
 
-    if (running) {
+    if (running || frameHolder.value.stillFading) {
         LaunchedEffect(true) {
             Log.i("Chip8", "Begin Render Loop")
             coroutineContext[Job]?.invokeOnCompletion { Log.i("Chip8", "End Render Loop") }
