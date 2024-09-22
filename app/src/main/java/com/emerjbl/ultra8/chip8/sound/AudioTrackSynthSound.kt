@@ -2,35 +2,26 @@ package com.emerjbl.ultra8.chip8.sound
 
 import android.media.AudioFormat
 import android.media.AudioTrack
-import kotlin.math.PI
-import kotlin.math.sign
-import kotlin.math.sin
+import android.util.Log
+import com.emerjbl.ultra8.util.SimpleStats
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import java.util.concurrent.Executors
+import kotlin.time.measureTime
 
 const val SAMPLE_RATE: Int = 44100
 
-fun wave(f: (Double) -> Double): FloatArray {
-    // Generate 5 seconds to cover 255 * 16.66ms
-    val samples = 5 * SAMPLE_RATE
-    val out = FloatArray(samples)
-    val b = 2 * PI / SAMPLE_RATE
-    for (t in out.indices) {
-        val y = f(b * t.toDouble())
-        out[t] = y.toFloat()
+class AudioTrackSynthSound(parentScope: CoroutineScope) : Chip8Sound {
+    val playStats = SimpleStats("ms", 10) {
+        Log.i("Chip8", "Beep times: $it")
     }
-    return out
-}
 
-fun sin(freq: Int): (Double) -> Double = {
-    sin(freq * it)
-}
-
-fun square(freq: Int): (Double) -> Double = {
-    sign(sin(freq * it))
-}
-
-class AudioTrackSynthSound : Chip8Sound {
-    val data: FloatArray = wave(square(880))
-    val track: AudioTrack =
+    private val data: FloatArray = wave(square(730), 730f)
+    private fun newTrack(data: FloatArray): AudioTrack =
         AudioTrack.Builder().setTransferMode(AudioTrack.MODE_STATIC)
             .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
             .setBufferSizeInBytes(data.size * 4)
@@ -42,26 +33,28 @@ class AudioTrackSynthSound : Chip8Sound {
                     .build()
             ).build().apply {
                 write(data, 0, data.size, AudioTrack.WRITE_BLOCKING)
-                setPlaybackPositionUpdateListener(object :
-                    AudioTrack.OnPlaybackPositionUpdateListener {
-                    override fun onMarkerReached(track: AudioTrack?) {
-                        track!!.stop()
-                    }
-
-                    override fun onPeriodicNotification(track: AudioTrack?) {
-                        TODO("Not yet implemented")
-                    }
-                })
             }
 
-    override fun play(ticks: Int) {
-        if (track.state == AudioTrack.STATE_INITIALIZED) {
-            track.stop()
-            track.reloadStaticData()
+    private val track = newTrack(data)
+
+    // AudioTrack is managed on a different thread, because calls to play sometimes take 10s of ms.
+    private val executor = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+
+    private val ticksToPlay = MutableSharedFlow<Int>(replay = 1).apply {
+        onEach { ticks ->
+            val playTime = measureTime {
+                val loops = (ticks * SAMPLE_RATE / 60) / track.bufferSizeInFrames
+                track.pause()
+                track.setLoopPoints(0, track.bufferSizeInFrames, loops)
+                track.play()
+            }
+            playStats.add(playTime.inWholeMilliseconds)
         }
-        // The marker notification triggers the sound stop
-        val samples = (ticks * SAMPLE_RATE / 60)
-        track.notificationMarkerPosition = samples
-        track.play()
+            .flowOn(executor)
+            .launchIn(parentScope)
+    }
+
+    override fun play(ticks: Int) {
+        ticksToPlay.tryEmit(ticks)
     }
 }
