@@ -3,8 +3,6 @@ package com.emerjbl.ultra8.chip8.runner
 import kotlinx.coroutines.flow.Flow
 
 interface Chip8Runner {
-    data class Period(val millis: Long, val nanos: Int)
-
     val running: Flow<Boolean>
 
     /** The number of instructions to run per second. */

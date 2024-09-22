@@ -1,6 +1,5 @@
 package com.emerjbl.ultra8.chip8.machine
 
-
 /** Helper for a Chip8 instruction
  *
  * Convenience properties for the various subfields.
