@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -14,9 +13,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
-import com.emerjbl.ultra8.ui.theme.chip8Colors
 import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
@@ -27,11 +24,15 @@ private val frameStats = SimpleStats(unit = "us", actionInterval = 300) {
     Log.i("Chip8", "Frame update: $it")
 }
 
+
 @Composable
-fun frameGrabber(running: Boolean, nextFrame: () -> SimpleGraphics.Frame): State<FrameHolder> {
-    val setColor = MaterialTheme.chip8Colors.pixelColor.toArgb()
+fun frameGrabber(
+    running: Boolean,
+    frameConfig: FrameConfig,
+    nextFrame: () -> SimpleGraphics.Frame
+): State<FrameHolder> {
     val frameHolder =
-        remember { mutableStateOf(null.next(nextFrame(), 0, setColor)) }
+        remember { mutableStateOf(null.next(nextFrame(), 0, frameConfig)) }
 
     if (running || frameHolder.value.stillFading) {
         LaunchedEffect(true) {
@@ -40,7 +41,7 @@ fun frameGrabber(running: Boolean, nextFrame: () -> SimpleGraphics.Frame): State
             while (isActive) {
                 withFrameMillis { ft ->
                     measureTimedValue {
-                        frameHolder.value = frameHolder.value.next(nextFrame(), ft, setColor)
+                        frameHolder.value = frameHolder.value.next(nextFrame(), ft, frameConfig)
                     }.let {
                         frameStats.add(it.duration.inWholeMicroseconds)
                     }
@@ -52,8 +53,8 @@ fun frameGrabber(running: Boolean, nextFrame: () -> SimpleGraphics.Frame): State
 }
 
 @Composable
-fun Graphics(running: Boolean, nextFrame: () -> SimpleGraphics.Frame) {
-    val frameHolder = frameGrabber(running, nextFrame)
+fun Graphics(running: Boolean, frameConfig: FrameConfig, nextFrame: () -> SimpleGraphics.Frame) {
+    val frameHolder = frameGrabber(running, frameConfig, nextFrame)
 
     Image(
         bitmap = frameHolder.value.bitmap.asImageBitmap(),

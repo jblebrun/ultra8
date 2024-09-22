@@ -1,17 +1,34 @@
 package com.emerjbl.ultra8.ui.component
 
+import android.animation.TimeInterpolator
 import android.graphics.Bitmap
 import android.view.animation.AccelerateInterpolator
+import androidx.annotation.ColorInt
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.alpha
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
-/** The amount of time to fade out an unset pixel. */
-const val FADE_TIME_MILLIS: Float = 400f
-const val MAX_ALPHA = 0xFF
+private const val MAX_ALPHA = 0xFF
 
-/** The interpolator function for the fadeout. */
-private val interpolator = AccelerateInterpolator(1.5f)
+data class FrameConfig(
+    /** The color of an "on" pixel. */
+    val color: Color = Color.Green,
 
+    /** The amount of time to fade out an unset pixel. */
+    val fadeTime: Duration = 400.milliseconds,
+
+    /** The interpolator function for the fadeout. */
+    val interpolator: TimeInterpolator = AccelerateInterpolator(1.5f)
+) {
+    val fadeMillisInt: Int = fadeTime.inWholeMilliseconds.toInt()
+    val fadeMillisFloat: Float = fadeTime.inWholeMilliseconds.toFloat()
+
+    @ColorInt
+    val colorInt: Int = color.toArgb()
+}
 
 fun Int.withAlpha(alpha: Int) = (this and 0x00FFFFFF) or (alpha shl 24)
 
@@ -27,12 +44,12 @@ class FrameHolder(
         get() = fadingPixels > 0
 
     /** Update this frame's data for the provided `frameDiff`. */
-    fun update(frame: SimpleGraphics.Frame, frameDiff: Int, setColor: Int) {
+    fun update(frame: SimpleGraphics.Frame, frameDiff: Int, frameConfig: FrameConfig) {
         var currentlyFading = 0
         for (i in frame.data.indices) {
             // If the pixel is being unset, start its fade timer
-            if (frame.data[i] == 0 && pixelData[i] == setColor) {
-                fadeTimes[i] = FADE_TIME_MILLIS.toInt()
+            if (frame.data[i] == 0 && pixelData[i] == frameConfig.colorInt) {
+                fadeTimes[i] = frameConfig.fadeMillisInt
             }
 
             // Interpolate and fade
@@ -42,15 +59,15 @@ class FrameHolder(
                 val newAlpha = if (fadeTimes[i] <= 0 || pixelData[i].alpha == 0) {
                     0
                 } else {
-                    val fadeFraction = fadeTimes[i] / FADE_TIME_MILLIS
-                    (MAX_ALPHA * interpolator.getInterpolation(fadeFraction)).toInt()
+                    val fadeFraction = fadeTimes[i] / frameConfig.fadeMillisFloat
+                    (MAX_ALPHA * frameConfig.interpolator.getInterpolation(fadeFraction)).toInt()
                 }
                 pixelData[i] = pixelData[i].withAlpha(newAlpha)
             }
 
             // Set Pixel
             if (frame.data[i] == 1) {
-                pixelData[i] = setColor
+                pixelData[i] = frameConfig.colorInt
                 fadeTimes[i] = 0
             }
         }
@@ -67,7 +84,11 @@ class FrameHolder(
  *
  * If any sizes mismatch the frame size, they are recreated.
  */
-fun FrameHolder?.next(frame: SimpleGraphics.Frame, frameTime: Long, setColor: Int): FrameHolder {
+fun FrameHolder?.next(
+    frame: SimpleGraphics.Frame,
+    frameTime: Long,
+    frameConfig: FrameConfig
+): FrameHolder {
     val fadeTimes = this?.fadeTimes
         ?.takeIf { it.size == frame.data.size }
         ?: IntArray(frame.data.size)
@@ -82,6 +103,6 @@ fun FrameHolder?.next(frame: SimpleGraphics.Frame, frameTime: Long, setColor: In
 
     val frameDiff = (frameTime - (this?.frameTime ?: 0)).toInt()
     return FrameHolder(pixelData, fadeTimes, bitmap, frameTime).apply {
-        update(frame, frameDiff, setColor)
+        update(frame, frameDiff, frameConfig)
     }
 }
