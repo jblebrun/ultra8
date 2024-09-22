@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -15,11 +16,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.emerjbl.ultra8.ui.component.BottomBar
+import com.emerjbl.ultra8.ui.component.FrameConfig
 import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
 import com.emerjbl.ultra8.ui.component.TopBar
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
+import com.emerjbl.ultra8.ui.theme.chip8Colors
 import com.emerjbl.ultra8.ui.viewmodel.Chip8ViewModel
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @Composable
@@ -35,6 +39,10 @@ fun MainScreen() {
     }
 
     val running by viewModel.running.collectAsState(initial = false)
+    val frameConfig = FrameConfig(
+        color = MaterialTheme.chip8Colors.pixelColor,
+        fadeTime = 400.milliseconds,
+    )
 
     Ultra8Theme {
         Scaffold(
@@ -53,7 +61,7 @@ fun MainScreen() {
                     .padding(innerPadding)
             ) {
                 Box(modifier = Modifier.padding(20.dp)) {
-                    Graphics(running, viewModel::nextFrame)
+                    Graphics(running, frameConfig, viewModel::nextFrame)
                 }
                 Box(modifier = Modifier.padding(20.dp)) {
                     Keypad(viewModel::keyDown, viewModel::keyUp)

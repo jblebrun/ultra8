@@ -1,6 +1,8 @@
 package com.emerjbl.ultra8.ui.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.emerjbl.ultra8.R
@@ -9,6 +11,7 @@ import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
+import com.emerjbl.ultra8.ui.component.FrameConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -32,6 +35,7 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
             .launchIn(viewModelScope)
     }
 
+    val frameConfig: MutableState<FrameConfig> = mutableStateOf(FrameConfig())
     val programs = R.raw::class.java.fields.map {
         Program(it.name, it.getInt(null))
     }
