@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -30,9 +31,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
-import com.emerjbl.ultra8.ui.theme.Gray20
-import com.emerjbl.ultra8.ui.theme.Gray200
-import com.emerjbl.ultra8.ui.theme.Gray40
+import com.emerjbl.ultra8.ui.theme.chip8Colors
 import java.util.Locale
 import kotlin.math.sqrt
 
@@ -46,7 +45,7 @@ fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
         modifier = Modifier
             .padding(5.dp)
             .fillMaxWidth()
-            .background(color = Gray40)
+            .background(color = MaterialTheme.chip8Colors.keypadBackground)
             .pointerInteropFilter { keyHitManager.onTouchEvent(it) }
             .padding(5.dp)
     ) {
@@ -74,7 +73,7 @@ fun ButtonRow(onPositioned: (Int, Rect) -> Unit, vararg buttons: Int) {
 @Composable
 fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
     val text = Integer.toHexString(value).uppercase(Locale.getDefault())
-    val buttonColor = Gray20
+    val buttonColor = MaterialTheme.chip8Colors.keyCapBackground
     val keyCapTextSize = remember { mutableStateOf(16.sp) }
 
     // Outer box to get position including all padding so there are no touch gaps.
@@ -109,6 +108,12 @@ fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
                         }
                     }
                 }, contentAlignment = Alignment.Center
-        ) { Text(text, color = Gray200, fontSize = keyCapTextSize.value) }
+        ) {
+            Text(
+                text,
+                color = MaterialTheme.chip8Colors.keyCapForeground,
+                fontSize = keyCapTextSize.value
+            )
+        }
     }
 }

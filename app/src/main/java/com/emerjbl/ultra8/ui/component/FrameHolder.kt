@@ -7,7 +7,6 @@ import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 
 /** The amount of time to fade out an unset pixel. */
 const val FADE_TIME_MILLIS: Float = 400f
-const val SET_COLOR = 0xFF00FF88.toInt()
 const val MAX_ALPHA = 0xFF
 
 /** The interpolator function for the fadeout. */
@@ -28,11 +27,11 @@ class FrameHolder(
         get() = fadingPixels > 0
 
     /** Update this frame's data for the provided `frameDiff`. */
-    fun update(frame: SimpleGraphics.Frame, frameDiff: Int) {
+    fun update(frame: SimpleGraphics.Frame, frameDiff: Int, setColor: Int) {
         var currentlyFading = 0
         for (i in frame.data.indices) {
             // If the pixel is being unset, start its fade timer
-            if (frame.data[i] == 0 && pixelData[i] == SET_COLOR) {
+            if (frame.data[i] == 0 && pixelData[i] == setColor) {
                 fadeTimes[i] = FADE_TIME_MILLIS.toInt()
             }
 
@@ -51,7 +50,7 @@ class FrameHolder(
 
             // Set Pixel
             if (frame.data[i] == 1) {
-                pixelData[i] = SET_COLOR
+                pixelData[i] = setColor
                 fadeTimes[i] = 0
             }
         }
@@ -68,7 +67,7 @@ class FrameHolder(
  *
  * If any sizes mismatch the frame size, they are recreated.
  */
-fun FrameHolder?.next(frame: SimpleGraphics.Frame, frameTime: Long): FrameHolder {
+fun FrameHolder?.next(frame: SimpleGraphics.Frame, frameTime: Long, setColor: Int): FrameHolder {
     val fadeTimes = this?.fadeTimes
         ?.takeIf { it.size == frame.data.size }
         ?: IntArray(frame.data.size)
@@ -83,6 +82,6 @@ fun FrameHolder?.next(frame: SimpleGraphics.Frame, frameTime: Long): FrameHolder
 
     val frameDiff = (frameTime - (this?.frameTime ?: 0)).toInt()
     return FrameHolder(pixelData, fadeTimes, bitmap, frameTime).apply {
-        update(frame, frameDiff)
+        update(frame, frameDiff, setColor)
     }
 }

@@ -42,7 +42,7 @@ fun speedDrag(
     cyclesPerSecond: MutableStateFlow<Int>
 ): suspend PointerInputScope.() -> Unit {
     return {
-        detectHorizontalDragGestures { change, dragAmount ->
+        detectHorizontalDragGestures { _, dragAmount ->
             cyclesPerSecond.value =
                 (cyclesPerSecond.value + 2 * dragAmount.toInt())
                     .coerceIn(10..10000)
