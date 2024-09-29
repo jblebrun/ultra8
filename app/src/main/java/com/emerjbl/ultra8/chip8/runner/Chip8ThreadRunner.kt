@@ -7,8 +7,8 @@ import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.machine.Halt
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.concurrent.thread
 import kotlin.time.Duration
@@ -25,7 +25,7 @@ class Chip8ThreadRunner(
     private var runThread: Thread? = null
     private var halt: Halt? = null
     private val _running = MutableStateFlow(false)
-    override val running: Flow<Boolean>
+    override val running: StateFlow<Boolean>
         get() = _running.asStateFlow()
 
     override var cyclesPerSecond: Int = 500
@@ -52,6 +52,7 @@ class Chip8ThreadRunner(
     override fun pause() {
         Log.i("Chip8", "Pausing machine")
         runThread?.interrupt()
+        runThread?.join()
         runThread = null
     }
 
