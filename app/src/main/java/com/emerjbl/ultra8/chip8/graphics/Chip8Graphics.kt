@@ -12,5 +12,5 @@ interface Chip8Graphics {
 
 /** The interface provided to renderers of Chip8 graphics. */
 interface Chip8Render<FT> {
-    fun nextFrame(): FT
+    fun nextFrame(lastFrame: FT?): FT
 }

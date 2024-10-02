@@ -45,7 +45,7 @@ class ScreenThreadTest {
             Thread.sleep(10)
             runner.load(breakoutProgram)
             runner.pause()
-            val frame = gfx.nextFrame()
+            val frame = gfx.nextFrame(null)
             for (i in 0 until frame.data.size) {
                 strikt.api
                     .expectThat(frame.data[i])
