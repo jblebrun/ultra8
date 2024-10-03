@@ -24,6 +24,7 @@ class Chip8ThreadRunner(
     private var machine: Chip8? = null
     private var runThread: Thread? = null
     private var halt: Halt? = null
+    private var paused: Boolean = false
     private val _running = MutableStateFlow(false)
     override val running: StateFlow<Boolean>
         get() = _running.asStateFlow()
@@ -38,25 +39,27 @@ class Chip8ThreadRunner(
 
     override fun load(program: ByteArray) {
         Log.i("Chip8", "Resetting machine")
-        val running = runThread != null
+        val shouldResume = !paused
         pause()
         halt = null
         gfx.hires = false
         gfx.clear()
         machine = Chip8(keys, gfx, sound, StandardChip8Font, timeSource, program)
-        if (running) {
+        if (shouldResume) {
             resume()
         }
     }
 
     override fun pause() {
         Log.i("Chip8", "Pausing machine")
+        paused = true
         runThread?.interrupt()
         runThread?.join()
         runThread = null
     }
 
     override fun resume() {
+        paused = false
         machine?.let {
             Log.i("Chip8", "Resuming machine at ${it.pc}")
             run(it)

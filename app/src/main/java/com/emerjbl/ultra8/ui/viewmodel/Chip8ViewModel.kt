@@ -1,8 +1,6 @@
 package com.emerjbl.ultra8.ui.viewmodel
 
 import android.app.Application
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.emerjbl.ultra8.R
@@ -11,11 +9,15 @@ import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.runner.Chip8Runner
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
-import com.emerjbl.ultra8.ui.component.FrameConfig
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
 import kotlin.time.TimeSource
 
 /** Pre-loaded program entry */
@@ -27,6 +29,8 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     private val keys: Chip8Keys = Chip8Keys()
     private val sound = AudioTrackSynthSound(viewModelScope)
     private val runner: Chip8Runner = Chip8ThreadRunner(keys, gfx, sound, TimeSource.Monotonic)
+    private val background: CoroutineDispatcher =
+        Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     val running: Flow<Boolean>
         get() = runner.running
 
@@ -35,7 +39,6 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
             .launchIn(viewModelScope)
     }
 
-    val frameConfig: MutableState<FrameConfig> = mutableStateOf(FrameConfig())
     val programs = R.raw::class.java.fields.map {
         Program(it.name, it.getInt(null))
     }
@@ -61,8 +64,12 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun load(id: Int) {
-        val program = getApplication<Application>().resources.openRawResource(id).readBytes()
-        runner.load(program)
+        viewModelScope.launch {
+            val program = withContext(background) {
+                getApplication<Application>().resources.openRawResource(id).readBytes()
+            }
+            runner.load(program)
+        }
     }
 
     fun nextFrame(): SimpleGraphics.Frame = gfx.nextFrame()
