@@ -23,7 +23,6 @@ private val Byte.i: Int
     get() = toUByte().toInt()
 
 /** The various halt conditions that can happen during execution. */
-@OptIn(ExperimentalStdlibApi::class)
 sealed class Halt(val pc: Int) {
     /** The EXIT command was encountered. */
     class Exit(pc: Int) : Halt(pc) {
@@ -197,8 +196,12 @@ class Chip8(
                 0xF0 -> when (b2) {
                     0x07 -> v[x] = timer.value
                     0x0A -> {
+                        // If we are interrupted while waiting,
+                        // come back to waiting.
+                        pc -= 2
                         Log.i("ultra8", "WAITING FOR PRESS")
                         v[x] = keys.awaitKey()
+                        pc += 2
                     }
 
                     0x15 -> timer.value = v[x]
