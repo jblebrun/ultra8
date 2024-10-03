@@ -65,5 +65,6 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
         runner.load(program)
     }
 
-    fun nextFrame(): SimpleGraphics.Frame = gfx.nextFrame()
+    fun nextFrame(lastFrame: SimpleGraphics.Frame?): SimpleGraphics.Frame =
+        gfx.nextFrame(lastFrame)
 }

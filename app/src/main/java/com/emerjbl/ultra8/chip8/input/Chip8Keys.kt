@@ -1,41 +1,39 @@
 package com.emerjbl.ultra8.chip8.input
 
+import com.emerjbl.ultra8.util.LockGuarded
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 /** Manage and share the state of the Chip8 key pad. */
 class Chip8Keys {
     private val lock = ReentrantLock()
-    private val keys = BooleanArray(16)
+    private val keys = LockGuarded(lock, BooleanArray(16))
     private val condition = lock.newCondition()
 
     fun keyDown(idx: Int) {
-        lock.withLock {
-            keys[idx] = true
+        keys.withLock {
+            it[idx] = true
             condition.signal()
         }
     }
 
     fun keyUp(idx: Int) {
-        lock.withLock {
-            keys[idx] = false
+        keys.withLock {
+            it[idx] = false
             condition.signal()
         }
     }
 
-    fun pressed(idx: Int) = keys[idx]
+    fun pressed(idx: Int) = keys.withLock { it[idx] }
 
-    fun awaitKey(): Int {
-        var pressed = firstPressedKey()
-        lock.withLock {
-            while (pressed < 0) {
-                condition.await()
-                pressed = firstPressedKey()
-            }
+    fun awaitKey(): Int = keys.withLock {
+        var pressed = it.firstPressedKey()
+        while (pressed < 0) {
+            condition.await()
+            pressed = it.firstPressedKey()
         }
-        return pressed
+        pressed
     }
 
-    private fun firstPressedKey(): Int =
-        keys.withIndex().firstOrNull { it.value }?.index ?: -1
+    private fun BooleanArray.firstPressedKey(): Int =
+        withIndex().firstOrNull { it.value }?.index ?: -1
 }

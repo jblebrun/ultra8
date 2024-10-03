@@ -29,10 +29,10 @@ private val frameStats = SimpleStats(unit = "us", actionInterval = 300) {
 fun frameGrabber(
     running: Boolean,
     frameConfig: FrameConfig,
-    nextFrame: () -> SimpleGraphics.Frame
+    nextFrame: (SimpleGraphics.Frame?) -> SimpleGraphics.Frame
 ): State<FrameHolder> {
     val frameHolder =
-        remember { mutableStateOf(null.next(nextFrame(), 0, frameConfig)) }
+        remember { mutableStateOf(null.next(nextFrame(null), 0, frameConfig)) }
 
     if (running || frameHolder.value.stillFading) {
         LaunchedEffect(true) {
@@ -41,7 +41,11 @@ fun frameGrabber(
             while (isActive) {
                 withFrameMillis { ft ->
                     measureTimedValue {
-                        frameHolder.value = frameHolder.value.next(nextFrame(), ft, frameConfig)
+                        frameHolder.value = frameHolder.value.next(
+                            nextFrame(frameHolder.value.frame),
+                            ft,
+                            frameConfig
+                        )
                     }.let {
                         frameStats.add(it.duration.inWholeMicroseconds)
                     }
@@ -53,7 +57,11 @@ fun frameGrabber(
 }
 
 @Composable
-fun Graphics(running: Boolean, frameConfig: FrameConfig, nextFrame: () -> SimpleGraphics.Frame) {
+fun Graphics(
+    running: Boolean,
+    frameConfig: FrameConfig,
+    nextFrame: (SimpleGraphics.Frame?) -> SimpleGraphics.Frame
+) {
     val frameHolder = frameGrabber(running, frameConfig, nextFrame)
 
     Image(
