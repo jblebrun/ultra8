@@ -24,7 +24,7 @@ class Chip8ThreadRunner(
     private var machine: Chip8? = null
     private var runThread: Thread? = null
     private var halt: Halt? = null
-    private var paused: Boolean = false
+    private var paused: Boolean = true
     private val _running = MutableStateFlow(false)
     override val running: StateFlow<Boolean>
         get() = _running.asStateFlow()

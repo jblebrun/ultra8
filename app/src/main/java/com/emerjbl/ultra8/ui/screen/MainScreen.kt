@@ -1,5 +1,6 @@
 package com.emerjbl.ultra8.ui.screen
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,6 +32,10 @@ import kotlin.time.Duration.Companion.milliseconds
 fun MainScreen() {
     val viewModel = viewModel<Chip8ViewModel>()
 
+    (LocalContext.current as? Activity)?.intent?.let {
+        viewModel.load(it)
+    }
+
     LifecycleResumeEffect(Unit) {
         viewModel.resume()
 
@@ -39,6 +45,8 @@ fun MainScreen() {
     }
 
     val running by viewModel.running.collectAsState(initial = false)
+    val loadedName by viewModel.loadedName.collectAsState(null)
+
     val frameConfig = FrameConfig(
         color = MaterialTheme.chip8Colors.pixelColor,
         fadeTime = 400.milliseconds,
@@ -47,7 +55,7 @@ fun MainScreen() {
     Ultra8Theme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            topBar = { TopBar(viewModel.programs, viewModel::load) },
+            topBar = { TopBar(loadedName, viewModel.programs, viewModel::load) },
             bottomBar = {
                 BottomBar(
                     cyclesPerSecond = viewModel.cyclesPerSecond,

@@ -17,13 +17,14 @@ import com.emerjbl.ultra8.ui.viewmodel.Program
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
+fun TopBar(loadedName: String?, programs: List<Program>, onSelectProgram: (Program) -> Unit) {
+    val title = if (loadedName == null) "Ultra8" else "Ultra8: $loadedName"
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             titleContentColor = MaterialTheme.colorScheme.primary,
         ),
-        title = { Text("Ultra8") },
+        title = { Text(title) },
         actions = {
             ProgramsDropdown(programs, onSelectProgram)
         },
@@ -31,7 +32,7 @@ fun TopBar(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
 }
 
 @Composable
-fun ProgramsDropdown(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
+fun ProgramsDropdown(programs: List<Program>, onSelectProgram: (Program) -> Unit) {
     var programsExpanded by remember { mutableStateOf(false) }
     Button(
         onClick = { programsExpanded = !programsExpanded }
@@ -41,7 +42,7 @@ fun ProgramsDropdown(programs: List<Program>, onSelectProgram: (Int) -> Unit) {
         onDismissRequest = { programsExpanded = false }) {
         for (program in programs) {
             DropdownMenuItem(text = { Text(program.name) }, onClick = {
-                onSelectProgram(program.id)
+                onSelectProgram(program)
                 programsExpanded = false
             })
         }
