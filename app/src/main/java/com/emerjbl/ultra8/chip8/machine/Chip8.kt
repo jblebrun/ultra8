@@ -5,8 +5,9 @@ import com.emerjbl.ultra8.chip8.graphics.Chip8Font
 import com.emerjbl.ultra8.chip8.graphics.Chip8Graphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
-import java.lang.Math.pow
+import com.emerjbl.ultra8.chip8.sound.Pattern
 import java.util.Random
+import kotlin.math.pow
 import kotlin.time.TimeSource
 
 private const val EXEC_START: Int = 0x200
@@ -81,6 +82,7 @@ class Chip8(
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
 
+    @OptIn(ExperimentalStdlibApi::class)
     fun step(): Halt? {
         val inst = Chip8Instruction(mem[pc++].i, mem[pc++].i)
         inst.run {
@@ -230,7 +232,15 @@ class Chip8(
                     }
 
                     0x02 -> {
-                        // TODO: audio pattern
+                        var low = 0UL
+                        var hi = 0UL
+                        for (offset in 0 until 8) {
+                            low = low shl 8
+                            hi = hi shl 8
+                            low = low or mem[i + offset].toUByte().toULong()
+                            hi = hi or mem[i + 8 + offset].toUByte().toULong()
+                        }
+                        sound.setPattern(Pattern(low, hi))
                     }
 
                     0x07 -> v[x] = timer.value
@@ -273,8 +283,9 @@ class Chip8(
                     }
 
                     0x3A -> {
-                        val freq = pow(4000 * 2.0, (((v[x] - 64) / 48.0)))
-                        // TODO: Freq
+                        sound.setPatternRate(
+                            (4000 * 2.0).pow((((v[x] - 64) / 48.0))).toInt()
+                        )
                     }
 
                     0x55 -> {
