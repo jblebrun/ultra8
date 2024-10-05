@@ -5,6 +5,7 @@ import com.emerjbl.ultra8.chip8.graphics.Chip8Font
 import com.emerjbl.ultra8.chip8.graphics.Chip8Graphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
+import java.lang.Math.pow
 import java.util.Random
 import kotlin.time.TimeSource
 
@@ -49,6 +50,10 @@ sealed class Halt(val pc: Int) {
     class StackOverflow(pc: Int) : Halt(pc) {
         override fun toString() = "UNDERFLOW at 0x${pc.sx}"
     }
+
+    class InvalidBitPlane(pc: Int, val x: Int) : Halt(pc) {
+        override fun toString() = "BADPLANE ($x) at 0x${pc.sx}"
+    }
 }
 
 /** All state of a running Chip8 Machine. */
@@ -67,7 +72,8 @@ class Chip8(
     var i: Int = 0
     var sp = 0
     var pc = 0x200
-    private val mem: ByteArray = ByteArray(4096).apply {
+    private var targetPlane = 0x1
+    private val mem: ByteArray = ByteArray(65536).apply {
         font.lo.copyInto(this, FONT_START)
         font.hi.copyInto(this, HIRES_FONT_START)
         program.copyInto(this, EXEC_START)
@@ -94,10 +100,10 @@ class Chip8(
                     0xFE -> gfx.hires = false
                     0xFF -> gfx.hires = true
 
-                    else -> if (y == 0xC) {
-                        gfx.scrollDown(subOp)
-                    } else {
-                        return Halt.IllegalOpcode(pc - 2, word)
+                    else -> when (y) {
+                        0xC -> gfx.scrollDown(subOp)
+                        0xD -> gfx.scrollUp(subOp)
+                        else -> return Halt.IllegalOpcode(pc - 2, word)
                     }
                 }
 
@@ -120,10 +126,26 @@ class Chip8(
                 0x40 -> if (v[x] != b2) pc += 2
 
                 0x50 -> {
-                    if (subOp != 0) Halt.IllegalOpcode(pc - 2, word)
+                    when (subOp) {
+                        0x00 -> if (v[x] == v[y]) {
+                            pc += 2
+                        }
 
-                    if (v[x] == v[y]) {
-                        pc += 2
+                        0x02 -> {
+                            // Load vx-vy into memory starting at i, don't change i
+                            for (vi in x..y) {
+                                mem[i + vi - x] = v[vi].b
+                            }
+                        }
+
+                        0x03 -> {
+                            // Load vx-vy from memory starting at i, don't change i
+                            for (vi in x..y) {
+                                v[vi] = mem[i + vi - x].i
+                            }
+                        }
+
+                        else -> return Halt.IllegalOpcode(pc - 2, word)
                     }
                 }
 
@@ -185,7 +207,7 @@ class Chip8(
                 0xB0 -> pc = v[0] + nnn
                 0xC0 -> v[x] = random.nextInt(0xFF) and b2
                 0xD0 -> v[0xF] =
-                    if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
+                    if (gfx.putSprite(v[x], v[y], mem, i, subOp, targetPlane)) 1 else 0
 
                 0xE0 -> when (b2) {
                     0x9E -> if (keys.pressed(v[x])) pc += 2
@@ -194,6 +216,23 @@ class Chip8(
                 }
 
                 0xF0 -> when (b2) {
+                    0x00 -> {
+                        i = mem[pc++].i
+                        i = i shl 8
+                        i = i or mem[pc++].i
+                    }
+
+                    0x01 -> {
+                        if (inst.x > 3 || inst.x < 0) {
+                            return Halt.InvalidBitPlane(pc - 2, x)
+                        }
+                        targetPlane = inst.x
+                    }
+
+                    0x02 -> {
+                        // TODO: audio pattern
+                    }
+
                     0x07 -> v[x] = timer.value
                     0x0A -> {
                         // If we are interrupted while waiting,
@@ -231,6 +270,11 @@ class Chip8(
                             ctr++
                         }
                         mem[i + 2] = ctr.b
+                    }
+
+                    0x3A -> {
+                        val freq = pow(4000 * 2.0, (((v[x] - 64) / 48.0)))
+                        // TODO: Freq
                     }
 
                     0x55 -> {

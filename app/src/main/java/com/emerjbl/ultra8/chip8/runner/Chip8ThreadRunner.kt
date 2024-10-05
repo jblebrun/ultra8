@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.concurrent.thread
+import kotlin.system.measureNanoTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
@@ -73,9 +74,12 @@ class Chip8ThreadRunner(
             _running.value = true
             try {
                 while (halt == null) {
-                    halt = machine.step()
-                    val nanos = (period.inWholeNanoseconds % 1000000).toInt()
-                    val millis = period.inWholeNanoseconds / 1000000
+                    val took = measureNanoTime {
+                        halt = machine.step()
+                    }
+                    val left = maxOf(0, period.inWholeNanoseconds - took)
+                    val nanos = (left % 1000000).toInt()
+                    val millis = left / 1000000
                     Thread.sleep(millis, nanos)
                 }
                 Log.i("Chip8", "Finished with: ${halt}")

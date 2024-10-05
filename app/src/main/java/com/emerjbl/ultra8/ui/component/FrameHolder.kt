@@ -16,6 +16,8 @@ private const val MAX_ALPHA = 0xFF
 data class FrameConfig(
     /** The color of an "on" pixel. */
     val color: Color = Color.Green,
+    val color2: Color = Color.Blue,
+    val color3: Color = Color.DarkGray,
 
     /** The amount of time to fade out an unset pixel. */
     val fadeTime: Duration = 400.milliseconds,
@@ -28,6 +30,8 @@ data class FrameConfig(
 
     @ColorInt
     val colorInt: Int = color.toArgb()
+    val color2Int: Int = color2.toArgb()
+    val color3Int: Int = color3.toArgb()
 }
 
 fun Int.withAlpha(alpha: Int) = (this and 0x00FFFFFF) or (alpha shl 24)
@@ -49,7 +53,7 @@ class FrameHolder(
         var currentlyFading = 0
         for (i in frame.data.indices) {
             // If the pixel is being unset, start its fade timer
-            if (frame.data[i] == 0 && pixelData[i] == frameConfig.colorInt) {
+            if (frame.data[i] == 0 && pixelData[i].alpha == 0xFF) {
                 fadeTimes[i] = frameConfig.fadeMillisInt
             }
 
@@ -69,6 +73,14 @@ class FrameHolder(
             // Set Pixel
             if (frame.data[i] == 1) {
                 pixelData[i] = frameConfig.colorInt
+                fadeTimes[i] = 0
+            }
+            if (frame.data[i] == 2) {
+                pixelData[i] = frameConfig.color2Int
+                fadeTimes[i] = 0
+            }
+            if (frame.data[i] == 3) {
+                pixelData[i] = frameConfig.color3Int
                 fadeTimes[i] = 0
             }
         }
