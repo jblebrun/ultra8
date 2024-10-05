@@ -47,12 +47,15 @@ fun MainScreen() {
     val running by viewModel.running.collectAsState(initial = false)
     val loadedName by viewModel.loadedName.collectAsState(null)
 
-    val frameConfig = FrameConfig(
-        color = MaterialTheme.chip8Colors.pixelColor,
-        fadeTime = 400.milliseconds,
-    )
+
 
     Ultra8Theme {
+        val frameConfig = FrameConfig(
+            color1 = MaterialTheme.chip8Colors.pixel1Color,
+            color2 = MaterialTheme.chip8Colors.pixel2Color,
+            color3 = MaterialTheme.chip8Colors.pixel3Color,
+            fadeTime = 400.milliseconds,
+        )
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = { TopBar(loadedName, viewModel.programs, viewModel::load) },

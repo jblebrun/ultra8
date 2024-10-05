@@ -77,8 +77,27 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         planes: Int,
     ): Boolean {
         val lines = if (linesIn == 0) 16 else linesIn
-        val bytesPerRow = if (linesIn == 0) 2 else 1
+        return when (planes) {
+            1 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1)
+            2 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 2)
+            3 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1) ||
+                    putPlaneSprite(xBase, yBase, data, offset + lines, linesIn, 2)
+
+            else -> false
+        }
+    }
+
+    fun putPlaneSprite(
+        xBase: Int,
+        yBase: Int,
+        data: ByteArray,
+        offset: Int,
+        linesIn: Int,
+        plane: Int,
+    ): Boolean {
         var unset = false
+        val bytesPerRow = if (linesIn == 0) 2 else 1
+        val lines = if (linesIn == 0) 16 else linesIn
 
         frame.withLock { frame ->
             for (yOffset in 0 until lines) {
@@ -89,8 +108,8 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
                         if ((row and 0x80) != 0) {
                             val x = ((xBase + xOffset + rowByte * 8) and (frame.width - 1))
                             val i = y * frame.width + x
-                            unset = unset || (frame.data[i] and planes != 0)
-                            frame.data[i] = frame.data[i] xor planes
+                            unset = unset || (frame.data[i] and plane != 0)
+                            frame.data[i] = frame.data[i] xor plane
                         }
                         row = row shl 1
                     }
