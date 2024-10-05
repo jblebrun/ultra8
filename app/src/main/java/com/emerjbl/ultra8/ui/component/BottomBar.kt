@@ -30,7 +30,7 @@ fun turboHold(
         detectTapGestures(
             onPress = {
                 val oldCps = cps.value
-                cyclesPerSecond.value = 10000
+                cyclesPerSecond.value = 100000
                 tryAwaitRelease()
                 cyclesPerSecond.value = oldCps
             }
@@ -45,7 +45,7 @@ fun speedDrag(
         detectHorizontalDragGestures { _, dragAmount ->
             cyclesPerSecond.value =
                 (cyclesPerSecond.value + 2 * dragAmount.toInt())
-                    .coerceIn(10..10000)
+                    .coerceIn(10..100000)
         }
     }
 }

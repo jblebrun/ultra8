@@ -4,4 +4,7 @@ package com.emerjbl.ultra8.chip8.sound
 interface Chip8Sound {
     /** Play a sound for `ticks` number of 60Hz ticks. */
     fun play(ticks: Int)
+
+    fun setPattern(pattern: Pattern)
+    fun setPatternRate(patternRate: Int)
 }

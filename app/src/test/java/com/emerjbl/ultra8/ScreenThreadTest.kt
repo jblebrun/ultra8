@@ -4,6 +4,7 @@ import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
+import com.emerjbl.ultra8.chip8.sound.Pattern
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -18,6 +19,8 @@ import kotlin.time.TimeSource
 
 class FakeSound : Chip8Sound {
     override fun play(ticks: Int) {}
+    override fun setPattern(pattern: Pattern) {}
+    override fun setPatternRate(patternRate: Int) {}
 }
 
 @RunWith(RobolectricTestRunner::class)

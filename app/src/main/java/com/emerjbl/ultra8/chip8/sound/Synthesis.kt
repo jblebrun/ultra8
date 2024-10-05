@@ -1,24 +1,49 @@
 package com.emerjbl.ultra8.chip8.sound
 
-import kotlin.math.PI
-import kotlin.math.sign
+class Pattern(
+    val first: ULong,
+    val second: ULong
+) {
+    fun bit(patternBit: Int): Double {
+        val word = if (patternBit < 64) first else second
+        val wordBit = (64 - patternBit % 64)
+        // Take the bit for the sample
+        val bit = word shr wordBit and 0x1UL
+        // Scale to -1..1 float space, but
+        // Scale volume to half.
+        // So -0.5-0.5
+        return (bit.toLong() - 0.5)
+    }
+}
 
-fun wave(f: (Double) -> Double, freq: Float): FloatArray {
-    // Generate 1 cycle to loop
-    val samples = (SAMPLE_RATE / freq).toInt()
+/**
+ * Render a Chip-XO sound pattern into PCM samples.
+ *
+ * This will render one complete cycle of the given pattern, at the give patternRate, so that it
+ * plays properly at the provided output sampleRate.
+ *
+ * We output floats rather than the smallest possible sample size, in case we want to do some
+ * smoothing later.
+ **/
+fun Pattern.render(
+    /** The pattern sample rate to use (the "pitch" value from a program). */
+    patternRate: Int,
+
+    /** The actual waveform output playback sample rate. */
+    sampleRate: Int
+): FloatArray {
+    // Calculate the total number of samples to hold one pattern repetition.
+    val samples = (128.0 * sampleRate / patternRate).toInt()
     val out = FloatArray(samples)
-    val b = 2 * PI / SAMPLE_RATE
-    for (t in out.indices) {
-        val y = f(b * t.toDouble())
-        out[t] = y.toFloat()
+
+    // Now populate each sample.
+    for (i in out.indices) {
+        // What ratio of the output are we at?
+        val ratio = i.toFloat() / out.size
+        // Scale that to 128 to find the right bit.
+        val bitIdx = (128 * ratio).toInt()
+        // Ask the pattern for that bit.
+        out[i] = this.bit(bitIdx).toFloat()
     }
     return out
-}
-
-fun sin(freq: Int): (Double) -> Double = {
-    kotlin.math.sin(freq * it)
-}
-
-fun square(freq: Int): (Double) -> Double = {
-    sign(kotlin.math.sin(freq * it))
 }

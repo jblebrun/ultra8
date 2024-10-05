@@ -34,7 +34,7 @@ data class Program(val name: String, val id: Int)
 class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     private val gfx = SimpleGraphics()
     private val keys: Chip8Keys = Chip8Keys()
-    private val sound = AudioTrackSynthSound(viewModelScope)
+    private val sound = AudioTrackSynthSound(viewModelScope, 48000)
     private val runner: Chip8Runner = Chip8ThreadRunner(keys, gfx, sound, TimeSource.Monotonic)
     private val background: CoroutineDispatcher =
         Executors.newSingleThreadExecutor().asCoroutineDispatcher()
