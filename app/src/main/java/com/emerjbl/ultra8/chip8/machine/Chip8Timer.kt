@@ -1,26 +1,29 @@
 package com.emerjbl.ultra8.chip8.machine
 
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.math.ceil
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 /** Manages the Chip8 real-time timer state. */
-class Chip8Timer(val timeSource: TimeSource) {
-    // The value currently left to count down.
-    private var tickCount: Int = 0
-    private var timeSetAt: TimeMark = timeSource.markNow()
+class Chip8Timer(private val timeSource: TimeSource) {
+    private var timerActiveUntil: TimeMark = timeSource.markNow()
 
     var value: Int
         get() {
-            val elapsed = timeSetAt.elapsedNow()
-            //16.66ms for 60Hz
-            val elapsedTicks = (elapsed / 16.66.milliseconds).toInt()
-            return maxOf(tickCount - elapsedTicks, 0).also {
-                tickCount = it
-            }
+            // If timer is still active, negative time has elapsed.
+            val elapsed = maxOf(Duration.ZERO, -timerActiveUntil.elapsedNow())
+            // Ceil because we don't decrement tick until the entire tick time
+            // has passed; toInt would decrement tick right away.
+            return ceil(elapsed / TICK_TIME).toInt()
         }
         set(ticks) {
-            tickCount = ticks
-            timeSetAt = timeSource.markNow()
+            // Mark the time that the timer will be expired.
+            timerActiveUntil = timeSource.markNow() + TICK_TIME * ticks
         }
+
+    companion object {
+        private val TICK_TIME = (1.0 / 60).seconds
+    }
 }
