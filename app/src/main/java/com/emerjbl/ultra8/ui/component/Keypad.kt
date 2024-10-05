@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposePath
@@ -114,6 +115,33 @@ fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
                 color = MaterialTheme.chip8Colors.keyCapForeground,
                 fontSize = keyCapTextSize.value
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun OverlayKeypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
+    val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
+
+    Box(
+        modifier = Modifier
+            .alpha(0.2f)
+            .padding(5.dp)
+            .aspectRatio(1.0f)
+            .fillMaxSize()
+            .background(color = MaterialTheme.chip8Colors.keypadBackground)
+            .pointerInteropFilter { keyHitManager.onTouchEvent(it) }
+            .padding(5.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            ButtonRow(keyHitManager::setKeyPosition, 1, 2, 3, 12)
+            ButtonRow(keyHitManager::setKeyPosition, 4, 5, 6, 13)
+            ButtonRow(keyHitManager::setKeyPosition, 7, 8, 9, 14)
+            ButtonRow(keyHitManager::setKeyPosition, 10, 0, 11, 15)
         }
     }
 }
