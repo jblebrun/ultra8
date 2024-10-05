@@ -60,12 +60,21 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         frame.data.fill(0, 0, n * frame.width)
     }
 
+    override fun scrollUp(n: Int) = frame.withLock { frame ->
+        val destinationOffset = 0
+        val startIndex = n * frame.width
+        val endIndex = frame.width * frame.height
+        frame.data.copyInto(frame.data, destinationOffset, startIndex, endIndex)
+        frame.data.fill(0, 0, n * frame.width)
+    }
+
     override fun putSprite(
         xBase: Int,
         yBase: Int,
         data: ByteArray,
         offset: Int,
-        linesIn: Int
+        linesIn: Int,
+        planes: Int,
     ): Boolean {
         val lines = if (linesIn == 0) 16 else linesIn
         val bytesPerRow = if (linesIn == 0) 2 else 1
@@ -80,8 +89,8 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
                         if ((row and 0x80) != 0) {
                             val x = ((xBase + xOffset + rowByte * 8) and (frame.width - 1))
                             val i = y * frame.width + x
-                            unset = unset || (frame.data[i] == 1)
-                            frame.data[i] = frame.data[i] xor 1
+                            unset = unset || (frame.data[i] and planes != 0)
+                            frame.data[i] = frame.data[i] xor planes
                         }
                         row = row shl 1
                     }

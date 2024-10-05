@@ -90,8 +90,8 @@ fun BottomBar(
                 modifier = Modifier.weight(3f),
                 value = cps.value.toFloat() / 100,
                 onValueChange = { cyclesPerSecond.value = 100 * it.toInt() },
-                steps = 40,
-                valueRange = 1f..40f
+                steps = 800,
+                valueRange = 1f..800f
             )
             TurboButton(
                 cps, cyclesPerSecond, modifier = Modifier.weight(1f)

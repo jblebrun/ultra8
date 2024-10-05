@@ -6,7 +6,16 @@ interface Chip8Graphics {
     fun scrollRight()
     fun scrollLeft()
     fun scrollDown(n: Int)
-    fun putSprite(xBase: Int, yBase: Int, data: ByteArray, offset: Int, linesIn: Int): Boolean
+    fun scrollUp(n: Int)
+    fun putSprite(
+        xBase: Int,
+        yBase: Int,
+        data: ByteArray,
+        offset: Int,
+        linesIn: Int,
+        planes: Int
+    ): Boolean
+
     var hires: Boolean
 }
 
