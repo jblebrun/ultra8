@@ -15,7 +15,7 @@ private const val MAX_ALPHA = 0xFF
 
 data class FrameConfig(
     /** The color of an "on" pixel. */
-    val color: Color = Color.Green,
+    val color1: Color = Color.Green,
     val color2: Color = Color.Blue,
     val color3: Color = Color.DarkGray,
 
@@ -29,7 +29,7 @@ data class FrameConfig(
     val fadeMillisFloat: Float = fadeTime.inWholeMilliseconds.toFloat()
 
     @ColorInt
-    val colorInt: Int = color.toArgb()
+    val colorInt: Int = color1.toArgb()
     val color2Int: Int = color2.toArgb()
     val color3Int: Int = color3.toArgb()
 }

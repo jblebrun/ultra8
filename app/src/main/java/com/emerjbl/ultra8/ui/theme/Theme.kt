@@ -30,18 +30,13 @@ class Chip8ColorScheme(
     val keypadBackground: Color,
     val keyCapBackground: Color,
     val keyCapForeground: Color,
-    val pixelColor: Color,
+    val pixel1Color: Color,
+    val pixel2Color: Color,
+    val pixel3Color: Color,
 )
 
-private val DefaultChip8ColorScheme = Chip8ColorScheme(
-    keypadBackground = Gray220,
-    keyCapBackground = Gray200,
-    keyCapForeground = Gray40,
-    pixelColor = LightColorScheme.tertiary
-
-)
-
-val LocalChip8ColorScheme = compositionLocalOf { DefaultChip8ColorScheme }
+val LocalChip8ColorScheme =
+    compositionLocalOf<Chip8ColorScheme> { error("No chip8 scheme specified") }
 
 @Suppress("UnusedReceiverParameter")
 val MaterialTheme.chip8Colors: Chip8ColorScheme
@@ -69,8 +64,11 @@ fun Ultra8Theme(
         keypadBackground = colorScheme.secondaryContainer,
         keyCapBackground = colorScheme.secondary,
         keyCapForeground = colorScheme.onSecondary,
-        pixelColor = colorScheme.tertiary
+        pixel1Color = colorScheme.tertiary,
+        pixel2Color = colorScheme.secondary,
+        pixel3Color = colorScheme.primary,
     )
+
 
     CompositionLocalProvider(
         LocalChip8ColorScheme provides chip8ColorScheme
