@@ -82,7 +82,6 @@ class Chip8(
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
 
-    @OptIn(ExperimentalStdlibApi::class)
     fun step(): Halt? {
         val inst = Chip8Instruction(mem[pc++].i, mem[pc++].i)
         inst.run {
