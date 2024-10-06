@@ -41,7 +41,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen() {
-    val viewModel = viewModel<Chip8ViewModel>()
+    val viewModel = viewModel<Chip8ViewModel>(factory = Chip8ViewModel.Factory)
 
     (LocalContext.current as? Activity)?.intent?.let {
         viewModel.load(it)
