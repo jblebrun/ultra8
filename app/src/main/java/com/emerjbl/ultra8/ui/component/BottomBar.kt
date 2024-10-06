@@ -3,6 +3,7 @@ package com.emerjbl.ultra8.ui.component
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
@@ -85,26 +86,29 @@ private val speeds = arrayOf(
 fun BottomBar(
     cyclesPerTick: MutableStateFlow<Int>
 ) {
-    val cpf = cyclesPerTick.collectAsState(0)
     Box(modifier = Modifier.pointerInput(Unit, speedDrag((cyclesPerTick)))) {
-        BottomAppBar(actions = {
-            Text(
-                "${cpf.value}\ncyc/frame",
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
-                lineHeight = 12.sp,
-                fontSize = 12.sp
-            )
-            Slider(
-                modifier = Modifier.weight(3f),
-                value = speeds.withIndex().minBy { abs(it.value - cpf.value) }.index.toFloat(),
-                onValueChange = { cyclesPerTick.value = speeds[it.toInt()] },
-                steps = speeds.size,
-                valueRange = 0f..(speeds.size - 1).toFloat()
-            )
-            TurboButton(
-                cpf, cyclesPerTick, modifier = Modifier.weight(1f)
-            )
-        })
+        BottomAppBar(actions = { BottomBarActions(cyclesPerTick) })
     }
+}
+
+@Composable
+fun RowScope.BottomBarActions(
+    cyclesPerTick: MutableStateFlow<Int>
+) {
+    val cpf = cyclesPerTick.collectAsState(0)
+    Text(
+        "${cpf.value}\ncyc/frame",
+        textAlign = TextAlign.Center,
+        lineHeight = 12.sp,
+        fontSize = 12.sp
+    )
+    Slider(
+        value = speeds.withIndex().minBy { abs(it.value - cpf.value) }.index.toFloat(),
+        onValueChange = { cyclesPerTick.value = speeds[it.toInt()] },
+        steps = speeds.size,
+        valueRange = 0f..(speeds.size -1).toFloat()
+    )
+    TurboButton(
+        cpf, cyclesPerTick, modifier = Modifier.weight(1f)
+    )
 }

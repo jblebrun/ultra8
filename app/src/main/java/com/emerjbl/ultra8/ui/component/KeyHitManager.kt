@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.toSize
  */
 class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
     /** Track the position and pressed state of a key. */
-    class ButtonState(
+    class ButtonState<T>(
         /** Window coordinates of this key's view */
-        val bounds: Rect
+        val bounds: T
     ) {
         /** Bitmask of pointers over this button. */
         var pointers: Int = 0
@@ -47,6 +47,7 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
 
     /** The keystates for the 16 keys on the Chip8 hex keypad. */
     private val keyBounds = Array(16) { ButtonState(Rect.Zero) }
+    private var parentCoords: LayoutCoordinates? = null
 
     internal var parentCoordinates: LayoutCoordinates? = null
 

@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -32,16 +31,16 @@ import kotlin.math.sqrt
 
 
 @Composable
-fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
+fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit, modifier: Modifier = Modifier) {
     val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
 
     Box(
         modifier = Modifier
             .padding(5.dp)
-            .fillMaxWidth()
             .background(color = MaterialTheme.chip8Colors.keypadBackground)
             .keyHitManager(keyHitManager)
             .padding(5.dp)
+                then modifier
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -112,32 +111,6 @@ fun RowScope.Chip8Button(
                 color = MaterialTheme.chip8Colors.keyCapForeground,
                 fontSize = keyCapTextSize.value
             )
-        }
-    }
-}
-
-@Composable
-fun OverlayKeypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
-    val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
-
-    Box(
-        modifier = Modifier
-            .alpha(0.2f)
-            .padding(5.dp)
-            .aspectRatio(1.0f)
-            .fillMaxSize()
-            .background(color = MaterialTheme.chip8Colors.keypadBackground)
-            .padding(5.dp)
-            .keyHitManager(keyHitManager)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            ButtonRow(keyHitManager, 1, 2, 3, 12)
-            ButtonRow(keyHitManager, 4, 5, 6, 13)
-            ButtonRow(keyHitManager, 7, 8, 9, 14)
-            ButtonRow(keyHitManager, 10, 0, 11, 15)
         }
     }
 }
