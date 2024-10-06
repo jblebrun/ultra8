@@ -54,7 +54,7 @@ class Chip8ThreadRunner {
                 }
                 Log.i("Chip8", "Finished with: $halt")
             } catch (ex: InterruptedException) {
-                Log.i("Chip8", "Thread interrupted at ${machine.pc}")
+                Log.i("Chip8", "Thread interrupted at ${machine.stateView.pc}")
             }
             _running.value = false
         }
