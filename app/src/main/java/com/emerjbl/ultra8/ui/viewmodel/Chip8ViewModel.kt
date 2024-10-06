@@ -5,8 +5,13 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore.MediaColumns
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.R
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
@@ -30,7 +35,10 @@ import kotlin.time.TimeSource
 data class Program(val name: String, val id: Int)
 
 /** A [androidx.lifecycle.ViewModel] maintaining the state of a running Chip8 machine. */
-class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
+class Chip8ViewModel(
+    val application: Application,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
     private val keys = Chip8Keys()
     private val gfx = SimpleGraphics()
     private fun newMachine(program: ByteArray): Chip8 {
@@ -62,7 +70,14 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        load(programs.firstOrNull { it.id == R.raw.breakout }!!)
+        Log.i("Chip8", "Saved State Keys: ${savedStateHandle.keys()}")
+        val program: ByteArray? = savedStateHandle["program"]
+        if (program != null) {
+            machine = newMachine(program)
+            resume()
+        } else {
+            load(programs.firstOrNull { it.id == R.raw.breakout }!!)
+        }
     }
 
     fun keyDown(idx: Int) {
@@ -103,7 +118,7 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
         Log.i("Chip8", "Opening program from URI: $uri")
         viewModelScope.launch {
             val program = withContext(background) {
-                getApplication<Application>().contentResolver.query(
+                application.contentResolver.query(
                     uri,
                     arrayOf(MediaColumns.DISPLAY_NAME),
                     null,
@@ -117,11 +132,12 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
-                getApplication<Application>().contentResolver.openInputStream(uri)!!.use {
+                application.contentResolver.openInputStream(uri)!!.use {
                     it.readBytes()
                 }
             }
             Log.i("Chip8", "Program size: ${program.size}")
+            savedStateHandle["program"] = program
             machine = newMachine(program)
             resume()
         }
@@ -129,11 +145,12 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
 
     fun load(program: Program) {
         viewModelScope.launch {
-            val data = getApplication<Application>().resources.openRawResource(program.id).use {
+            val data = application.resources.openRawResource(program.id).use {
                 it.readBytes()
             }
             Log.i("Chip8", "Program size: ${data.size}")
             _loadedName.value = program.name
+            savedStateHandle["program"] = data
             machine = newMachine(data)
             resume()
         }
@@ -141,4 +158,19 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
 
     fun nextFrame(lastFrame: SimpleGraphics.Frame?): SimpleGraphics.Frame =
         gfx.nextFrame(lastFrame)
+
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+                extras: CreationExtras
+            ): T =
+                Chip8ViewModel(
+                    checkNotNull(extras[APPLICATION_KEY]),
+                    extras.createSavedStateHandle()
+                ) as T
+        }
+    }
 }
