@@ -12,8 +12,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.onInterceptKeyBeforeSoftKeyboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -25,6 +30,7 @@ import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
 import com.emerjbl.ultra8.ui.component.OverlayKeypad
 import com.emerjbl.ultra8.ui.component.TopBar
+import com.emerjbl.ultra8.ui.component.onKeyEvent
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import com.emerjbl.ultra8.ui.theme.chip8Colors
 import com.emerjbl.ultra8.ui.viewmodel.Chip8ViewModel
@@ -64,6 +70,7 @@ fun MainScreen() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PortraitMain(
     frameConfig: FrameConfig,
@@ -71,8 +78,25 @@ fun PortraitMain(
 ) {
     val loadedName by viewModel.loadedName.collectAsState(null)
     val running by viewModel.running.collectAsState(initial = false)
+    val focusRequester = remember { FocusRequester() }
+
+    if (running) {
+        focusRequester.requestFocus()
+    }
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .onInterceptKeyBeforeSoftKeyboard {
+                onKeyEvent(
+                    it,
+                    keyDown = viewModel::keyDown,
+                    keyUp = viewModel::keyUp,
+                )
+                false
+            },
+
         topBar = { TopBar(loadedName, viewModel.programs, viewModel::load) },
         bottomBar = {
             BottomBar(
