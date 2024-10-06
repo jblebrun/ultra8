@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.emerjbl.ultra8.ui.component.BottomBar
+import com.emerjbl.ultra8.ui.component.BottomBarActions
 import com.emerjbl.ultra8.ui.component.FrameConfig
 import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
-import com.emerjbl.ultra8.ui.component.OverlayKeypad
 import com.emerjbl.ultra8.ui.component.TopBar
 import com.emerjbl.ultra8.ui.component.onKeyEvent
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
@@ -129,20 +130,29 @@ fun LandscapeMain(
     val running by viewModel.running.collectAsState(initial = false)
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
     ) { innerPadding ->
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box(
-                modifier = Modifier.padding(20.dp),
-                contentAlignment = Alignment.Center
+            Keypad(
+                viewModel::keyDown,
+                viewModel::keyUp,
+                modifier = Modifier.weight(1f)
+            )
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .weight(2f),
             ) {
                 Graphics(running, frameConfig, viewModel::nextFrame)
-                OverlayKeypad(viewModel::keyDown, viewModel::keyUp)
+                Row {
+                    BottomBarActions(viewModel.cyclesPerTick)
+                }
             }
         }
     }
