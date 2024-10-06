@@ -1,6 +1,5 @@
 package com.emerjbl.ultra8.ui.component
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,19 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
@@ -37,7 +31,6 @@ import java.util.Locale
 import kotlin.math.sqrt
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
     val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
@@ -47,44 +40,48 @@ fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
             .padding(5.dp)
             .fillMaxWidth()
             .background(color = MaterialTheme.chip8Colors.keypadBackground)
-            .pointerInteropFilter { keyHitManager.onTouchEvent(it) }
+            .keyHitManager(keyHitManager)
             .padding(5.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            ButtonRow(keyHitManager::setKeyPosition, 1, 2, 3, 12)
-            ButtonRow(keyHitManager::setKeyPosition, 4, 5, 6, 13)
-            ButtonRow(keyHitManager::setKeyPosition, 7, 8, 9, 14)
-            ButtonRow(keyHitManager::setKeyPosition, 10, 0, 11, 15)
+            ButtonRow(keyHitManager, 1, 2, 3, 12)
+            ButtonRow(keyHitManager, 4, 5, 6, 13)
+            ButtonRow(keyHitManager, 7, 8, 9, 14)
+            ButtonRow(keyHitManager, 10, 0, 11, 15)
         }
     }
 }
 
 @Composable
-fun ButtonRow(onPositioned: (Int, Rect) -> Unit, vararg buttons: Int) {
+fun ButtonRow(
+    keyHitManager: KeyHitManager,
+    vararg buttons: Int
+) {
     Row(modifier = Modifier.fillMaxWidth()) {
         for (value in buttons) {
-            Chip8Button(value) { onPositioned(value, it) }
+            Chip8Button(value, keyHitManager)
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
+fun RowScope.Chip8Button(
+    value: Int,
+    keyHitManager: KeyHitManager,
+) {
     val text = Integer.toHexString(value).uppercase(Locale.getDefault())
     val buttonColor = MaterialTheme.chip8Colors.keyCapBackground
     val keyCapTextSize = remember { mutableStateOf(16.sp) }
 
     // Outer box to get position including all padding so there are no touch gaps.
-    Box(modifier = Modifier
-        .weight(1f)
-        .onGloballyPositioned {
-            onPositioned(Rect(it.positionInWindow(), it.size.toSize()))
-            keyCapTextSize.value = (it.size.width / 4f).sp
-        }
-        .aspectRatio(1.0f)
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .onGloballyPositioned { keyCapTextSize.value = (it.size.width / 4f).sp }
+            .addKeyToKeyHitManager(value, keyHitManager)
+            .aspectRatio(1.0f)
     ) {
         Box(
             modifier = Modifier
@@ -119,7 +116,6 @@ fun RowScope.Chip8Button(value: Int, onPositioned: (Rect) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun OverlayKeypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
     val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
@@ -131,17 +127,17 @@ fun OverlayKeypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit) {
             .aspectRatio(1.0f)
             .fillMaxSize()
             .background(color = MaterialTheme.chip8Colors.keypadBackground)
-            .pointerInteropFilter { keyHitManager.onTouchEvent(it) }
             .padding(5.dp)
+            .keyHitManager(keyHitManager)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            ButtonRow(keyHitManager::setKeyPosition, 1, 2, 3, 12)
-            ButtonRow(keyHitManager::setKeyPosition, 4, 5, 6, 13)
-            ButtonRow(keyHitManager::setKeyPosition, 7, 8, 9, 14)
-            ButtonRow(keyHitManager::setKeyPosition, 10, 0, 11, 15)
+            ButtonRow(keyHitManager, 1, 2, 3, 12)
+            ButtonRow(keyHitManager, 4, 5, 6, 13)
+            ButtonRow(keyHitManager, 7, 8, 9, 14)
+            ButtonRow(keyHitManager, 10, 0, 11, 15)
         }
     }
 }
