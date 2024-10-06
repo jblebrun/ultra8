@@ -8,6 +8,7 @@ import com.emerjbl.ultra8.ui.screen.MainScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        println("ONCREATE")
         super.onCreate(savedInstanceState)
         actionBar?.hide()
         enableEdgeToEdge()

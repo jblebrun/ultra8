@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.onInterceptKeyBeforeSoftKeyboard
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -67,10 +67,6 @@ fun MainScreen() {
         val running by viewModel.running.collectAsState(initial = false)
         val focusRequester = remember { FocusRequester() }
 
-        if (running) {
-            focusRequester.requestFocus()
-        }
-
         fun onKeyEvent(event: KeyEvent): Boolean {
             onKeyEvent(event, viewModel::keyDown, viewModel::keyUp)
             return false
@@ -83,7 +79,7 @@ fun MainScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .focusRequester(focusRequester)
-                .onInterceptKeyBeforeSoftKeyboard(::onKeyEvent),
+                .onKeyEvent(::onKeyEvent),
             topBar = {
                 if (!isLandscape()) TopBar(loadedName, viewModel.programs, viewModel::load)
             },
@@ -91,6 +87,9 @@ fun MainScreen() {
                 if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)
             }
         ) { innerPadding ->
+            if (running) {
+                focusRequester.requestFocus()
+            }
             if (isLandscape()) {
                 LandscapeContent(innerPadding, running, frameConfig, viewModel)
             } else {
