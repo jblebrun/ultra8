@@ -1,12 +1,10 @@
 package com.emerjbl.ultra8.chip8.machine
 
-
 sealed interface Segment {
     data class Code(val instruction: List<Chip8Instruction>) : Segment
     data class Data(val bytes: List<UByte>) : Segment
 }
 
-@OptIn(ExperimentalStdlibApi::class)
 private val byteFormat = HexFormat {
     number {
         this.prefix = "0x"
@@ -17,7 +15,6 @@ class Disassembly(
     /** The disassembled segments. These represent the contiguous byte-code. */
     val segments: List<Segment>
 ) {
-    @OptIn(ExperimentalStdlibApi::class)
     override fun toString(): String = segments.joinToString("\n\n") { segment ->
         when (segment) {
             is Segment.Code -> {
@@ -74,7 +71,6 @@ private sealed interface Item {
 }
 
 
-@OptIn(ExperimentalUnsignedTypes::class)
 private fun UByteArray.asItems(): Sequence<Item> {
     data class IndexedItem(val idx: Int, val item: Item?)
     return generateSequence(IndexedItem(0, null)) { (idx, _) ->
@@ -108,7 +104,6 @@ private fun UByteArray.asItems(): Sequence<Item> {
  *
  * This is not robust against a lot of structures, but it's a start.
  */
-@OptIn(ExperimentalUnsignedTypes::class)
 fun disassemble(code: UByteArray): Disassembly =
     code.asItems().fold(DisassemblyBuilder()) { disAssembly, item ->
         disAssembly.apply {

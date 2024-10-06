@@ -3,7 +3,6 @@ package com.emerjbl.ultra8.ui.component
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -15,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.emerjbl.ultra8.ui.viewmodel.Program
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(loadedName: String?, programs: List<Program>, onSelectProgram: (Program) -> Unit) {
     val title = if (loadedName == null) "Ultra8" else "Ultra8: $loadedName"

@@ -2,7 +2,6 @@ package com.emerjbl.ultra8.ui.component
 
 import android.util.Log
 import android.view.MotionEvent
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -47,7 +46,6 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
 
     /** The keystates for the 16 keys on the Chip8 hex keypad. */
     private val keyBounds = Array(16) { ButtonState(Rect.Zero) }
-    private var parentCoords: LayoutCoordinates? = null
 
     internal var parentCoordinates: LayoutCoordinates? = null
 
@@ -148,7 +146,6 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
         Offset(getX(actionIndex), getY(actionIndex))
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 fun Modifier.keyHitManager(manager: KeyHitManager) =
     onGloballyPositioned { manager.parentCoordinates = it }
         .pointerInteropFilter { manager.onTouchEvent(it) }

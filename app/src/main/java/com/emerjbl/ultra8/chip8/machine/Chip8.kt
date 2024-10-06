@@ -16,7 +16,6 @@ private const val EXEC_START: Int = 0x200
 private const val FONT_START: Int = 0x000
 private const val HIRES_FONT_START: Int = 0x100
 
-@OptIn(ExperimentalStdlibApi::class)
 private val Int.sx: String
     get() = "0x${toShort().toHexString()}"
 
