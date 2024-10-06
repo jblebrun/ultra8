@@ -2,8 +2,14 @@ package com.emerjbl.ultra8.ui.component
 
 import android.util.Log
 import android.view.MotionEvent
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.toSize
 
 /** A helper to manage tracking key down/up events across the Chip8 key grid.
  *
@@ -42,14 +48,22 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
     /** The keystates for the 16 keys on the Chip8 hex keypad. */
     private val keyBounds = Array(16) { ButtonState(Rect.Zero) }
 
+    internal var parentCoordinates: LayoutCoordinates? = null
+
     /**
      *  Set the position on-screen for the key with the provided values.
      *
      *  The provided [Rect] should be in screen coordinates. The [value] parameter corresponds to
      *  the hex value on the Chip8 keycap.
      * */
-    fun setKeyPosition(value: Int, position: Rect) {
-        keyBounds[value] = ButtonState(position)
+    internal fun setKeyPosition(value: Int, keyCoords: LayoutCoordinates) {
+        val pc = parentCoordinates
+        if (pc == null) {
+            Log.i("Chip8", "Trying to set key position with no parent coords.")
+            return
+        }
+        val keyOffset = pc.localPositionOf(keyCoords, Offset.Zero)
+        keyBounds[value] = ButtonState(Rect(keyOffset, keyCoords.size.toSize()))
     }
 
     /** A touch event handler.
@@ -57,12 +71,12 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
      *  Appropriate for use as the `touchEvent` parameter for
      *  [androidx.ui.compose.Modifier.pointerInteropFilter].
      */
-    fun onTouchEvent(event: MotionEvent): Boolean {
+    internal fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val pointer = event.getPointerId(event.actionIndex)
-                val windowOffset = event.windowOffset(event.actionIndex)
-                hit(windowOffset)?.let { (index, value) ->
+                val offsetInParent = event.offsetInParent(event.actionIndex)
+                hit(offsetInParent)?.let { (index, value) ->
                     if (value.pointerDown(pointer)) {
                         Log.i("Chip8", "KEYDOWN $index")
                         onKeyDown(index)
@@ -72,8 +86,8 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 val pointer = event.getPointerId(event.actionIndex)
-                val windowOffset = event.windowOffset(event.actionIndex)
-                hit(windowOffset)?.also { (index, value) ->
+                val offsetInParent = event.offsetInParent(event.actionIndex)
+                hit(offsetInParent)?.also { (index, value) ->
                     if (value.downFor(pointer)) {
                         if (value.pointerUp(pointer)) {
                             Log.i("Chip8", "KEYUP $index ($pointer)")
@@ -99,9 +113,9 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
             MotionEvent.ACTION_MOVE -> {
                 for (actionIndex in 0 until event.pointerCount) {
                     val pointer = event.getPointerId(actionIndex)
-                    val windowOffset = event.windowOffset((actionIndex))
+                    val offsetInParent = event.offsetInParent(actionIndex)
                     downForPointer(pointer)?.let {
-                        if (!it.value.bounds.contains(windowOffset)) {
+                        if (!it.value.bounds.contains(offsetInParent)) {
                             Log.i("Chip8", "MOVE KEYUP ${it.index} ($pointer)")
                             if (it.value.pointerUp(pointer)) {
                                 onKeyUp(it.index)
@@ -109,7 +123,7 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
                         }
                     }
 
-                    hit(windowOffset)?.also {
+                    hit(offsetInParent)?.also {
                         if (!it.value.downFor(pointer)) {
                             if (it.value.pointerDown(pointer)) {
                                 Log.i("Chip8", "MOVE KEYDOWN ${it.index} ($pointer)")
@@ -129,6 +143,14 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
     private fun downForPointer(pointer: Int) =
         keyBounds.withIndex().firstOrNull { it.value.downFor(pointer) }
 
-    private fun MotionEvent.windowOffset(actionIndex: Int) =
-        Offset(getRawX(actionIndex), getRawY(actionIndex))
+    private fun MotionEvent.offsetInParent(actionIndex: Int) =
+        Offset(getX(actionIndex), getY(actionIndex))
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.keyHitManager(manager: KeyHitManager) =
+    onGloballyPositioned { manager.parentCoordinates = it }
+        .pointerInteropFilter { manager.onTouchEvent(it) }
+
+fun Modifier.addKeyToKeyHitManager(value: Int, manager: KeyHitManager) =
+    onGloballyPositioned { manager.setKeyPosition(value, it) }
