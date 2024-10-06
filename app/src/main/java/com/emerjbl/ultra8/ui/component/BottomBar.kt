@@ -24,42 +24,42 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 fun turboHold(
     cps: State<Int>,
-    cyclesPerSecond: MutableStateFlow<Int>
+    cyclesPerTick: MutableStateFlow<Int>
 ): suspend PointerInputScope.() -> Unit {
     return {
         detectTapGestures(
             onPress = {
                 val oldCps = cps.value
-                cyclesPerSecond.value = 100000
+                cyclesPerTick.value = 10
                 tryAwaitRelease()
-                cyclesPerSecond.value = oldCps
+                cyclesPerTick.value = oldCps
             }
         )
     }
 }
 
 fun speedDrag(
-    cyclesPerSecond: MutableStateFlow<Int>
+    cyclesPerTick: MutableStateFlow<Int>
 ): suspend PointerInputScope.() -> Unit {
     return {
         detectHorizontalDragGestures { _, dragAmount ->
-            cyclesPerSecond.value =
-                (cyclesPerSecond.value + 2 * dragAmount.toInt())
-                    .coerceIn(10..100000)
+            cyclesPerTick.value =
+                (cyclesPerTick.value + 2 * dragAmount.toInt())
+                    .coerceIn(10..2000)
         }
     }
 }
 
 @Composable
 fun TurboButton(
-    cps: State<Int>, cyclesPerSecond: MutableStateFlow<Int>,
+    cps: State<Int>, cyclesPerFrame: MutableStateFlow<Int>,
     modifier: Modifier = Modifier
 ) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .aspectRatio(1f)
-            .pointerInput(Unit, turboHold(cps, cyclesPerSecond))
+            .pointerInput(Unit, turboHold(cps, cyclesPerFrame))
                 then (modifier),
     ) {
         Icon(
@@ -74,13 +74,13 @@ fun TurboButton(
 
 @Composable
 fun BottomBar(
-    cyclesPerSecond: MutableStateFlow<Int>
+    cyclesPerTick: MutableStateFlow<Int>
 ) {
-    val cps = cyclesPerSecond.collectAsState(0)
-    Box(modifier = Modifier.pointerInput(Unit, speedDrag((cyclesPerSecond)))) {
+    val cpf = cyclesPerTick.collectAsState(0)
+    Box(modifier = Modifier.pointerInput(Unit, speedDrag((cyclesPerTick)))) {
         BottomAppBar(actions = {
             Text(
-                "${cps.value}\ncyc/s",
+                "${cpf.value}\ncyc/frame",
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 lineHeight = 12.sp,
@@ -88,13 +88,13 @@ fun BottomBar(
             )
             Slider(
                 modifier = Modifier.weight(3f),
-                value = cps.value.toFloat() / 100,
-                onValueChange = { cyclesPerSecond.value = 100 * it.toInt() },
-                steps = 800,
-                valueRange = 1f..800f
+                value = cpf.value.toFloat(),
+                onValueChange = { cyclesPerTick.value = it.toInt() },
+                steps = 2000,
+                valueRange = 1f..2000f
             )
             TurboButton(
-                cps, cyclesPerSecond, modifier = Modifier.weight(1f)
+                cpf, cyclesPerTick, modifier = Modifier.weight(1f)
             )
         })
     }

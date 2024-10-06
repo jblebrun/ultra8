@@ -9,13 +9,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.emerjbl.ultra8.R
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
-import com.emerjbl.ultra8.chip8.runner.Chip8Runner
+import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,24 +29,31 @@ import kotlin.time.TimeSource
 /** Pre-loaded program entry */
 data class Program(val name: String, val id: Int)
 
-
 /** A [androidx.lifecycle.ViewModel] maintaining the state of a running Chip8 machine. */
 class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
+    private val keys = Chip8Keys()
     private val gfx = SimpleGraphics()
-    private val keys: Chip8Keys = Chip8Keys()
-    private val sound = AudioTrackSynthSound(viewModelScope, 48000)
-    private val runner: Chip8Runner = Chip8ThreadRunner(keys, gfx, sound, TimeSource.Monotonic)
+    private fun newMachine(program: ByteArray): Chip8 {
+        val sound = AudioTrackSynthSound(viewModelScope, 48000)
+        gfx.hires = false
+        return Chip8(keys, gfx, sound, StandardChip8Font, TimeSource.Monotonic, program)
+    }
+
+    private var machine = newMachine(byteArrayOf())
+
+    private val runner = Chip8ThreadRunner()
     private val background: CoroutineDispatcher =
         Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val running: Flow<Boolean>
+
+    val running: StateFlow<Boolean>
         get() = runner.running
 
     private val _loadedName = MutableStateFlow<String?>(null)
     val loadedName: StateFlow<String?>
         get() = _loadedName.asStateFlow()
 
-    val cyclesPerSecond = MutableStateFlow(runner.cyclesPerSecond).apply {
-        onEach { runner.cyclesPerSecond = it }
+    val cyclesPerTick = MutableStateFlow(runner.cyclesPerTick).apply {
+        onEach { runner.cyclesPerTick = it }
             .launchIn(viewModelScope)
     }
 
@@ -71,7 +78,7 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resume() {
-        runner.resume()
+        runner.run(machine)
     }
 
     fun load(intent: Intent) {
@@ -115,7 +122,8 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             Log.i("Chip8", "Program size: ${program.size}")
-            runner.load(program)
+            machine = newMachine(program)
+            resume()
         }
     }
 
@@ -126,7 +134,8 @@ class Chip8ViewModel(application: Application) : AndroidViewModel(application) {
             }
             Log.i("Chip8", "Program size: ${data.size}")
             _loadedName.value = program.name
-            runner.load(data)
+            machine = newMachine(data)
+            resume()
         }
     }
 

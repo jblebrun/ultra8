@@ -76,7 +76,7 @@ fun PortraitMain(
         topBar = { TopBar(loadedName, viewModel.programs, viewModel::load) },
         bottomBar = {
             BottomBar(
-                cyclesPerSecond = viewModel.cyclesPerSecond,
+                cyclesPerTick = viewModel.cyclesPerTick,
             )
         }
     ) { innerPadding ->
