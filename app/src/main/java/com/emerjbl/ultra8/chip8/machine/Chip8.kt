@@ -6,6 +6,8 @@ import com.emerjbl.ultra8.chip8.graphics.Chip8Graphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
+import java.nio.ByteBuffer
+import java.nio.IntBuffer
 import java.util.Random
 import kotlin.math.pow
 import kotlin.time.TimeSource
@@ -59,31 +61,102 @@ sealed class Halt(val pc: Int) {
 
 /** All state of a running Chip8 Machine. */
 class Chip8(
-    val keys: Chip8Keys,
-    val gfx: Chip8Graphics,
-    val sound: Chip8Sound,
-    val font: Chip8Font,
+    private val keys: Chip8Keys,
+    private val gfx: Chip8Graphics,
+    private val sound: Chip8Sound,
+    private val font: Chip8Font,
     timeSource: TimeSource,
     program: ByteArray
 ) {
+    /** Collect all Chip8 state in one place. Convenient for eventual save/restore. */
+    class State(
+        /** Registers V0-VF. */
+        internal val v: IntArray = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        /**
+         * Special HP flag registers.
+         *
+         * In the HP-48 implementation, these were hardware-persisted across runs by a special 64
+         * bit register file.
+         *
+         * Chip-XO supports up to 16 registers.
+         *
+         * These *should* be persisted, but we don't currently do that.
+         **/
+        internal val hp: IntArray = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        /** Call stack. */
+        internal val stack: IntArray = IntArray(64),
+        /**
+         * Machine memory.
+         *
+         * The original machine  implementation is 4k, but Chip-XO can address up to 64k.
+         * For now, we just support the highest.
+         **/
+        internal val mem: ByteArray = ByteArray(65536),
+        /** Index register I. */
+        internal var i: Int = 0,
+        /** Stack pointer. */
+        internal var sp: Int = 0,
+        /** Program counter. */
+        internal var pc: Int = 0x200,
+        /** Chip-XO target plane for drawing (0-3). */
+        internal var targetPlane: Int = 0x1
+    ) {
+        /**
+         * A read-only view of the Chip8 state.
+         *
+         * A given instance wraps an actual live machine state, so it will change as the machine does;
+         * it's not a static copy.
+         */
+        interface View {
+            val v: IntBuffer
+            val hp: IntBuffer
+            val stack: IntBuffer
+            val mem: ByteBuffer
+            val i: Int
+            val sp: Int
+            val pc: Int
+            val targetPlane: Int
+        }
 
-    val v = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    val hp = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
-    val stack = IntArray(64)
-    var i: Int = 0
-    var sp = 0
-    var pc = 0x200
-    private var targetPlane = 0x1
-    private val mem: ByteArray = ByteArray(65536).apply {
-        font.lo.copyInto(this, FONT_START)
-        font.hi.copyInto(this, HIRES_FONT_START)
-        program.copyInto(this, EXEC_START)
+        val stateView = object : View {
+            override val v: IntBuffer = IntBuffer.wrap(this@State.v).asReadOnlyBuffer()
+            override val hp: IntBuffer = IntBuffer.wrap(this@State.hp).asReadOnlyBuffer()
+            override val stack: IntBuffer = IntBuffer.wrap(this@State.stack).asReadOnlyBuffer()
+            override val mem: ByteBuffer = ByteBuffer.wrap(this@State.mem).asReadOnlyBuffer()
+            override val i: Int
+                get() = this@State.i
+            override val sp: Int
+                get() = this@State.sp
+            override val pc: Int
+                get() = this@State.pc
+            override val targetPlane: Int
+                get() = this@State.targetPlane
+        }
+
+        /** Create a deep copy of the entire state. */
+        fun clone() = State(
+            v.clone(), hp.clone(), stack.clone(), mem.clone(),
+            i, sp, pc, targetPlane,
+        )
+
     }
+
+    private val state = State().apply {
+        font.lo.copyInto(mem, FONT_START)
+        font.hi.copyInto(mem, HIRES_FONT_START)
+        program.copyInto(mem, EXEC_START)
+    }
+    val stateView = state.stateView
+
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
 
     fun step(): Halt? {
-        val inst = Chip8Instruction(mem[pc++].i, mem[pc++].i)
+        val inst = Chip8Instruction(state.mem[state.pc++].i, state.mem[state.pc++].i)
+        return state.run(inst)
+    }
+
+    private fun State.run(inst: Chip8Instruction): Halt? {
         inst.run {
             when (majOp) {
                 0x00 -> when (b2) {
