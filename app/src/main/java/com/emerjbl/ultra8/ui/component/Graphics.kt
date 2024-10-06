@@ -2,8 +2,10 @@ package com.emerjbl.ultra8.ui.component
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -13,6 +15,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.dp
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.Job
@@ -60,6 +63,7 @@ fun frameGrabber(
 fun Graphics(
     running: Boolean,
     frameConfig: FrameConfig,
+    modifier: Modifier = Modifier,
     nextFrame: (SimpleGraphics.Frame?) -> SimpleGraphics.Frame
 ) {
     val frameHolder = frameGrabber(running, frameConfig, nextFrame)
@@ -68,8 +72,9 @@ fun Graphics(
         bitmap = frameHolder.value.bitmap.asImageBitmap(),
         contentDescription = "Main Screen",
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(2f),
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(5.dp)
+            .aspectRatio(2f) then modifier,
         filterQuality = FilterQuality.Low
     )
 }

@@ -33,23 +33,18 @@ import kotlin.math.sqrt
 @Composable
 fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit, modifier: Modifier = Modifier) {
     val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
-
-    Box(
-        modifier = Modifier
-            .padding(5.dp)
+    Column(
+        modifier =
+        Modifier
+            .fillMaxWidth()
             .background(color = MaterialTheme.chip8Colors.keypadBackground)
             .keyHitManager(keyHitManager)
-            .padding(5.dp)
                 then modifier
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            ButtonRow(keyHitManager, 1, 2, 3, 12)
-            ButtonRow(keyHitManager, 4, 5, 6, 13)
-            ButtonRow(keyHitManager, 7, 8, 9, 14)
-            ButtonRow(keyHitManager, 10, 0, 11, 15)
-        }
+        ButtonRow(keyHitManager, 1, 2, 3, 12)
+        ButtonRow(keyHitManager, 4, 5, 6, 13)
+        ButtonRow(keyHitManager, 7, 8, 9, 14)
+        ButtonRow(keyHitManager, 10, 0, 11, 15)
     }
 }
 
@@ -74,43 +69,38 @@ fun RowScope.Chip8Button(
     val buttonColor = MaterialTheme.chip8Colors.keyCapBackground
     val keyCapTextSize = remember { mutableStateOf(16.sp) }
 
-    // Outer box to get position including all padding so there are no touch gaps.
     Box(
         modifier = Modifier
             .weight(1f)
             .onGloballyPositioned { keyCapTextSize.value = (it.size.width / 4f).sp }
             .addKeyToKeyHitManager(value, keyHitManager)
             .aspectRatio(1.0f)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(5.dp)
-                .drawWithCache {
-                    val path = RoundedPolygon(
-                        numVertices = 4,
-                        radius = sqrt(2f) * size.minDimension / 2,
-                        centerX = size.width / 2,
-                        centerY = size.height / 2,
-                        rounding = CornerRounding(
-                            size.minDimension / 3f,
-                            smoothing = 0.2f
-                        )
+            .fillMaxSize()
+            .padding(5.dp)
+            .drawWithCache {
+                val path = RoundedPolygon(
+                    numVertices = 4,
+                    radius = sqrt(2f) * size.minDimension / 2,
+                    centerX = size.width / 2,
+                    centerY = size.height / 2,
+                    rounding = CornerRounding(
+                        size.minDimension / 3f,
+                        smoothing = 0.2f
                     )
-                        .toPath()
-                        .asComposePath()
-                    onDrawBehind {
-                        rotate(45f) {
-                            drawPath(path, color = buttonColor)
-                        }
+                )
+                    .toPath()
+                    .asComposePath()
+                onDrawBehind {
+                    rotate(45f) {
+                        drawPath(path, color = buttonColor)
                     }
-                }, contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text,
-                color = MaterialTheme.chip8Colors.keyCapForeground,
-                fontSize = keyCapTextSize.value
-            )
-        }
+                }
+            }, contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text,
+            color = MaterialTheme.chip8Colors.keyCapForeground,
+            fontSize = keyCapTextSize.value
+        )
     }
 }
