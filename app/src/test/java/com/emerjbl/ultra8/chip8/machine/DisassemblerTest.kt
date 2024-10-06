@@ -9,7 +9,6 @@ import strikt.assertions.isEqualTo
 @RunWith(JUnit4::class)
 class DisassemblerTest {
 
-    @OptIn(ExperimentalUnsignedTypes::class)
     @Test
     fun disassemble_instructionsOnly() {
         val bytes = ubyteArrayOf(
@@ -33,7 +32,6 @@ class DisassemblerTest {
         }
     }
 
-    @OptIn(ExperimentalUnsignedTypes::class)
     @Test
     fun disassemble_instructionsWithDataAligned() {
         val bytes = ubyteArrayOf(
@@ -75,7 +73,6 @@ class DisassemblerTest {
         }
     }
 
-    @OptIn(ExperimentalUnsignedTypes::class)
     @Test
     fun disassemble_instructionsAndDataAlignedToString() {
         val bytes = ubyteArrayOf(

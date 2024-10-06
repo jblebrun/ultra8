@@ -32,9 +32,21 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+
     }
+
     kotlinOptions {
         jvmTarget = "1.8"
+        compileOptions {
+            options.optIn = listOf(
+                "androidx.compose.material3.ExperimentalMaterial3Api",
+                "androidx.compose.ui.ExperimentalComposeUiApi",
+                "kotlin.ExperimentalStdlibApi",
+                "kotlin.ExperimentalUnsignedTypes",
+                "kotlinx.coroutines.FlowPreview",
+            )
+        }
+
     }
     buildFeatures {
         compose = true

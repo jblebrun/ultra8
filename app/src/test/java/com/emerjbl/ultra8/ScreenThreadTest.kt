@@ -7,7 +7,6 @@ import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.timeout
@@ -47,7 +46,6 @@ class ScreenThreadTest {
         ?.getResourceAsStream("breakout")
         ?.readBytes()!!
 
-    @OptIn(FlowPreview::class)
     @Test
     fun changeProgram_keepsRunningOnResume() {
         for (attempt in 0..10000) {

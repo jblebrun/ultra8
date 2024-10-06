@@ -119,21 +119,16 @@ value class Chip8Instruction(val word: Int) {
         }
 
     companion object {
-
-        @OptIn(ExperimentalStdlibApi::class)
         private val Int.b: String
             get() = "0x${toByte().toHexString()}"
 
-        @OptIn(ExperimentalStdlibApi::class)
         private val Int.sx: String
             get() = "0x${toShort().toHexString()}"
 
-        @OptIn(ExperimentalStdlibApi::class)
         private val V_FORMAT = HexFormat {
             number.removeLeadingZeros = true
         }
 
-        @OptIn(ExperimentalStdlibApi::class)
         val Int.v: String
             get() = "V${toByte().toHexString(V_FORMAT)}"
     }
