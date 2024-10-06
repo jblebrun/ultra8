@@ -52,7 +52,8 @@ class AudioTrackSynthSound(
     private var track = newTrack()
 
     // AudioTrack is managed on a different thread, because calls to play sometimes take 10s of ms.
-    private val executor = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val executor =
+        Executors.newSingleThreadExecutor({ Thread(it, "AudioThread") }).asCoroutineDispatcher()
 
     private val soundActions =
         MutableSharedFlow<Action>(replay = 1, extraBufferCapacity = 10).apply {

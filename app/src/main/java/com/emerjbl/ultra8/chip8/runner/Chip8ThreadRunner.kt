@@ -33,7 +33,7 @@ class Chip8ThreadRunner {
     fun run(machine: Chip8) {
         runThread?.interrupt()
         runThread?.join()
-        runThread = thread {
+        runThread = thread(name = "Chip8Runner") {
             _running.value = true
             var halt: Halt? = null
             try {
