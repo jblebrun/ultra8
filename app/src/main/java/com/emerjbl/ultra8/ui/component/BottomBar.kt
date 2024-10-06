@@ -1,10 +1,6 @@
 package com.emerjbl.ultra8.ui.component
 
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
@@ -12,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerInputScope
@@ -40,37 +35,20 @@ fun turboHold(
     }
 }
 
-fun speedDrag(
-    cyclesPerTick: MutableStateFlow<Int>
-): suspend PointerInputScope.() -> Unit {
-    return {
-        detectHorizontalDragGestures { _, dragAmount ->
-            cyclesPerTick.value =
-                (cyclesPerTick.value + 2 * dragAmount.toInt())
-                    .coerceIn(10..2000)
-        }
-    }
-}
-
 @Composable
 fun TurboButton(
     cps: State<Int>, cyclesPerFrame: MutableStateFlow<Int>,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        contentAlignment = Alignment.Center,
+    Icon(
         modifier = Modifier
-            .aspectRatio(1f)
             .pointerInput(Unit, turboHold(cps, cyclesPerFrame))
                 then (modifier),
-    ) {
-        Icon(
-            imageVector = ImageVector.vectorResource(
-                id = R.drawable.baseline_fast_forward_24
-            ),
-            contentDescription = "Turbo"
-        )
-    }
+        imageVector = ImageVector.vectorResource(
+            id = R.drawable.baseline_fast_forward_24
+        ),
+        contentDescription = "Turbo"
+    )
 }
 
 
@@ -86,29 +64,25 @@ private val speeds = arrayOf(
 fun BottomBar(
     cyclesPerTick: MutableStateFlow<Int>
 ) {
-    Box(modifier = Modifier.pointerInput(Unit, speedDrag((cyclesPerTick)))) {
-        BottomAppBar(actions = { BottomBarActions(cyclesPerTick) })
-    }
-}
-
-@Composable
-fun RowScope.BottomBarActions(
-    cyclesPerTick: MutableStateFlow<Int>
-) {
-    val cpf = cyclesPerTick.collectAsState(0)
-    Text(
-        "${cpf.value}\ncyc/frame",
-        textAlign = TextAlign.Center,
-        lineHeight = 12.sp,
-        fontSize = 12.sp
-    )
-    Slider(
-        value = speeds.withIndex().minBy { abs(it.value - cpf.value) }.index.toFloat(),
-        onValueChange = { cyclesPerTick.value = speeds[it.toInt()] },
-        steps = speeds.size,
-        valueRange = 0f..(speeds.size -1).toFloat()
-    )
-    TurboButton(
-        cpf, cyclesPerTick, modifier = Modifier.weight(1f)
-    )
+    BottomAppBar(actions = {
+        val cpf = cyclesPerTick.collectAsState(0)
+        Text(
+            "${cpf.value}\ncyc/frame",
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Center,
+            lineHeight = 12.sp,
+            fontSize = 12.sp
+        )
+        Slider(
+            modifier = Modifier.weight(4f),
+            value = speeds.withIndex().minBy { abs(it.value - cpf.value) }.index.toFloat(),
+            onValueChange = { cyclesPerTick.value = speeds[it.toInt()] },
+            steps = speeds.size,
+            valueRange = 0f..(speeds.size - 1).toFloat()
+        )
+        TurboButton(
+            cpf, cyclesPerTick,
+            modifier = Modifier.weight(1f)
+        )
+    })
 }
