@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.emerjbl.ultra8.R
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.math.abs
 
 fun turboHold(
     cps: State<Int>,
@@ -30,7 +31,7 @@ fun turboHold(
         detectTapGestures(
             onPress = {
                 val oldCps = cps.value
-                cyclesPerTick.value = 10
+                cyclesPerTick.value = oldCps * 20
                 tryAwaitRelease()
                 cyclesPerTick.value = oldCps
             }
@@ -72,6 +73,14 @@ fun TurboButton(
 }
 
 
+private val speeds = arrayOf(
+    1, 2, 3, 4, 5, 6, 7, 8, 9,
+    10, 20, 30, 40, 50, 60, 70, 80, 90,
+    100, 200, 300, 400, 500, 600, 700, 800, 900,
+    1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
+)
+
+
 @Composable
 fun BottomBar(
     cyclesPerTick: MutableStateFlow<Int>
@@ -88,10 +97,10 @@ fun BottomBar(
             )
             Slider(
                 modifier = Modifier.weight(3f),
-                value = cpf.value.toFloat(),
-                onValueChange = { cyclesPerTick.value = it.toInt() },
-                steps = 2000,
-                valueRange = 1f..2000f
+                value = speeds.withIndex().minBy { abs(it.value - cpf.value) }.index.toFloat(),
+                onValueChange = { cyclesPerTick.value = speeds[it.toInt()] },
+                steps = speeds.size,
+                valueRange = 0f..(speeds.size - 1).toFloat()
             )
             TurboButton(
                 cpf, cyclesPerTick, modifier = Modifier.weight(1f)
