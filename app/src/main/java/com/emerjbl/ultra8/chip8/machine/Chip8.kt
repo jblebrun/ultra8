@@ -355,7 +355,7 @@ class Chip8(
 
                     0x3A -> {
                         sound.setPatternRate(
-                            (4000 * 2.0).pow((((v[x] - 64) / 48.0))).toInt()
+                            (4000.0 * 2.0.pow(((v[x] - 64) / 48.0))).toInt()
                         )
                     }
 
