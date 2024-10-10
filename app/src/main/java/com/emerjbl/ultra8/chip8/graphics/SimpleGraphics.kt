@@ -4,8 +4,8 @@ import com.emerjbl.ultra8.util.LockGuarded
 import java.util.concurrent.locks.ReentrantLock
 
 
-class SimpleGraphics {
-    class Frame private constructor(
+class SimpleGraphics constructor(hires: Boolean, frame: SimpleGraphics.Frame) {
+    class Frame constructor(
         val width: Int,
         val height: Int,
         val data: IntArray
@@ -15,16 +15,18 @@ class SimpleGraphics {
         fun clone(): Frame = Frame(width, height, data.clone())
     }
 
-    private var frame: LockGuarded<Frame> = LockGuarded(ReentrantLock(), lowRes())
+    constructor() : this(false, lowRes())
 
-    var hires: Boolean = false
+    fun clone() = SimpleGraphics(hires, frame.withLock { it.clone() })
+
+    private var frame: LockGuarded<Frame> = LockGuarded(ReentrantLock(), frame)
+
+    var hires: Boolean = hires
         set(value) {
             field = value
             frame.update(if (value) hiRes() else lowRes())
         }
 
-    private fun lowRes() = Frame(64, 32)
-    private fun hiRes() = Frame(128, 64)
 
     fun clear() {
         frame.withLock { it.data.fill(0) }
@@ -126,5 +128,10 @@ class SimpleGraphics {
         } else {
             frame.clone()
         }
+    }
+
+    companion object {
+        private fun lowRes() = Frame(64, 32)
+        private fun hiRes() = Frame(128, 64)
     }
 }

@@ -19,11 +19,15 @@ import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
+import com.emerjbl.ultra8.data.MaybeState
+import com.emerjbl.ultra8.data.chip8StateStore
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -42,7 +46,12 @@ class Chip8ViewModel(
     private val keys = Chip8Keys()
     private fun newMachine(program: ByteArray): Chip8 {
         val sound = AudioTrackSynthSound(viewModelScope, 48000)
-        return Chip8(keys, sound, StandardChip8Font, TimeSource.Monotonic, program)
+        return Chip8(keys, sound, StandardChip8Font, TimeSource.Monotonic, program = program)
+    }
+
+    private fun newMachine(state: Chip8.State): Chip8 {
+        val sound = AudioTrackSynthSound(viewModelScope, 48000)
+        return Chip8(keys, sound, StandardChip8Font, TimeSource.Monotonic, state)
     }
 
     private var machine = newMachine(byteArrayOf())
@@ -69,12 +78,27 @@ class Chip8ViewModel(
 
     init {
         Log.i("Chip8", "Saved State Keys: ${savedStateHandle.keys()}")
-        val program: ByteArray? = savedStateHandle["program"]
-        if (program != null) {
-            machine = newMachine(program)
-            resume()
-        } else {
-            load(programs.firstOrNull { it.id == R.raw.breakout }!!)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val savedState = application.chip8StateStore.data.firstOrNull()
+            when (savedState) {
+                is MaybeState.Yes -> {
+                    Log.i("Chip8", "Restoring saved state: ${savedState.state.pc}")
+                    machine = newMachine(savedState.state)
+                    resume()
+                    return@launch
+                }
+
+                else -> {
+                    val program: ByteArray? = savedStateHandle["program"]
+                    if (program != null) {
+                        machine = newMachine(program)
+                        resume()
+                    } else {
+                        load(programs.firstOrNull { it.id == R.raw.breakout }!!)
+                    }
+                }
+            }
         }
     }
 
@@ -88,6 +112,13 @@ class Chip8ViewModel(
 
     fun pause() {
         runner.pause()
+        val state = machine.stateView.clone()
+        viewModelScope.launch(Dispatchers.IO) {
+            application.chip8StateStore.updateData {
+                MaybeState.Yes(state)
+            }
+            Log.i("Chip8", "State Saved: ${state.pc}")
+        }
     }
 
     fun resume() {
