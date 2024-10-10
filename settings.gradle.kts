@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Ultra8"
 include(":app")
- 
+include(":testutil")

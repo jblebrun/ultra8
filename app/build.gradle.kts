@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.emerjbl.ultra8"
-        minSdk = 29
+        minSdk = 26
         targetSdk = 35
         versionCode = 4
         versionName = "0.3"
@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.datastore.android)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
@@ -74,11 +75,18 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.graphics.shapes.android)
     implementation(libs.androidx.lifecycle.runtime.compose.android)
+    implementation(libs.androidx.datastore.core.android)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.strikt.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(project(":testutil"))
+
+
+    androidTestImplementation(project(":testutil"))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.core.ktx)
+    androidTestImplementation(libs.strikt.core)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)

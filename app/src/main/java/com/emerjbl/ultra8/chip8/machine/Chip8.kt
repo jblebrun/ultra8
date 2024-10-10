@@ -4,6 +4,7 @@ import android.util.Log
 import com.emerjbl.ultra8.chip8.graphics.Chip8Font
 import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
+import com.emerjbl.ultra8.chip8.machine.Chip8.State
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
 import java.nio.ByteBuffer
@@ -11,6 +12,7 @@ import java.nio.IntBuffer
 import java.util.Random
 import kotlin.math.pow
 import kotlin.time.TimeSource
+
 
 private const val EXEC_START: Int = 0x200
 private const val FONT_START: Int = 0x000
@@ -58,18 +60,33 @@ sealed class Halt(val pc: Int) {
     }
 }
 
+private fun stateFromProgram(program: ByteArray, font: Chip8Font) = State().apply {
+    font.lo.copyInto(mem, FONT_START)
+    font.hi.copyInto(mem, HIRES_FONT_START)
+    program.copyInto(mem, EXEC_START)
+}
+
 /** All state of a running Chip8 Machine. */
 class Chip8(
     private val keys: Chip8Keys,
     private val sound: Chip8Sound,
     private val font: Chip8Font,
     timeSource: TimeSource,
-    program: ByteArray
+    private val state: State,
 ) {
+
+    constructor(
+        keys: Chip8Keys,
+        sound: Chip8Sound,
+        font: Chip8Font,
+        timeSource: TimeSource,
+        program: ByteArray
+    ) : this(keys, sound, font, timeSource, stateFromProgram(program, font))
+
     /** Collect all Chip8 state in one place. Convenient for eventual save/restore. */
     class State(
         /** Registers V0-VF. */
-        internal val v: IntArray = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        val v: IntArray = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         /**
          * Special HP flag registers.
          *
@@ -80,24 +97,27 @@ class Chip8(
          *
          * These *should* be persisted, but we don't currently do that.
          **/
-        internal val hp: IntArray = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        val hp: IntArray = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         /** Call stack. */
-        internal val stack: IntArray = IntArray(64),
+        val stack: IntArray = IntArray(64),
         /**
          * Machine memory.
          *
          * The original machine  implementation is 4k, but Chip-XO can address up to 64k.
          * For now, we just support the highest.
          **/
-        internal val mem: ByteArray = ByteArray(65536),
+        val mem: ByteArray = ByteArray(65536),
         /** Index register I. */
-        internal var i: Int = 0,
+        var i: Int = 0,
         /** Stack pointer. */
-        internal var sp: Int = 0,
+        var sp: Int = 0,
         /** Program counter. */
-        internal var pc: Int = 0x200,
+        var pc: Int = 0x200,
         /** Chip-XO target plane for drawing (0-3). */
-        internal var targetPlane: Int = 0x1
+        var targetPlane: Int = 0x1,
+
+        /** Graphics buffer is an important part of state, too. */
+        val gfx: SimpleGraphics = SimpleGraphics()
     ) {
         /**
          * A read-only view of the Chip8 state.
@@ -105,51 +125,34 @@ class Chip8(
          * A given instance wraps an actual live machine state, so it will change as the machine does;
          * it's not a static copy.
          */
-        interface View {
-            val v: IntBuffer
-            val hp: IntBuffer
-            val stack: IntBuffer
-            val mem: ByteBuffer
-            val i: Int
-            val sp: Int
-            val pc: Int
-            val targetPlane: Int
+        class View(private val state: State) {
+            val v = IntBuffer.wrap(state.v).asReadOnlyBuffer()
+            val hp = IntBuffer.wrap(state.hp).asReadOnlyBuffer()
+            val stack = IntBuffer.wrap(state.stack).asReadOnlyBuffer()
+            val mem = ByteBuffer.wrap(state.mem).asReadOnlyBuffer()
+            val i: Int get() = state.i
+            val sp: Int get() = state.sp
+            val pc: Int get() = state.pc
+            val targetPlane: Int get() = state.targetPlane
+
+            /** Create a deep copy of the entire state. */
+            fun clone() = State(
+                state.v.clone(),
+                state.hp.clone(),
+                state.stack.clone(),
+                state.mem.clone(),
+                i,
+                sp,
+                pc,
+                targetPlane,
+                state.gfx.clone(),
+            )
         }
-
-        val stateView = object : View {
-            override val v: IntBuffer = IntBuffer.wrap(this@State.v).asReadOnlyBuffer()
-            override val hp: IntBuffer = IntBuffer.wrap(this@State.hp).asReadOnlyBuffer()
-            override val stack: IntBuffer = IntBuffer.wrap(this@State.stack).asReadOnlyBuffer()
-            override val mem: ByteBuffer = ByteBuffer.wrap(this@State.mem).asReadOnlyBuffer()
-            override val i: Int
-                get() = this@State.i
-            override val sp: Int
-                get() = this@State.sp
-            override val pc: Int
-                get() = this@State.pc
-            override val targetPlane: Int
-                get() = this@State.targetPlane
-        }
-
-        /** Create a deep copy of the entire state. */
-        fun clone() = State(
-            v.clone(), hp.clone(), stack.clone(), mem.clone(),
-            i, sp, pc, targetPlane,
-        )
-
     }
 
-    private val gfx: SimpleGraphics = SimpleGraphics()
+    val stateView = State.View(state)
 
-    fun nextFrame(frame: SimpleGraphics.Frame?): SimpleGraphics.Frame = gfx.nextFrame(frame)
-
-
-    private val state = State().apply {
-        font.lo.copyInto(mem, FONT_START)
-        font.hi.copyInto(mem, HIRES_FONT_START)
-        program.copyInto(mem, EXEC_START)
-    }
-    val stateView = state.stateView
+    fun nextFrame(frame: SimpleGraphics.Frame?): SimpleGraphics.Frame = state.gfx.nextFrame(frame)
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
@@ -166,7 +169,7 @@ class Chip8(
                     0xE0 -> gfx.clear()
 
                     0xEE -> {
-                        if (sp < 0) return Halt.StackUnderflow(pc - 2)
+                        if (sp < 1) return Halt.StackUnderflow(pc - 2)
                         pc = stack[--sp]
                     }
 
