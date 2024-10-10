@@ -4,7 +4,7 @@ import com.emerjbl.ultra8.util.LockGuarded
 import java.util.concurrent.locks.ReentrantLock
 
 
-class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
+class SimpleGraphics {
     class Frame private constructor(
         val width: Int,
         val height: Int,
@@ -17,7 +17,7 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
 
     private var frame: LockGuarded<Frame> = LockGuarded(ReentrantLock(), lowRes())
 
-    override var hires: Boolean = false
+    var hires: Boolean = false
         set(value) {
             field = value
             frame.update(if (value) hiRes() else lowRes())
@@ -26,11 +26,11 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
     private fun lowRes() = Frame(64, 32)
     private fun hiRes() = Frame(128, 64)
 
-    override fun clear() {
+    fun clear() {
         frame.withLock { it.data.fill(0) }
     }
 
-    override fun scrollRight() = frame.withLock { frame ->
+    fun scrollRight() = frame.withLock { frame ->
         for (row in 0 until frame.width) {
             val rowStart = row * frame.width
             val startIndex = rowStart
@@ -41,7 +41,7 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         }
     }
 
-    override fun scrollLeft() = frame.withLock { frame ->
+    fun scrollLeft() = frame.withLock { frame ->
         for (row in 0 until frame.height) {
             val rowStart = row * frame.width
             val startIndex = rowStart + 4
@@ -52,7 +52,7 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         }
     }
 
-    override fun scrollDown(n: Int) = frame.withLock { frame ->
+    fun scrollDown(n: Int) = frame.withLock { frame ->
         val destinationOffset = n * frame.width
         val startIndex = 0
         val endIndex = (frame.height - n) * frame.width
@@ -60,7 +60,7 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         frame.data.fill(0, 0, n * frame.width)
     }
 
-    override fun scrollUp(n: Int) = frame.withLock { frame ->
+    fun scrollUp(n: Int) = frame.withLock { frame ->
         val destinationOffset = 0
         val startIndex = n * frame.width
         val endIndex = frame.width * frame.height
@@ -68,7 +68,7 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         frame.data.fill(0, 0, n * frame.width)
     }
 
-    override fun putSprite(
+    fun putSprite(
         xBase: Int,
         yBase: Int,
         data: ByteArray,
@@ -119,7 +119,7 @@ class SimpleGraphics : Chip8Graphics, Chip8Render<SimpleGraphics.Frame> {
         return unset
     }
 
-    override fun nextFrame(lastFrame: Frame?): Frame = frame.withLock { frame ->
+    fun nextFrame(lastFrame: Frame?): Frame = frame.withLock { frame ->
         if (lastFrame?.height == frame.height && lastFrame.width == frame.width) {
             frame.data.copyInto(lastFrame.data)
             lastFrame

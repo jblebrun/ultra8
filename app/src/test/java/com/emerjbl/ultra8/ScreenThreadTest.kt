@@ -1,6 +1,5 @@
 package com.emerjbl.ultra8
 
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.machine.Chip8
@@ -25,8 +24,6 @@ class FakeSound : Chip8Sound {
 
 @RunWith(RobolectricTestRunner::class)
 class ScreenThreadTest {
-    private val gfx = SimpleGraphics()
-
     private val runner = Chip8ThreadRunner().apply {
         cyclesPerTick = 2000
     }
@@ -34,7 +31,6 @@ class ScreenThreadTest {
     val newMachine = { program: ByteArray ->
         Chip8(
             Chip8Keys(),
-            gfx,
             FakeSound(),
             StandardChip8Font,
             TimeSource.Monotonic,
