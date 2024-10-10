@@ -2,7 +2,7 @@ package com.emerjbl.ultra8.chip8.machine
 
 import android.util.Log
 import com.emerjbl.ultra8.chip8.graphics.Chip8Font
-import com.emerjbl.ultra8.chip8.graphics.Chip8Graphics
+import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
@@ -61,7 +61,6 @@ sealed class Halt(val pc: Int) {
 /** All state of a running Chip8 Machine. */
 class Chip8(
     private val keys: Chip8Keys,
-    private val gfx: Chip8Graphics,
     private val sound: Chip8Sound,
     private val font: Chip8Font,
     timeSource: TimeSource,
@@ -139,6 +138,11 @@ class Chip8(
         )
 
     }
+
+    private val gfx: SimpleGraphics = SimpleGraphics()
+
+    fun nextFrame(frame: SimpleGraphics.Frame?): SimpleGraphics.Frame = gfx.nextFrame(frame)
+
 
     private val state = State().apply {
         font.lo.copyInto(mem, FONT_START)

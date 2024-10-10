@@ -40,11 +40,9 @@ class Chip8ViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val keys = Chip8Keys()
-    private val gfx = SimpleGraphics()
     private fun newMachine(program: ByteArray): Chip8 {
         val sound = AudioTrackSynthSound(viewModelScope, 48000)
-        gfx.hires = false
-        return Chip8(keys, gfx, sound, StandardChip8Font, TimeSource.Monotonic, program)
+        return Chip8(keys, sound, StandardChip8Font, TimeSource.Monotonic, program)
     }
 
     private var machine = newMachine(byteArrayOf())
@@ -157,7 +155,7 @@ class Chip8ViewModel(
     }
 
     fun nextFrame(lastFrame: SimpleGraphics.Frame?): SimpleGraphics.Frame =
-        gfx.nextFrame(lastFrame)
+        machine.nextFrame(lastFrame)
 
 
     companion object {
