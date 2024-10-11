@@ -6,10 +6,12 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 
+/** A helper for handling hardware key events. */
 fun onKeyEvent(event: KeyEvent, keyDown: (Int) -> Unit, keyUp: (Int) -> Unit) {
     if (event.nativeKeyEvent.repeatCount > 0) {
         return
     }
+
     val idx = when (event.key) {
         Key.One -> 1
         Key.Two -> 2
@@ -29,9 +31,9 @@ fun onKeyEvent(event: KeyEvent, keyDown: (Int) -> Unit, keyUp: (Int) -> Unit) {
         Key.V -> 15
         else -> return
     }
+
     when (event.type) {
         KeyEventType.KeyDown -> keyDown(idx)
         KeyEventType.KeyUp -> keyUp(idx)
     }
-    return
 }

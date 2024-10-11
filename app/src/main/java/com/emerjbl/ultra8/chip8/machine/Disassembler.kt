@@ -23,8 +23,8 @@ class Disassembly(
 
             is Segment.Data -> {
                 segment.bytes.chunked(8)
-                    .joinToString(prefix = "DATA:\n", separator = "\n") {
-                        "  ${it.joinToString(" ") { it.toHexString(byteFormat) }}"
+                    .joinToString(prefix = "DATA:\n", separator = "\n") { chunk ->
+                        "  ${chunk.joinToString(" ") { it.toHexString(byteFormat) }}"
                     }
 
             }

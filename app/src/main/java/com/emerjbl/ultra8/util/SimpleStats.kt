@@ -17,8 +17,8 @@ class SimpleStats(
         private set
 
     fun add(value: Long) {
-        count++;
-        total += value;
+        count++
+        total += value
         min = minOf(min, value)
         max = maxOf(max, value)
         average = (total + value) / count

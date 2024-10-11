@@ -1,6 +1,6 @@
 package com.emerjbl.ultra8.data
 
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.testutil.contentEquals
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +13,7 @@ import java.io.PipedOutputStream
 class Chip8StateStoreTest {
     @Test
     fun test_serializedState_deserializesToSameState() = runTest {
-        val gfx = SimpleGraphics()
+        val gfx = FrameManager()
         gfx.putSprite(10, 10, byteArrayOf(2, 3, 4, 56, 7, 7), 0, 5, 2)
         val state = Chip8.State(
             v = (100..115).toList().toIntArray(),

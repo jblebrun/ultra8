@@ -1,13 +1,16 @@
 package com.emerjbl.ultra8.chip8.graphics
 
+/** Convenience for byte literals below. */
 private val Int.b: Byte
     get() = toByte()
 
+/** Something that provides the two Chip8 fonts. */
 interface Chip8Font {
     val lo: ByteArray
     val hi: ByteArray
 }
 
+/** The standard font in most Chip-8 engines. */
 object StandardChip8Font : Chip8Font {
     override val lo = font
     override val hi = fonthi
