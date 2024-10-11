@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
@@ -32,7 +32,7 @@ private val frameStats = SimpleStats(unit = "us", actionInterval = 300) {
 fun frameGrabber(
     running: Boolean,
     frameConfig: FrameConfig,
-    nextFrame: (SimpleGraphics.Frame?) -> SimpleGraphics.Frame
+    nextFrame: (FrameManager.Frame?) -> FrameManager.Frame
 ): State<FrameHolder> {
     val frameHolder =
         remember { mutableStateOf(null.next(nextFrame(null), 0, frameConfig)) }
@@ -64,7 +64,7 @@ fun Graphics(
     running: Boolean,
     frameConfig: FrameConfig,
     modifier: Modifier = Modifier,
-    nextFrame: (SimpleGraphics.Frame?) -> SimpleGraphics.Frame
+    nextFrame: (FrameManager.Frame?) -> FrameManager.Frame
 ) {
     val frameHolder = frameGrabber(running, frameConfig, nextFrame)
 

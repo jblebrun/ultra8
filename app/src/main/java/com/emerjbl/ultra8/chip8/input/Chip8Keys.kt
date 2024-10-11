@@ -9,6 +9,7 @@ class Chip8Keys {
     private val keys = LockGuarded(lock, BooleanArray(16))
     private val condition = lock.newCondition()
 
+    /** Put the key at index `idx` in the down state. */
     fun keyDown(idx: Int) {
         keys.withLock {
             it[idx] = true
@@ -16,6 +17,7 @@ class Chip8Keys {
         }
     }
 
+    /** Put the key at index `idx` in the up state. */
     fun keyUp(idx: Int) {
         keys.withLock {
             it[idx] = false
@@ -23,8 +25,10 @@ class Chip8Keys {
         }
     }
 
+    /** Return wether or not the key [idx] is pressed */
     fun pressed(idx: Int) = keys.withLock { it[idx] }
 
+    /** Wait until the next key is pressed, and return its index. */
     fun awaitKey(): Int = keys.withLock {
         var pressed = it.firstPressedKey()
         while (pressed < 0) {

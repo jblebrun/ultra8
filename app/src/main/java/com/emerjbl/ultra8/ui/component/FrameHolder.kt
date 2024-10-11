@@ -7,7 +7,7 @@ import androidx.annotation.ColorInt
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.alpha
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -38,18 +38,20 @@ fun Int.withAlpha(alpha: Int) = (this and 0x00FFFFFF) or (alpha shl 24)
 
 /** Holds data related to a frame to render, and its fade out times. */
 class FrameHolder(
-    val frame: SimpleGraphics.Frame?,
+    val frame: FrameManager.Frame?,
     val pixelData: IntArray,
     val fadeTimes: IntArray,
     val bitmap: Bitmap,
     val frameTime: Long,
 ) {
     private var fadingPixels = 0
+
+    /** Let the renderer know that we still have pixels to fade out. */
     val stillFading: Boolean
         get() = fadingPixels > 0
 
     /** Update this frame's data for the provided `frameDiff`. */
-    fun update(frame: SimpleGraphics.Frame, frameDiff: Int, frameConfig: FrameConfig) {
+    fun update(frame: FrameManager.Frame, frameDiff: Int, frameConfig: FrameConfig) {
         var currentlyFading = 0
         for (i in frame.data.indices) {
             // If the pixel is being unset, start its fade timer
@@ -71,19 +73,14 @@ class FrameHolder(
             }
 
             // Set Pixel
-            if (frame.data[i] == 1) {
-                pixelData[i] = frameConfig.colorInt
-                fadeTimes[i] = 0
+            when (frame.data[i]) {
+                1 -> pixelData[i] = frameConfig.colorInt
+                2 -> pixelData[i] = frameConfig.color2Int
+                3 -> pixelData[i] = frameConfig.color3Int
             }
-            if (frame.data[i] == 2) {
-                pixelData[i] = frameConfig.color2Int
-                fadeTimes[i] = 0
-            }
-            if (frame.data[i] == 3) {
-                pixelData[i] = frameConfig.color3Int
-                fadeTimes[i] = 0
-            }
+            if (frame.data[i] != 0) fadeTimes[i] = 0
         }
+
         fadingPixels = currentlyFading
 
         bitmap.setPixels(
@@ -98,7 +95,7 @@ class FrameHolder(
  * If any sizes mismatch the frame size, they are recreated.
  */
 fun FrameHolder?.next(
-    frame: SimpleGraphics.Frame,
+    frame: FrameManager.Frame,
     frameTime: Long,
     frameConfig: FrameConfig
 ): FrameHolder {

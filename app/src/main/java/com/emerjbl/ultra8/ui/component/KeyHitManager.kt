@@ -25,8 +25,7 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
         val bounds: T
     ) {
         /** Bitmask of pointers over this button. */
-        var pointers: Int = 0
-            private set
+        private var pointers: Int = 0
 
         fun pointerDown(pointerIdx: Int): Boolean {
             val alreadyDown = down()
@@ -68,8 +67,9 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
     /** A touch event handler.
      *
      *  Appropriate for use as the `touchEvent` parameter for
-     *  [androidx.ui.compose.Modifier.pointerInteropFilter].
+     *  [pointerInteropFilter].
      */
+    @Suppress("SameReturnValue")
     internal fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {

@@ -13,7 +13,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.R
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.machine.Chip8
@@ -51,7 +51,7 @@ class Chip8ViewModel(
 
     private fun newMachine(state: Chip8.State): Chip8 {
         val sound = AudioTrackSynthSound(viewModelScope, 48000)
-        return Chip8(keys, sound, StandardChip8Font, TimeSource.Monotonic, state)
+        return Chip8(keys, sound, TimeSource.Monotonic, state)
     }
 
     private var machine = newMachine(byteArrayOf())
@@ -80,8 +80,7 @@ class Chip8ViewModel(
         Log.i("Chip8", "Saved State Keys: ${savedStateHandle.keys()}")
 
         viewModelScope.launch(Dispatchers.IO) {
-            val savedState = application.chip8StateStore.data.firstOrNull()
-            when (savedState) {
+            when (val savedState = application.chip8StateStore.data.firstOrNull()) {
                 is MaybeState.Yes -> {
                     Log.i("Chip8", "Restoring saved state: ${savedState.state.pc}")
                     machine = newMachine(savedState.state)
@@ -185,7 +184,7 @@ class Chip8ViewModel(
         }
     }
 
-    fun nextFrame(lastFrame: SimpleGraphics.Frame?): SimpleGraphics.Frame =
+    fun nextFrame(lastFrame: FrameManager.Frame?): FrameManager.Frame =
         machine.nextFrame(lastFrame)
 
 

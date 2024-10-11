@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,7 +17,7 @@ import java.io.OutputStream
 /** Using a Nullable type causes the DataStore to crash. */
 sealed interface MaybeState {
     class Yes(val state: Chip8.State) : MaybeState
-    object No : MaybeState
+    data object No : MaybeState
 }
 
 /** Serialize Chip8State with a simple DataStream approach. */
@@ -46,7 +46,7 @@ object Chip8StateSerializer : Serializer<MaybeState> {
                         val width = dis.readInt()
                         val height = dis.readInt()
                         val data = dis.readIntArray(width * height)
-                        SimpleGraphics(hires, SimpleGraphics.Frame(width, height, data))
+                        FrameManager(hires, FrameManager.Frame(width, height, data))
                     }
                 ).let { MaybeState.Yes(it) }
             }

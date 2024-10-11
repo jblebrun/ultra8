@@ -8,7 +8,7 @@ private val tokenRegex = Regex("\\s*(#.*|\\S+)")
 
 /** Generate a sequence of tokens for the provided sequence of program lines. */
 fun tokenSequence(lines: Sequence<String>): Sequence<Token> =
-    lines.flatMapIndexed() { lineIndex, line ->
+    lines.flatMapIndexed { lineIndex, line ->
         // Tokens are whitespace separated
         tokenRegex.findAll(line).mapNotNull { match ->
             match.groups[1]?.let {

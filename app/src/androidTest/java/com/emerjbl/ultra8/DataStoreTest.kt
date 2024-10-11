@@ -5,7 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.dataStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.data.Chip8StateSerializer
 import com.emerjbl.ultra8.data.MaybeState
@@ -33,7 +33,7 @@ class DataStoreTest {
     @Test
     fun test_dataStoreReload() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        val gfx = SimpleGraphics()
+        val gfx = FrameManager()
         gfx.putSprite(10, 10, byteArrayOf(2, 3, 4, 56, 7, 7), 0, 5, 2)
 
         val state = Chip8.State(

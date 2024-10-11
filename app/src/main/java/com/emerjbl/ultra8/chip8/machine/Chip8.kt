@@ -2,9 +2,8 @@ package com.emerjbl.ultra8.chip8.machine
 
 import android.util.Log
 import com.emerjbl.ultra8.chip8.graphics.Chip8Font
-import com.emerjbl.ultra8.chip8.graphics.SimpleGraphics
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
-import com.emerjbl.ultra8.chip8.machine.Chip8.State
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
 import java.nio.ByteBuffer
@@ -13,75 +12,20 @@ import java.util.Random
 import kotlin.math.pow
 import kotlin.time.TimeSource
 
-
-private const val EXEC_START: Int = 0x200
-private const val FONT_START: Int = 0x000
-private const val HIRES_FONT_START: Int = 0x100
-
-private val Int.sx: String
-    get() = "0x${toShort().toHexString()}"
-
-private val Int.b: Byte
-    get() = toByte()
-
-private val Byte.i: Int
-    get() = toUByte().toInt()
-
-/** The various halt conditions that can happen during execution. */
-sealed class Halt(val pc: Int) {
-    /** The EXIT command was encountered. */
-    class Exit(pc: Int) : Halt(pc) {
-        override fun toString() = "EXIT at ${pc.sx}"
-    }
-
-    /** A spin-jump was encountered (JMP to self). */
-    class Spin(pc: Int) : Halt(pc) {
-        override fun toString() = "SPIN at 0x${pc.sx}"
-    }
-
-    /** Unknown or unimplemented opcode. */
-    class IllegalOpcode(pc: Int, val opcode: Int) : Halt(pc) {
-        override fun toString() =
-            "ILLOP 0x${opcode.sx} at 0x${pc.sx}"
-    }
-
-    /** A return underflowed the stack. */
-    class StackUnderflow(pc: Int) : Halt(pc) {
-        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
-    }
-
-    /** A call overflowed the stack. */
-    class StackOverflow(pc: Int) : Halt(pc) {
-        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
-    }
-
-    class InvalidBitPlane(pc: Int, val x: Int) : Halt(pc) {
-        override fun toString() = "BADPLANE ($x) at 0x${pc.sx}"
-    }
-}
-
-private fun stateFromProgram(program: ByteArray, font: Chip8Font) = State().apply {
-    font.lo.copyInto(mem, FONT_START)
-    font.hi.copyInto(mem, HIRES_FONT_START)
-    program.copyInto(mem, EXEC_START)
-}
-
 /** All state of a running Chip8 Machine. */
 class Chip8(
     private val keys: Chip8Keys,
     private val sound: Chip8Sound,
-    private val font: Chip8Font,
     timeSource: TimeSource,
     private val state: State,
 ) {
-
     constructor(
         keys: Chip8Keys,
         sound: Chip8Sound,
         font: Chip8Font,
         timeSource: TimeSource,
         program: ByteArray
-    ) : this(keys, sound, font, timeSource, stateFromProgram(program, font))
+    ) : this(keys, sound, timeSource, stateFromProgram(program, font))
 
     /** Collect all Chip8 state in one place. Convenient for eventual save/restore. */
     class State(
@@ -117,7 +61,7 @@ class Chip8(
         var targetPlane: Int = 0x1,
 
         /** Graphics buffer is an important part of state, too. */
-        val gfx: SimpleGraphics = SimpleGraphics()
+        val gfx: FrameManager = FrameManager()
     ) {
         /**
          * A read-only view of the Chip8 state.
@@ -125,11 +69,12 @@ class Chip8(
          * A given instance wraps an actual live machine state, so it will change as the machine does;
          * it's not a static copy.
          */
+        @Suppress("MemberVisibilityCanBePrivate")
         class View(private val state: State) {
-            val v = IntBuffer.wrap(state.v).asReadOnlyBuffer()
-            val hp = IntBuffer.wrap(state.hp).asReadOnlyBuffer()
-            val stack = IntBuffer.wrap(state.stack).asReadOnlyBuffer()
-            val mem = ByteBuffer.wrap(state.mem).asReadOnlyBuffer()
+            val v: IntBuffer = IntBuffer.wrap(state.v).asReadOnlyBuffer()
+            val hp: IntBuffer = IntBuffer.wrap(state.hp).asReadOnlyBuffer()
+            val stack: IntBuffer = IntBuffer.wrap(state.stack).asReadOnlyBuffer()
+            val mem: ByteBuffer = ByteBuffer.wrap(state.mem).asReadOnlyBuffer()
             val i: Int get() = state.i
             val sp: Int get() = state.sp
             val pc: Int get() = state.pc
@@ -152,7 +97,7 @@ class Chip8(
 
     val stateView = State.View(state)
 
-    fun nextFrame(frame: SimpleGraphics.Frame?): SimpleGraphics.Frame = state.gfx.nextFrame(frame)
+    fun nextFrame(frame: FrameManager.Frame?): FrameManager.Frame = state.gfx.nextFrame(frame)
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
@@ -398,4 +343,61 @@ class Chip8(
         }
         return null
     }
+
+    companion object {
+        /** Generate a new state instance initialized with the provided [program] and [font] data. */
+        private fun stateFromProgram(program: ByteArray, font: Chip8Font) = State().apply {
+            font.lo.copyInto(mem, FONT_START)
+            font.hi.copyInto(mem, HIRES_FONT_START)
+            program.copyInto(mem, EXEC_START)
+        }
+
+        private const val EXEC_START: Int = 0x200
+        private const val FONT_START: Int = 0x000
+        private const val HIRES_FONT_START: Int = 0x100
+    }
+
 }
+
+/** The various halt conditions that can happen during execution. */
+sealed class Halt(val pc: Int) {
+    /** The EXIT command was encountered. */
+    class Exit(pc: Int) : Halt(pc) {
+        override fun toString() = "EXIT at ${pc.sx}"
+    }
+
+    /** A spin-jump was encountered (JMP to self). */
+    class Spin(pc: Int) : Halt(pc) {
+        override fun toString() = "SPIN at 0x${pc.sx}"
+    }
+
+    /** Unknown or unimplemented opcode. */
+    class IllegalOpcode(pc: Int, val opcode: Int) : Halt(pc) {
+        override fun toString() =
+            "ILLOP 0x${opcode.sx} at 0x${pc.sx}"
+    }
+
+    /** A return underflowed the stack. */
+    class StackUnderflow(pc: Int) : Halt(pc) {
+        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
+    }
+
+    /** A call overflowed the stack. */
+    class StackOverflow(pc: Int) : Halt(pc) {
+        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
+    }
+
+    /** An attempt to draw to an invalid bitplane. */
+    class InvalidBitPlane(pc: Int, val x: Int) : Halt(pc) {
+        override fun toString() = "BADPLANE ($x) at 0x${pc.sx}"
+    }
+}
+
+private val Int.sx: String
+    get() = "0x${toShort().toHexString()}"
+
+private val Int.b: Byte
+    get() = toByte()
+
+private val Byte.i: Int
+    get() = toUByte().toInt()
