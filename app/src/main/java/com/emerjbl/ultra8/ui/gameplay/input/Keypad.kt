@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,21 +42,69 @@ fun Keypad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit, modifier: Modifier 
             .keyHitManager(keyHitManager)
                 then modifier
     ) {
-        ButtonRow(keyHitManager, 1, 2, 3, 12)
-        ButtonRow(keyHitManager, 4, 5, 6, 13)
-        ButtonRow(keyHitManager, 7, 8, 9, 14)
-        ButtonRow(keyHitManager, 10, 0, 11, 15)
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Chip8Button(1, keyHitManager)
+            Chip8Button(2, keyHitManager)
+            Chip8Button(3, keyHitManager)
+            Chip8Button(12, keyHitManager)
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Chip8Button(4, keyHitManager)
+            Chip8Button(5, keyHitManager)
+            Chip8Button(6, keyHitManager)
+            Chip8Button(13, keyHitManager)
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Chip8Button(7, keyHitManager)
+            Chip8Button(8, keyHitManager)
+            Chip8Button(9, keyHitManager)
+            Chip8Button(14, keyHitManager)
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Chip8Button(10, keyHitManager)
+            Chip8Button(0, keyHitManager)
+            Chip8Button(11, keyHitManager)
+            Chip8Button(15, keyHitManager)
+        }
     }
 }
 
+
 @Composable
-fun ButtonRow(
-    keyHitManager: KeyHitManager,
-    vararg buttons: Int
-) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        for (value in buttons) {
-            Chip8Button(value, keyHitManager)
+fun OctoPad(onKeyDown: (Int) -> Unit, onKeyUp: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val keyHitManager = remember { KeyHitManager(onKeyDown, onKeyUp) }
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .background(color = MaterialTheme.chip8Colors.keypadBackground)
+            .keyHitManager(keyHitManager)
+                then modifier
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth(0.5f)) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Chip8Button(5, keyHitManager)
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Chip8Button(7, keyHitManager)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Chip8Button(9, keyHitManager)
+                }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Chip8Button(8, keyHitManager)
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                Spacer(modifier = Modifier.weight(1f))
+                Row(modifier = Modifier.fillMaxWidth(1f)) {
+                    Chip8Button(4, keyHitManager)
+                    Chip8Button(6, keyHitManager)
+                }
+            }
         }
     }
 }
