@@ -27,25 +27,30 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
         /** Bitmask of pointers over this button. */
         private var pointers: Int = 0
 
+        /** Track pointer as holding the key down. Return true if it's the first one going down. */
         fun pointerDown(pointerIdx: Int): Boolean {
             val alreadyDown = down()
             pointers = pointers or (1 shl pointerIdx)
             return !alreadyDown
         }
 
+        /** Track pointer as off of this key. Return true if all pointers are off of the key. */
         fun pointerUp(pointerIdx: Int): Boolean {
             pointers = pointers and (1 shl pointerIdx).inv()
             return pointers == 0
         }
 
+        /** Return true if the specified pointer is holding this button down. */
         fun downFor(pointerIdx: Int) = pointers and (1 shl pointerIdx) != 0
 
+        /** Return true if any pointer is down on this button. */
         fun down() = pointers != 0
     }
 
     /** The keystates for the 16 keys on the Chip8 hex keypad. */
     private val keyBounds = Array(16) { ButtonState(Rect.Zero) }
 
+    /** The bounds of the parent that (hopefully) encloses all added keys. */
     internal var parentCoordinates: LayoutCoordinates? = null
 
     /**
@@ -72,6 +77,8 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
     @Suppress("SameReturnValue")
     internal fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
+            // A pointer is going down. If it is inside of a key bound, associate it with the key
+            // and possible trigger a keydown event (if first one on that key).
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val pointer = event.getPointerId(event.actionIndex)
                 val offsetInParent = event.offsetInParent(event.actionIndex)
@@ -83,10 +90,23 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
                 }
             }
 
+            // The pointer is canceled, we won't receive any more events.
+            // So take it off of any keys it is on.
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_OUTSIDE -> {
+                val pointer = event.getPointerId(event.actionIndex)
+                downForPointer(pointer).map { (index, value) ->
+                    if (value.pointerUp(pointer)) {
+                        Log.i("Chip8", "KEYUP $index ($pointer)")
+                        onKeyUp(index)
+                    }
+                }
+            }
+
+            // A pointer is doing up; take it off of any keys that it was associated with, and
+            // possibly emit keyUp events (if it was the last one up on a key).
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 val pointer = event.getPointerId(event.actionIndex)
-                val offsetInParent = event.offsetInParent(event.actionIndex)
-                hit(offsetInParent)?.also { (index, value) ->
+                downForPointer(pointer).forEach { (index, value) ->
                     if (value.downFor(pointer)) {
                         if (value.pointerUp(pointer)) {
                             Log.i("Chip8", "KEYUP $index ($pointer)")
@@ -109,11 +129,14 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
                 }
             }
 
+            // As we move, we may:
+            //   * leave key bounds, possibly triggering a key up (if last out).
+            //   * enter key bounds, possibly triggering a key down (if first in).
             MotionEvent.ACTION_MOVE -> {
                 for (actionIndex in 0 until event.pointerCount) {
                     val pointer = event.getPointerId(actionIndex)
                     val offsetInParent = event.offsetInParent(actionIndex)
-                    downForPointer(pointer)?.let {
+                    downForPointer(pointer).forEach {
                         if (!it.value.bounds.contains(offsetInParent)) {
                             Log.i("Chip8", "MOVE KEYUP ${it.index} ($pointer)")
                             if (it.value.pointerUp(pointer)) {
@@ -136,19 +159,31 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
         return true
     }
 
+    /** Return the key that the point [Offset] is inside, if any. */
     private fun hit(point: Offset) =
         keyBounds.withIndex().firstOrNull { it.value.bounds.contains(point) }
 
+    /** Return all keys that are considered down for the given pointer. */
     private fun downForPointer(pointer: Int) =
-        keyBounds.withIndex().firstOrNull { it.value.downFor(pointer) }
+        keyBounds.withIndex().filter { it.value.downFor(pointer) }
 
     private fun MotionEvent.offsetInParent(actionIndex: Int) =
         Offset(getX(actionIndex), getY(actionIndex))
 }
 
+/**
+ * Set the parent for the provided [KeyHitManager].
+ *
+ * This should be a parent fully enclosing any keys that are added  with [addKeyToKeyHitManager].
+ **/
 fun Modifier.keyHitManager(manager: KeyHitManager) =
     onGloballyPositioned { manager.parentCoordinates = it }
         .pointerInteropFilter { manager.onTouchEvent(it) }
 
+/**
+ * Add a key to the hit manager.
+ *
+ * The key should be fully contained inside of the parent that was added with [keyHitManager].
+ */
 fun Modifier.addKeyToKeyHitManager(value: Int, manager: KeyHitManager) =
     onGloballyPositioned { manager.setKeyPosition(value, it) }
