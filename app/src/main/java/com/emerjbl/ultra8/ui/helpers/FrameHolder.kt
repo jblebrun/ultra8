@@ -13,6 +13,16 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private const val MAX_ALPHA = 0xFF
 
+/**
+ * Filter padding in Chip8 pixels.
+ *
+ * We add some empty base around the borer of the graphics bitmap, so that wehn the image
+ * filter is applied, there's no sharp edge at the borders where the filtering is clipped
+ * by the image bounds. I couldn't find a way to allow the image to draw out of bounds,
+ * but this approach works nicely.
+ */
+private const val FILTER_PADDING_PX = 1;
+
 data class FrameConfig(
     /** The color of an "on" pixel. */
     val color1: Color = Color.Green,
@@ -84,7 +94,13 @@ class FrameHolder(
         fadingPixels = currentlyFading
 
         bitmap.setPixels(
-            pixelData, 0, frame.width, 0, 0, frame.width, frame.height
+            pixelData,
+            0,
+            frame.width,
+            FILTER_PADDING_PX,
+            FILTER_PADDING_PX,
+            frame.width,
+            frame.height
         )
     }
 }
@@ -107,9 +123,13 @@ fun FrameHolder?.next(
         ?.takeIf { it.size == frame.data.size }
         ?: IntArray(frame.data.size)
 
+    // Add some space for filter blur to extend into.
+    val bitmapWidth = frame.width + 2 * FILTER_PADDING_PX
+    val bitmapHeight = frame.height + 2 * FILTER_PADDING_PX
+
     val bitmap = this?.bitmap
-        ?.takeIf { it.width == frame.width && it.height == frame.height }
-        ?: Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+        ?.takeIf { it.width == bitmapWidth && it.height == bitmapHeight }
+        ?: Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
 
     val frameDiff = (frameTime - (this?.frameTime ?: 0)).toInt()
     return FrameHolder(frame, pixelData, fadeTimes, bitmap, frameTime).apply {
