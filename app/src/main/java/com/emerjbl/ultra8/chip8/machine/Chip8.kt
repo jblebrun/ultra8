@@ -3,6 +3,7 @@ package com.emerjbl.ultra8.chip8.machine
 import android.util.Log
 import com.emerjbl.ultra8.chip8.graphics.Chip8Font
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
+import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
@@ -19,14 +20,6 @@ class Chip8(
     timeSource: TimeSource,
     private val state: State,
 ) {
-    constructor(
-        keys: Chip8Keys,
-        sound: Chip8Sound,
-        font: Chip8Font,
-        timeSource: TimeSource,
-        program: ByteArray
-    ) : this(keys, sound, timeSource, stateFromProgram(program, font))
-
     /** Collect all Chip8 state in one place. Convenient for eventual save/restore. */
     class State(
         /** Registers V0-VF. */
@@ -346,11 +339,12 @@ class Chip8(
 
     companion object {
         /** Generate a new state instance initialized with the provided [program] and [font] data. */
-        private fun stateFromProgram(program: ByteArray, font: Chip8Font) = State().apply {
-            font.lo.copyInto(mem, FONT_START)
-            font.hi.copyInto(mem, HIRES_FONT_START)
-            program.copyInto(mem, EXEC_START)
-        }
+        fun stateForProgram(program: ByteArray, font: Chip8Font = StandardChip8Font) =
+            State().apply {
+                font.lo.copyInto(mem, FONT_START)
+                font.hi.copyInto(mem, HIRES_FONT_START)
+                program.copyInto(mem, EXEC_START)
+            }
 
         private const val EXEC_START: Int = 0x200
         private const val FONT_START: Int = 0x000

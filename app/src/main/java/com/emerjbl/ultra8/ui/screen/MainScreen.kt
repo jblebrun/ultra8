@@ -63,6 +63,7 @@ fun MainScreen() {
 
         val loadedName by viewModel.loadedName.collectAsState(null)
         val running by viewModel.running.collectAsState(initial = false)
+        val programs = viewModel.programs.collectAsState(initial = emptyList())
         val focusRequester = remember { FocusRequester() }
 
         fun onKeyEvent(event: KeyEvent): Boolean {
@@ -79,7 +80,7 @@ fun MainScreen() {
                 .focusRequester(focusRequester)
                 .onKeyEvent(::onKeyEvent),
             topBar = {
-                if (!isLandscape()) TopBar(loadedName, viewModel.programs, viewModel::load)
+                if (!isLandscape()) TopBar(loadedName, programs.value, viewModel::load)
             },
             bottomBar = {
                 if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)
