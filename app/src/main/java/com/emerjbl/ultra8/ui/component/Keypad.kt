@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,18 +17,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.asComposePath
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.TransformResult
 import androidx.graphics.shapes.toPath
 import com.emerjbl.ultra8.ui.theme.chip8Colors
 import java.util.Locale
-import kotlin.math.sqrt
 
 
 @Composable
@@ -60,6 +60,23 @@ fun ButtonRow(
     }
 }
 
+/** Unit-size polygon for the keypad key shape. */
+private val unitKeyPoly = RoundedPolygon(
+    vertices = floatArrayOf(0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f),
+    centerX = 0.5f,
+    centerY = 0.5f,
+    rounding = CornerRounding(
+        0.3f,
+        smoothing = 1f
+    )
+)
+
+/** A shape that will draw the key poly at the correct size. */
+private val keyPathShape = GenericShape { size, _ ->
+    unitKeyPoly.transformed { x, y -> TransformResult(x * size.width, y * size.height) }
+        .toPath(this@GenericShape.asAndroidPath())
+}
+
 @Composable
 fun RowScope.Chip8Button(
     value: Int,
@@ -70,32 +87,16 @@ fun RowScope.Chip8Button(
     val keyCapTextSize = remember { mutableStateOf(16.sp) }
 
     Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
             .weight(1f)
+            .padding(5.dp)
+            .shadow(5.dp, clip = true, shape = keyPathShape)
+            .background(buttonColor)
             .onGloballyPositioned { keyCapTextSize.value = (it.size.width / 4f).sp }
             .addKeyToKeyHitManager(value, keyHitManager)
             .aspectRatio(1.0f)
-            .fillMaxSize()
-            .padding(5.dp)
-            .drawWithCache {
-                val path = RoundedPolygon(
-                    numVertices = 4,
-                    radius = sqrt(2f) * size.minDimension / 2,
-                    centerX = size.width / 2,
-                    centerY = size.height / 2,
-                    rounding = CornerRounding(
-                        size.minDimension / 3f,
-                        smoothing = 0.2f
-                    )
-                )
-                    .toPath()
-                    .asComposePath()
-                onDrawBehind {
-                    rotate(45f) {
-                        drawPath(path, color = buttonColor)
-                    }
-                }
-            }, contentAlignment = Alignment.Center
+            .fillMaxSize(),
     ) {
         Text(
             text,
