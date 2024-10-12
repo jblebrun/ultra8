@@ -1,31 +1,18 @@
 package com.emerjbl.ultra8
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
-import com.emerjbl.ultra8.data.Chip8StateSerializer
-import com.emerjbl.ultra8.data.MaybeState
+import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.testutil.contentEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import strikt.assertions.isNotNull
-
-class DataStoreWrapper(scope: CoroutineScope) {
-    val Context.testStore: DataStore<MaybeState> by dataStore(
-        fileName = "chip8state.u8b",
-        serializer = Chip8StateSerializer,
-        scope = scope
-    )
-}
 
 @RunWith(AndroidJUnit4::class)
 class DataStoreTest {
@@ -50,18 +37,17 @@ class DataStoreTest {
 
         runBlocking(Dispatchers.Default) {
             val scope1 = CoroutineScope(Dispatchers.IO)
-            DataStoreWrapper(scope1).run {
-                appContext.testStore.updateData { MaybeState.Yes(state) }
+            Chip8StateStore(appContext, scope1).run {
+                saveSate(state)
             }
             scope1.cancel()
 
             val scope2 = CoroutineScope(Dispatchers.IO)
-            val readBack = DataStoreWrapper(scope2).run {
-                appContext.testStore.data.firstOrNull()
+            val readBack = Chip8StateStore(appContext, scope2).run {
+                lastSavedState()
             }
             scope2.cancel()
-
-            strikt.api.expectThat(readBack).isNotNull().contentEquals(MaybeState.Yes(state))
+            strikt.api.expectThat(readBack).isNotNull().contentEquals(state)
         }
     }
 }
