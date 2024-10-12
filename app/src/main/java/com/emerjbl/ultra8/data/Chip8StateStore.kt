@@ -20,7 +20,7 @@ import java.io.OutputStream
 /** Manages the save states for Chip8 instances. */
 class Chip8StateStore(
     private val context: Context,
-    private val scope: CoroutineScope = CoroutineScope((Dispatchers.IO + SupervisorJob()))
+    scope: CoroutineScope = CoroutineScope((Dispatchers.IO + SupervisorJob()))
 ) {
     /** Returns the last state saved, if there was one. */
     suspend fun lastSavedState(): Chip8.State? =

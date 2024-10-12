@@ -13,6 +13,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.R
+import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
@@ -189,11 +190,13 @@ class Chip8ViewModel(
                 modelClass: Class<T>,
                 extras: CreationExtras
             ): T =
-                Chip8ViewModel(
-                    Chip8StateStore(checkNotNull(extras[APPLICATION_KEY])),
-                    checkNotNull(extras[APPLICATION_KEY]),
-                    extras.createSavedStateHandle()
-                ) as T
+                checkNotNull(extras[APPLICATION_KEY]).let { application ->
+                    Chip8ViewModel(
+                        (application as Ultra8Application).provider.chip8StateStore,
+                        checkNotNull(extras[APPLICATION_KEY]),
+                        extras.createSavedStateHandle()
+                    ) as T
+                }
         }
     }
 }
