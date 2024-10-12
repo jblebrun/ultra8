@@ -12,7 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.emerjbl.ultra8.ui.viewmodel.Program
+import com.emerjbl.ultra8.data.Program
 
 @Composable
 fun TopBar(loadedName: String?, programs: List<Program>, onSelectProgram: (Program) -> Unit) {
