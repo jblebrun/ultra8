@@ -126,6 +126,11 @@ class Chip8ViewModel(
         resume()
     }
 
+    fun reset() {
+        machine.reset()
+        resume()
+    }
+
     fun load(program: Program) {
         viewModelScope.launch {
             loadInternal(program)
