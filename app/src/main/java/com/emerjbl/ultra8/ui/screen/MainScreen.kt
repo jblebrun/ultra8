@@ -22,6 +22,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,8 +46,15 @@ fun MainScreen() {
         viewModel.load(it)
     }
 
-    LifecycleResumeEffect(Unit) {
-        viewModel.resume()
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+
+    LifecycleResumeEffect(windowFocused) {
+        // If window loses focus (recent tasks view), pause machine.
+        if (windowFocused) {
+            viewModel.resume()
+        } else {
+            viewModel.pause()
+        }
 
         onPauseOrDispose {
             viewModel.pause()
