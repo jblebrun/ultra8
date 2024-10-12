@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.helpers
 
 import android.util.Log
 import android.view.MotionEvent

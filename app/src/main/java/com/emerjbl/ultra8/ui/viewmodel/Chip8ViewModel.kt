@@ -40,18 +40,18 @@ class Chip8ViewModel(
         return Chip8(keys, sound, TimeSource.Monotonic, state)
     }
 
+    val programs: StateFlow<List<Program>> = programStore.programs
+
     private var machine = newMachine(byteArrayOf())
 
     private val runner = Chip8ThreadRunner()
 
-    val programs: StateFlow<List<Program>> = programStore.programs
-
     val running: StateFlow<Boolean>
         get() = runner.running
 
-    private val _loadedName = MutableStateFlow<String?>(null)
-    val loadedName: StateFlow<String?>
-        get() = _loadedName.asStateFlow()
+    private val _loadedProgram = MutableStateFlow<Program?>(null)
+    val loadedProgram: StateFlow<Program?>
+        get() = _loadedProgram.asStateFlow()
 
     val cyclesPerTick = MutableStateFlow(runner.cyclesPerTick).apply {
         onEach { runner.cyclesPerTick = it }
@@ -121,7 +121,7 @@ class Chip8ViewModel(
     private suspend fun loadInternal(program: Program) {
         val data = programStore.data(program)
         Log.i("Chip8", "Program size: ${data.size}")
-        _loadedName.value = program.name
+        _loadedProgram.value = program
         machine = newMachine(data)
         resume()
     }

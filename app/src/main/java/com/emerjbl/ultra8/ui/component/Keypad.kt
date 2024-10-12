@@ -26,6 +26,9 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.TransformResult
 import androidx.graphics.shapes.toPath
+import com.emerjbl.ultra8.ui.helpers.KeyHitManager
+import com.emerjbl.ultra8.ui.helpers.addKeyToKeyHitManager
+import com.emerjbl.ultra8.ui.helpers.keyHitManager
 import com.emerjbl.ultra8.ui.theme.chip8Colors
 import java.util.Locale
 
