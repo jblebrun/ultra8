@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
+import com.emerjbl.ultra8.ui.helpers.FrameConfig
+import com.emerjbl.ultra8.ui.helpers.FrameHolder
+import com.emerjbl.ultra8.ui.helpers.next
 import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive

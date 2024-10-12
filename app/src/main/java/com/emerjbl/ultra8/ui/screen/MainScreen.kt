@@ -2,19 +2,19 @@ package com.emerjbl.ultra8.ui.screen
 
 import android.app.Activity
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -27,20 +27,24 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.emerjbl.ultra8.ui.component.BottomBar
-import com.emerjbl.ultra8.ui.component.FrameConfig
-import com.emerjbl.ultra8.ui.component.Graphics
-import com.emerjbl.ultra8.ui.component.Keypad
+import com.emerjbl.ultra8.ui.component.SideDrawer
 import com.emerjbl.ultra8.ui.component.TopBar
-import com.emerjbl.ultra8.ui.component.onKeyEvent
+import com.emerjbl.ultra8.ui.content.LandscapeGameplay
+import com.emerjbl.ultra8.ui.content.PortraitGameplay
+import com.emerjbl.ultra8.ui.helpers.FrameConfig
+import com.emerjbl.ultra8.ui.helpers.onKeyEvent
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import com.emerjbl.ultra8.ui.theme.chip8Colors
 import com.emerjbl.ultra8.ui.viewmodel.Chip8ViewModel
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 
 @Composable
 fun MainScreen() {
     val viewModel = viewModel<Chip8ViewModel>(factory = Chip8ViewModel.Factory)
+    val scope = rememberCoroutineScope()
+
 
     (LocalContext.current as? Activity)?.intent?.let {
         viewModel.load(it)
@@ -69,9 +73,10 @@ fun MainScreen() {
             fadeTime = 400.milliseconds,
         )
 
-        val loadedName by viewModel.loadedName.collectAsState(null)
+        val loadedProgram by viewModel.loadedProgram.collectAsState(null)
         val running by viewModel.running.collectAsState(initial = false)
-        val programs = viewModel.programs.collectAsState(initial = emptyList())
+        val programs by viewModel.programs.collectAsState(initial = emptyList())
+        val selectedProgram by viewModel.loadedProgram.collectAsState(null)
         val focusRequester = remember { FocusRequester() }
 
         fun onKeyEvent(event: KeyEvent): Boolean {
@@ -82,86 +87,82 @@ fun MainScreen() {
         @Composable
         fun isLandscape(): Boolean = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
 
-        Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .focusRequester(focusRequester)
-                .onKeyEvent(::onKeyEvent),
-            topBar = {
-                if (!isLandscape()) TopBar(
-                    loadedName,
-                    programs.value,
-                    viewModel::load,
-                    viewModel::reset
+        val drawerState = rememberDrawerState(
+            initialValue = DrawerValue.Closed,
+            confirmStateChange = {
+                if (it == DrawerValue.Closed) {
+                    viewModel.resume()
+                }
+                true
+            }
+        )
+
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            // Allow swipe/scrim tap to close, but don't try to open it with swipes when its not.
+            gesturesEnabled = drawerState.isOpen,
+            drawerContent = {
+                SideDrawer(
+                    drawerState,
+                    programs,
+                    selectedProgram,
+                    onProgramSelected = { program ->
+                        scope.launch {
+                            drawerState.close()
+                        }
+                        viewModel.load(program)
+                    },
+                    onReset = {
+                        scope.launch {
+                            drawerState.close()
+                        }
+                        viewModel.reset()
+                    }
                 )
-            },
-            bottomBar = {
-                if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)
+            }) {
+            Scaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRequester(focusRequester)
+                    .onKeyEvent(::onKeyEvent),
+                topBar = {
+                    if (!isLandscape()) TopBar(
+                        loadedProgram,
+                        openDrawer = {
+                            viewModel.pause()
+                            scope.launch { drawerState.open() }
+                        }
+                    )
+                },
+                bottomBar = {
+                    if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)
+                }
+            ) { innerPadding ->
+                if (running) {
+                    focusRequester.requestFocus()
+                }
+                val extraPadding = animateDpAsState(
+                    targetValue = if (drawerState.isAnimationRunning) {
+                        if (drawerState.isOpen) 0.dp else 10.dp
+                    } else {
+                        if (drawerState.isOpen) 10.dp else 0.dp
+                    },
+                    label = "scrimPadding"
+                )
+
+                if (isLandscape()) {
+                    LandscapeGameplay(innerPadding, running, frameConfig, viewModel)
+                } else {
+                    PortraitGameplay(
+                        running,
+                        frameConfig,
+                        viewModel,
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .padding(extraPadding.value)
+                    )
+                }
             }
-        ) { innerPadding ->
-            if (running) {
-                focusRequester.requestFocus()
-            }
-            if (isLandscape()) {
-                LandscapeContent(innerPadding, running, frameConfig, viewModel)
-            } else {
-                PortraitContent(innerPadding, running, frameConfig, viewModel)
-            }
-        }
-    }
-}
-
-
-@Composable
-fun PortraitContent(
-    innerPadding: PaddingValues,
-    running: Boolean,
-    frameConfig: FrameConfig,
-    viewModel: Chip8ViewModel
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(innerPadding)
-    ) {
-        Graphics(
-            running,
-            frameConfig,
-            nextFrame = viewModel::nextFrame
-        )
-        Keypad(
-            modifier = Modifier.padding(10.dp),
-            onKeyDown = viewModel::keyDown,
-            onKeyUp = viewModel::keyUp
-        )
-
-    }
-}
-
-@Composable
-fun LandscapeContent(
-    innerPadding: PaddingValues,
-    running: Boolean,
-    frameConfig: FrameConfig,
-    viewModel: Chip8ViewModel
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-    ) {
-        Keypad(
-            viewModel::keyDown,
-            viewModel::keyUp,
-            modifier = Modifier.weight(1f)
-        )
-        Column(
-            modifier = Modifier.weight(2f),
-        ) {
-            Graphics(running, frameConfig, nextFrame = viewModel::nextFrame)
-            BottomBar(viewModel.cyclesPerTick)
         }
     }
 }

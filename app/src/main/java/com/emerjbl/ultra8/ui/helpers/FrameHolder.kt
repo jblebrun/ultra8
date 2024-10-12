@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.helpers
 
 import android.animation.TimeInterpolator
 import android.graphics.Bitmap
