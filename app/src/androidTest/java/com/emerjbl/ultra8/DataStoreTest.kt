@@ -6,10 +6,10 @@ import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.testutil.contentEquals
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.supervisorScope
 import org.junit.Test
 import org.junit.runner.RunWith
 import strikt.assertions.isNotNull
@@ -36,17 +36,21 @@ class DataStoreTest {
         )
 
         runBlocking(Dispatchers.Default) {
-            val scope1 = CoroutineScope(Dispatchers.IO)
-            Chip8StateStore(appContext, scope1).run {
-                saveSate(state)
+            supervisorScope {
+                Chip8StateStore(appContext, this).run {
+                    saveSate(state)
+                }
+                // Cause the store to shut down so we can exit this scope.
+                coroutineContext.cancelChildren()
             }
-            scope1.cancel()
 
-            val scope2 = CoroutineScope(Dispatchers.IO)
-            val readBack = Chip8StateStore(appContext, scope2).run {
-                lastSavedState()
+            val readBack = supervisorScope {
+                val result = Chip8StateStore(appContext, this).run {
+                    lastSavedState()
+                }
+                coroutineContext.cancelChildren()
+                result
             }
-            scope2.cancel()
             strikt.api.expectThat(readBack).isNotNull().contentEquals(state)
         }
     }
