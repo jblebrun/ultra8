@@ -80,7 +80,12 @@ fun MainScreen() {
                 .focusRequester(focusRequester)
                 .onKeyEvent(::onKeyEvent),
             topBar = {
-                if (!isLandscape()) TopBar(loadedName, programs.value, viewModel::load)
+                if (!isLandscape()) TopBar(
+                    loadedName,
+                    programs.value,
+                    viewModel::load,
+                    viewModel::reset
+                )
             },
             bottomBar = {
                 if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)

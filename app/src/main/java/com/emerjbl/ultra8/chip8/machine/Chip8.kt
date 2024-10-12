@@ -49,7 +49,7 @@ class Chip8(
         /** Stack pointer. */
         var sp: Int = 0,
         /** Program counter. */
-        var pc: Int = 0x200,
+        var pc: Int = EXEC_START,
         /** Chip-XO target plane for drawing (0-3). */
         var targetPlane: Int = 0x1,
 
@@ -90,14 +90,32 @@ class Chip8(
 
     val stateView = State.View(state)
 
+    /** The last halt condition for the machine. Clear with [reset]. */
+    var halted: Halt? = null
+        private set
+
+    /** Soft reset the machine: clear screen, reset to program start. */
+    fun reset() {
+        halted = null
+        state.gfx.clear()
+        state.pc = EXEC_START
+    }
+
     fun nextFrame(frame: FrameManager.Frame?): FrameManager.Frame = state.gfx.nextFrame(frame)
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
 
+    /**
+     * Execute the next program instruction.
+     *
+     * If the instruction results in a halt, the halt is returned.
+     * If the machine was already halted, the last halt is returned.
+     */
     fun step(): Halt? {
+        if (halted != null) return halted
         val inst = Chip8Instruction(state.mem[state.pc++].i, state.mem[state.pc++].i)
-        return state.run(inst)
+        return state.run(inst).also { halted = it }
     }
 
     private fun State.run(inst: Chip8Instruction): Halt? {

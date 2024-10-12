@@ -15,7 +15,12 @@ import androidx.compose.runtime.setValue
 import com.emerjbl.ultra8.data.Program
 
 @Composable
-fun TopBar(loadedName: String?, programs: List<Program>, onSelectProgram: (Program) -> Unit) {
+fun TopBar(
+    loadedName: String?,
+    programs: List<Program>,
+    onSelectProgram: (Program) -> Unit,
+    onReset: () -> Unit
+) {
     val title = if (loadedName == null) "Ultra8" else "Ultra8: $loadedName"
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -24,6 +29,7 @@ fun TopBar(loadedName: String?, programs: List<Program>, onSelectProgram: (Progr
         ),
         title = { Text(title) },
         actions = {
+            Button(onReset) { Text("Reset") }
             ProgramsDropdown(programs, onSelectProgram)
         },
     )
