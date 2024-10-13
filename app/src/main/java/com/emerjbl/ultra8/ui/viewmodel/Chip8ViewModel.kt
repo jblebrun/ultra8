@@ -119,10 +119,9 @@ class Chip8ViewModel(
     }
 
     private suspend fun loadInternal(program: Program) {
-        val data = programStore.data(program)
-        Log.i("Chip8", "Program size: ${data.size}")
+        Log.i("Chip8", "Program size: ${program.data.bytes.size}")
         _loadedProgram.value = program
-        machine = newMachine(data)
+        machine = newMachine(program.data.bytes)
         resume()
     }
 
