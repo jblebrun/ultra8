@@ -99,12 +99,12 @@ class FrameManager(hires: Boolean, frame: Frame) {
          **/
         planes: Int,
     ): Boolean {
-        val lines = if (linesIn == 0) 16 else linesIn
+        val plane3Offset = if (linesIn == 0) 32 else linesIn
         return when (planes) {
             1 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1)
             2 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 2)
             3 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1) ||
-                    putPlaneSprite(xBase, yBase, data, offset + lines, linesIn, 2)
+                    putPlaneSprite(xBase, yBase, data, offset + plane3Offset, linesIn, 2)
 
             else -> false
         }
