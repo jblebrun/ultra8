@@ -94,6 +94,7 @@ value class Chip8Instruction(val word: Int) {
             }
 
             0xF0 -> when (b2) {
+                0x00 -> "long NNNNN"
                 0x07 -> "LD ${x.v}, DT"
                 0x0A -> "LD ${x.v}, K"
 

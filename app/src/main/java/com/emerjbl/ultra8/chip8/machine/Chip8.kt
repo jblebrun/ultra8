@@ -119,6 +119,18 @@ class Chip8(
         return state.run(inst).also { state.halted = it }
     }
 
+    /** Skip instructions, including skipping over 2-byte long jump instruction. */
+    private fun skipNextInstruction() {
+        state.run {
+            if (mem[pc].i == 0xF0 && mem[pc + 1].i == 0x00) {
+                pc += 4
+            } else {
+                pc += 2
+            }
+        }
+
+    }
+
     private fun State.run(inst: Chip8Instruction): Halt? {
         inst.run {
             when (majOp) {
@@ -159,14 +171,12 @@ class Chip8(
                     pc = nnn
                 }
 
-                0x30 -> if (v[x] == b2) pc += 2
-                0x40 -> if (v[x] != b2) pc += 2
+                0x30 -> if (v[x] == b2) skipNextInstruction()
+                0x40 -> if (v[x] != b2) skipNextInstruction()
 
                 0x50 -> {
                     when (subOp) {
-                        0x00 -> if (v[x] == v[y]) {
-                            pc += 2
-                        }
+                        0x00 -> if (v[x] == v[y]) skipNextInstruction()
 
                         0x02 -> {
                             // Load vx-vy into memory starting at i, don't change i
@@ -237,7 +247,7 @@ class Chip8(
 
                 0x90 -> {
                     if (subOp != 0) return Halt.IllegalOpcode(pc - 2, word)
-                    if (v[x] != v[y]) pc += 2
+                    if (v[x] != v[y]) skipNextInstruction()
                 }
 
                 0xA0 -> i = nnn
@@ -247,8 +257,8 @@ class Chip8(
                     if (gfx.putSprite(v[x], v[y], mem, i, subOp, targetPlane)) 1 else 0
 
                 0xE0 -> when (b2) {
-                    0x9E -> if (keys.pressed(v[x])) pc += 2
-                    0xA1 -> if (!keys.pressed(v[x])) pc += 2
+                    0x9E -> if (keys.pressed(v[x])) skipNextInstruction()
+                    0xA1 -> if (!keys.pressed(v[x])) skipNextInstruction()
                     else -> return Halt.IllegalOpcode(pc - 2, word)
                 }
 
