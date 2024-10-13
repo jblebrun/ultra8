@@ -54,7 +54,10 @@ class Chip8(
         var targetPlane: Int = 0x1,
 
         /** Graphics buffer is an important part of state, too. */
-        val gfx: FrameManager = FrameManager()
+        val gfx: FrameManager = FrameManager(),
+
+        /** The last halt condition for the machine. Clear with [reset]. */
+        var halted: Halt? = null
     ) {
         /**
          * A read-only view of the Chip8 state.
@@ -72,6 +75,7 @@ class Chip8(
             val sp: Int get() = state.sp
             val pc: Int get() = state.pc
             val targetPlane: Int get() = state.targetPlane
+            val halted: Halt? get() = state.halted
 
             /** Create a deep copy of the entire state. */
             fun clone() = State(
@@ -84,19 +88,16 @@ class Chip8(
                 pc,
                 targetPlane,
                 state.gfx.clone(),
+                state.halted
             )
         }
     }
 
     val stateView = State.View(state)
 
-    /** The last halt condition for the machine. Clear with [reset]. */
-    var halted: Halt? = null
-        private set
-
     /** Soft reset the machine: clear screen, reset to program start. */
     fun reset() {
-        halted = null
+        state.halted = null
         state.gfx.clear()
         state.pc = EXEC_START
     }
@@ -113,9 +114,9 @@ class Chip8(
      * If the machine was already halted, the last halt is returned.
      */
     fun step(): Halt? {
-        if (halted != null) return halted
+        if (state.halted != null) return state.halted
         val inst = Chip8Instruction(state.mem[state.pc++].i, state.mem[state.pc++].i)
-        return state.run(inst).also { halted = it }
+        return state.run(inst).also { state.halted = it }
     }
 
     private fun State.run(inst: Chip8Instruction): Halt? {

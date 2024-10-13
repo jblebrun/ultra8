@@ -39,16 +39,14 @@ data class Program(
 
 /** The store of programs that Ultra8 can run. */
 class ProgramStore(private val context: Context, initScope: CoroutineScope) {
-    init {
-        initScope.launch {
-            withContext(Dispatchers.IO) {
-                _programs.value = R.raw::class.java.fields.map {
-                    val id = it.getInt(null)
-                    val bytes = context.resources.openRawResource(id).use {
-                        it.readBytes().wrapped()
-                    }
-                    Program(it.name, bytes)
+    val initJob = initScope.launch {
+        withContext(Dispatchers.IO) {
+            _programs.value = R.raw::class.java.fields.map {
+                val id = it.getInt(null)
+                val bytes = context.resources.openRawResource(id).use {
+                    it.readBytes().wrapped()
                 }
+                Program(it.name, bytes)
             }
         }
     }
@@ -60,6 +58,7 @@ class ProgramStore(private val context: Context, initScope: CoroutineScope) {
 
     suspend fun addForUri(uri: Uri): Program =
         withContext(Dispatchers.IO) {
+            initJob.join()
             val name = withContext(Dispatchers.IO) {
                 context.contentResolver.query(
                     uri,
@@ -85,8 +84,8 @@ class ProgramStore(private val context: Context, initScope: CoroutineScope) {
             program
         }
 
-    fun forName(name: String): Program? {
-        println("Program $name? ${_programs.value.size}")
+    suspend fun forName(name: String): Program? {
+        initJob.join()
         return _programs.value.firstOrNull { println("Compare ${it.name} $name"); it.name == name }
     }
 }
