@@ -7,6 +7,7 @@ import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
+import com.emerjbl.ultra8.chip8.machine.Halt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -64,12 +65,16 @@ class Chip8StateStore(
             return try {
                 withContext(Dispatchers.IO) {
                     Chip8.State(
+                        halted = dis.readHalt(),
                         v = dis.readIntArray(16),
                         hp = dis.readIntArray(16),
                         stack = dis.readIntArray(64),
                         mem = run {
                             // Support variable memory lengths.
                             val len = dis.readInt()
+                            if (len > 65536) {
+                                throw IllegalStateException("memory too large: $len")
+                            }
                             dis.readByteArray(len)
                         },
                         i = dis.readInt(),
@@ -80,6 +85,9 @@ class Chip8StateStore(
                             val hires = dis.readBoolean()
                             val width = dis.readInt()
                             val height = dis.readInt()
+                            if (width * height > 65536) {
+                                throw IllegalStateException("Invalid screen width/height: $width x $height")
+                            }
                             val data = dis.readIntArray(width * height)
                             FrameManager(hires, FrameManager.Frame(width, height, data))
                         }
@@ -106,6 +114,7 @@ class Chip8StateStore(
 
             val dos = DataOutputStream(output)
             withContext(Dispatchers.IO) {
+                dos.writeHalt(state.halted)
                 dos.writeIntArray(state.v)
                 dos.writeIntArray(state.hp)
                 dos.writeIntArray(state.stack)
@@ -136,5 +145,31 @@ class Chip8StateStore(
 
         private fun DataInputStream.readByteArray(size: Int) =
             ByteArray(size).apply { readFully(this) }
+
+        private fun DataOutputStream.writeHalt(halt: Halt?) {
+            when (halt) {
+                null -> writeInt(0)
+                is Halt.Exit -> writeIntArray(intArrayOf(1, halt.pc))
+                is Halt.Spin -> writeIntArray(intArrayOf(2, halt.pc))
+                is Halt.IllegalOpcode -> writeIntArray(intArrayOf(3, halt.pc, halt.opcode))
+                is Halt.StackUnderflow -> writeIntArray(intArrayOf(4, halt.pc))
+                is Halt.StackOverflow -> writeIntArray(intArrayOf(5, halt.pc))
+                is Halt.InvalidBitPlane -> writeIntArray(intArrayOf(6, halt.pc, halt.x))
+            }
+        }
+
+        private fun DataInputStream.readHalt(): Halt? {
+            val firstByte = readInt()
+            return when (firstByte) {
+                0 -> null
+                1 -> Halt.Exit(readInt())
+                2 -> Halt.Spin(readInt())
+                3 -> Halt.IllegalOpcode(readInt(), readInt())
+                4 -> Halt.StackUnderflow(readInt())
+                5 -> Halt.StackOverflow(readInt())
+                6 -> Halt.InvalidBitPlane(readInt(), readInt())
+                else -> throw IllegalStateException("Unknown halt type $firstByte")
+            }
+        }
     }
 }
