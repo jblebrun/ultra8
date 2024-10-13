@@ -11,8 +11,8 @@ android {
         applicationId = "com.emerjbl.ultra8"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3"
+        versionCode = 8
+        versionName = "0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
