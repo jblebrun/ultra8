@@ -52,7 +52,7 @@ fun SideDrawer(
             }
             items(programs.size,
                 contentType = { 1 },
-                key = { programs[it].dataUri }
+                key = { programs[it].name }
             ) {
                 val program = programs[it]
                 NavigationDrawerItem(
