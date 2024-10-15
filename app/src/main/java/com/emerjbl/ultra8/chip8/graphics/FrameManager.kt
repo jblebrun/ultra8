@@ -40,7 +40,7 @@ class FrameManager(hires: Boolean, frame: Frame) {
 
     /** Scroll right by 4 pixels. (SCR instruction) */
     fun scrollRight() = frame.withLock { frame ->
-        for (row in 0 until frame.width) {
+        for (row in 0 until frame.height) {
             val rowStart = row * frame.width
             val startIndex = row * frame.width
             val destinationOffset = rowStart + 4
