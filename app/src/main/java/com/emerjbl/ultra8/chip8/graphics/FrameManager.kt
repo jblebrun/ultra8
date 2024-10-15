@@ -103,7 +103,8 @@ class FrameManager(hires: Boolean, frame: Frame) {
         return when (planes) {
             1 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1)
             2 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 2)
-            3 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1) ||
+            // Note: Use of non-short-circuiting `or` here, so both plans are always drawn.
+            3 -> putPlaneSprite(xBase, yBase, data, offset, linesIn, 1) or
                     putPlaneSprite(xBase, yBase, data, offset + plane3Offset, linesIn, 2)
 
             else -> false
