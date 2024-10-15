@@ -1,6 +1,5 @@
 package com.emerjbl.ultra8.ui.component
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,9 +29,7 @@ fun SideDrawer(
         LazyColumn {
             item {
                 Text(
-                    "Ultra 8", modifier = Modifier
-                        .clickable(onClick = onReset)
-                        .padding(10.dp),
+                    "Ultra 8", modifier = Modifier.padding(10.dp),
                     style = MaterialTheme.typography.titleLarge
                 )
                 HorizontalDivider()

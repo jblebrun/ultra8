@@ -47,7 +47,7 @@ fun MainScreen() {
 
 
     (LocalContext.current as? Activity)?.intent?.let {
-        viewModel.load(it)
+        viewModel.handleIntent(it)
     }
 
     val windowFocused = LocalWindowInfo.current.isWindowFocused

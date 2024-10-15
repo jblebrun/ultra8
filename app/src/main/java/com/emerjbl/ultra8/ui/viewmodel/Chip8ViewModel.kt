@@ -97,7 +97,7 @@ class Chip8ViewModel(
         }
     }
 
-    fun load(intent: Intent) {
+    fun handleIntent(intent: Intent) {
         when (intent.action) {
             Intent.ACTION_MAIN -> {}
             Intent.ACTION_VIEW -> {
@@ -107,7 +107,10 @@ class Chip8ViewModel(
                 } else {
                     Log.i("Chip8", "Opening program from URI: $data")
                     viewModelScope.launch {
-                        loadInternal(programStore.addForUri(data))
+                        val program = programStore.addForUri(data)
+                        if (program != loadedProgram.value) {
+                            loadInternal(program)
+                        }
                     }
                 }
             }
