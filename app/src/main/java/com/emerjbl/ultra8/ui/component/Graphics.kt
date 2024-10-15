@@ -24,16 +24,8 @@ import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.ui.helpers.FrameConfig
 import com.emerjbl.ultra8.ui.helpers.FrameHolder
 import com.emerjbl.ultra8.ui.helpers.next
-import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
-import kotlin.time.measureTimedValue
-
-
-private val frameStats = SimpleStats(unit = "us", actionInterval = 300) {
-    Log.i("Chip8", "Frame update: $it")
-}
-
 
 @Composable
 fun frameGrabber(
@@ -50,15 +42,11 @@ fun frameGrabber(
             coroutineContext[Job]?.invokeOnCompletion { Log.i("Chip8", "End Render Loop") }
             while (isActive) {
                 withFrameMillis { ft ->
-                    measureTimedValue {
-                        frameHolder.value = frameHolder.value.next(
-                            nextFrame(frameHolder.value.frame),
-                            ft,
-                            frameConfig
-                        )
-                    }.let {
-                        frameStats.add(it.duration.inWholeMicroseconds)
-                    }
+                    frameHolder.value = frameHolder.value.next(
+                        nextFrame(frameHolder.value.frame),
+                        ft,
+                        frameConfig
+                    )
                 }
             }
         }

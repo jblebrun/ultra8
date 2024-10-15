@@ -2,8 +2,6 @@ package com.emerjbl.ultra8.chip8.sound
 
 import android.media.AudioFormat
 import android.media.AudioTrack
-import android.util.Log
-import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,17 +9,12 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import java.util.concurrent.Executors
-import kotlin.time.TimeSource
 
 /** Provide Chip8 sound output using an AudioTrack. */
 class AudioTrackSynthSound(
     parentScope: CoroutineScope,
     private val sampleRate: Int
 ) : Chip8Sound {
-    private val playStats = SimpleStats("ms", 1) {
-        Log.i("Chip8", "Beep play times: $it")
-    }
-
     private sealed interface Action {
         data class Play(val ticks: Int) : Action
         data object UpdatePattern : Action
@@ -68,7 +61,6 @@ class AudioTrackSynthSound(
                         // 2) According to the XO spec, updating the tick timer should not restart
                         //    the sound. But currently, we will pause and restart the sound, so
                         //    you may hear clicks.
-                        val started = TimeSource.Monotonic.markNow()
                         val sampleTime = action.ticks / 60.0 // 60 Hz ticks
                         val samplesToPlay = sampleTime * sampleRate
                         track.pause()
@@ -80,8 +72,6 @@ class AudioTrackSynthSound(
                         }
                         track.setLoopPoints(0, playSamples, loops)
                         track.play()
-                        val timeToPlay = started.elapsedNow()
-                        playStats.add(timeToPlay.inWholeMilliseconds)
                     }
 
                     is Action.UpdatePattern -> {

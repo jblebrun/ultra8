@@ -3,7 +3,6 @@ package com.emerjbl.ultra8.chip8.runner
 import android.util.Log
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.machine.Halt
-import com.emerjbl.ultra8.util.SimpleStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,10 +25,6 @@ class Chip8ThreadRunner {
         runThread = null
     }
 
-    private val tickStats = SimpleStats("us", 300) {
-        Log.i("Chip8", "$cyclesPerTick/tick: $it")
-    }
-
     fun run(machine: Chip8) {
         runThread?.interrupt()
         runThread?.join()
@@ -49,7 +44,6 @@ class Chip8ThreadRunner {
                     val remaining = FRAME_TIME - instructionTime
                     val millisRemaining =
                         maxOf(0, remaining.inWholeMilliseconds)
-                    tickStats.add(instructionTime.inWholeMicroseconds)
                     Thread.sleep(millisRemaining)
                 }
                 Log.i("Chip8", "Finished with: $halt")
