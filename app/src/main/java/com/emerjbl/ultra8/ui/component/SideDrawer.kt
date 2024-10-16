@@ -18,7 +18,7 @@ import com.emerjbl.ultra8.data.Program
 fun SideDrawer(
     drawerState: DrawerState,
     programs: List<Program>,
-    selectedProgram: Program?,
+    selectedProgram: String?,
     onProgramSelected: (Program) -> Unit,
     onReset: () -> Unit
 ) {
@@ -57,7 +57,7 @@ fun SideDrawer(
                     label = {
                         Text(program.name)
                     },
-                    selected = program == selectedProgram
+                    selected = program.name == selectedProgram
                 )
             }
         }

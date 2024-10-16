@@ -1,175 +1,161 @@
 package com.emerjbl.ultra8.data
 
-import android.content.Context
-import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.core.Serializer
-import androidx.datastore.dataStore
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.ProvidedTypeConverter
+import androidx.room.Query
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+import androidx.room.Upsert
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.machine.Halt
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.io.InputStream
-import java.io.OutputStream
 
 /** Manages the save states for Chip8 instances. */
 class Chip8StateStore(
-    private val context: Context,
-    scope: CoroutineScope = CoroutineScope((Dispatchers.IO + SupervisorJob()))
+    private val db: Ultra8Database,
 ) {
-    /** Returns the last state saved, if there was one. */
-    suspend fun lastSavedState(): Chip8.State? =
-        when (val saved = context.chip8StateStore.data.firstOrNull()) {
-            is MaybeState.Yes -> {
-                saved.state
-            }
-
-            else -> null
-        }
-
-    /** Save the provided state. Pass `null` to clear the saved state. */
-    suspend fun saveSate(state: Chip8.State?) {
-        context.chip8StateStore.updateData {
-            if (state == null) {
-                MaybeState.No
-            } else {
-                MaybeState.Yes(state)
-            }
-        }
+    /** Save the provided [Chip8.State] associated with the program [name]. */
+    suspend fun saveState(name: String, state: Chip8.State) {
+        db.chip8StateDao().saveState(Chip8ProgramState(name, state.toDbState()))
     }
 
-    private val Context.chip8StateStore: DataStore<MaybeState> by dataStore(
-        fileName = "chip8state.u8b",
-        serializer = Chip8StateSerializer,
-        scope = scope,
+    /** Look for a previously saved [Chip8.State] for the provided [name]. */
+    suspend fun findState(name: String): Chip8.State? {
+        return db.chip8StateDao().findByName(name)?.state?.toMachineState()
+    }
+}
+
+@Dao
+interface Chip8ProgramStateDao {
+    @Upsert
+    suspend fun saveState(state: Chip8ProgramState)
+
+    @Query("SELECT * FROM chip8ProgramState WHERE name == :name LIMIT 1")
+    suspend fun findByName(name: String): Chip8ProgramState?
+}
+
+/** A program state stored along with the program name. */
+@Entity
+class Chip8ProgramState(
+    @PrimaryKey val name: String,
+    @Embedded val state: Chip8State
+)
+
+/** An embedding representation of a Chip8.State. */
+@TypeConverters(IntArrayTypeConverter::class, HaltTypeConverter::class)
+class Chip8State(
+    val halt: Halt?,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val vRegisters: IntArray,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val hpRegisters: IntArray,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val stack: IntArray,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val frameData: IntArray,
+    val mem: ByteArray,
+    val i: Int,
+    val sp: Int,
+    val pc: Int,
+    val hires: Boolean,
+    val targetPlane: Int,
+    val width: Int,
+    val height: Int,
+)
+
+private fun Chip8.State.toDbState(): Chip8State {
+    val frame = gfx.nextFrame(null)
+    return Chip8State(
+        halt = halted,
+        vRegisters = v,
+        hpRegisters = hp,
+        stack = stack,
+        mem = mem,
+        i = i,
+        sp = sp,
+        pc = pc,
+        hires = gfx.hires,
+        targetPlane = targetPlane,
+        width = frame.width,
+        height = frame.height,
+        frameData = frame.data.also {
+            check(it.size == frame.width * frame.height)
+        }
     )
+}
 
-    /** Using a Nullable type causes the DataStore to crash. */
-    private sealed interface MaybeState {
-        class Yes(val state: Chip8.State) : MaybeState
-        object No : MaybeState
+private fun Chip8State.toMachineState(): Chip8.State {
+    val gfx = FrameManager(hires, FrameManager.Frame(width, height, frameData))
+    return Chip8.State(
+        halted = halt,
+        v = vRegisters,
+        hp = hpRegisters,
+        stack = stack,
+        mem = mem,
+        i = i,
+        sp = sp,
+        pc = pc,
+        targetPlane = targetPlane,
+        gfx = gfx,
+    )
+}
+
+@ProvidedTypeConverter
+class IntArrayTypeConverter {
+    @TypeConverter
+    fun intArrayToByteArray(intArray: IntArray): ByteArray {
+        val bos = ByteArrayOutputStream(intArray.size * 4)
+        val dos = DataOutputStream(bos)
+        intArray.forEach { dos.writeInt(it) }
+        return bos.toByteArray()
     }
 
-    /** Serialize Chip8State with a simple DataStream approach. */
-    private object Chip8StateSerializer : Serializer<MaybeState> {
-        override val defaultValue: MaybeState = MaybeState.No
-
-        override suspend fun readFrom(input: InputStream): MaybeState {
-            val dis = DataInputStream(input)
-            return try {
-                withContext(Dispatchers.IO) {
-                    Chip8.State(
-                        halted = dis.readHalt(),
-                        v = dis.readIntArray(16),
-                        hp = dis.readIntArray(16),
-                        stack = dis.readIntArray(64),
-                        mem = run {
-                            // Support variable memory lengths.
-                            val len = dis.readInt()
-                            if (len > 65536) {
-                                throw IllegalStateException("memory too large: $len")
-                            }
-                            dis.readByteArray(len)
-                        },
-                        i = dis.readInt(),
-                        sp = dis.readInt(),
-                        pc = dis.readInt(),
-                        targetPlane = dis.readInt(),
-                        gfx = run {
-                            val hires = dis.readBoolean()
-                            val width = dis.readInt()
-                            val height = dis.readInt()
-                            if (width * height > 65536) {
-                                throw IllegalStateException("Invalid screen width/height: $width x $height")
-                            }
-                            val data = dis.readIntArray(width * height)
-                            FrameManager(hires, FrameManager.Frame(width, height, data))
-                        }
-                    ).let { MaybeState.Yes(it) }
-                }
-            } catch (e: Exception) {
-                Log.w("Chip8", "Failed to read in the stored Chip8 state", e)
-                MaybeState.No
+    @TypeConverter
+    fun byteArrayToIntArray(byteArray: ByteArray): IntArray {
+        val dis = DataInputStream(ByteArrayInputStream(byteArray))
+        return IntArray(byteArray.size / 4).apply {
+            repeat(this.size) {
+                this[it] = dis.readInt()
             }
         }
+    }
+}
 
-        override suspend fun writeTo(
-            t: MaybeState,
-            output: OutputStream
-        ) {
-            val state = when (t) {
-                MaybeState.No -> {
-                    Log.i("Chip8", "Clearing saved state")
-                    return
-                }
-
-                is MaybeState.Yes -> t.state
-            }
-
-            val dos = DataOutputStream(output)
-            withContext(Dispatchers.IO) {
-                dos.writeHalt(state.halted)
-                dos.writeIntArray(state.v)
-                dos.writeIntArray(state.hp)
-                dos.writeIntArray(state.stack)
-                dos.writeInt(state.mem.size)
-                dos.write(state.mem)
-                dos.writeInt(state.i)
-                dos.writeInt(state.sp)
-                dos.writeInt(state.pc)
-                dos.writeInt(state.targetPlane)
-                dos.writeBoolean(state.gfx.hires)
-                val frame = state.gfx.nextFrame(null)
-                dos.writeInt(frame.width)
-                dos.writeInt(frame.height)
-                dos.writeIntArray(frame.data)
-            }
+@ProvidedTypeConverter
+class HaltTypeConverter {
+    @TypeConverter
+    fun toString(halt: Halt?): String {
+        return when (halt) {
+            null -> ""
+            is Halt.Exit -> "Exit,${halt.pc}"
+            is Halt.Spin -> "Spin,${halt.pc}"
+            is Halt.IllegalOpcode -> "IllegalOpcode,${halt.pc},${halt.opcode}"
+            is Halt.StackUnderflow -> "StackUnderflow,${halt.pc}"
+            is Halt.StackOverflow -> "StackOverflow,${halt.pc}"
+            is Halt.InvalidBitPlane -> "InvalidBitPlane,${halt.pc},${halt.x}"
         }
+    }
 
-        private fun DataOutputStream.writeIntArray(vals: IntArray) {
-            vals.forEach { writeInt(it) }
-        }
-
-        private fun DataInputStream.read(ints: IntArray) {
-            repeat(ints.size) { ints[it] = readInt() }
-        }
-
-        private fun DataInputStream.readIntArray(size: Int) =
-            IntArray(size).apply { read(this) }
-
-        private fun DataInputStream.readByteArray(size: Int) =
-            ByteArray(size).apply { readFully(this) }
-
-        private fun DataOutputStream.writeHalt(halt: Halt?) {
-            when (halt) {
-                null -> writeInt(0)
-                is Halt.Exit -> writeIntArray(intArrayOf(1, halt.pc))
-                is Halt.Spin -> writeIntArray(intArrayOf(2, halt.pc))
-                is Halt.IllegalOpcode -> writeIntArray(intArrayOf(3, halt.pc, halt.opcode))
-                is Halt.StackUnderflow -> writeIntArray(intArrayOf(4, halt.pc))
-                is Halt.StackOverflow -> writeIntArray(intArrayOf(5, halt.pc))
-                is Halt.InvalidBitPlane -> writeIntArray(intArrayOf(6, halt.pc, halt.x))
-            }
-        }
-
-        private fun DataInputStream.readHalt(): Halt? {
-            val firstByte = readInt()
-            return when (firstByte) {
-                0 -> null
-                1 -> Halt.Exit(readInt())
-                2 -> Halt.Spin(readInt())
-                3 -> Halt.IllegalOpcode(readInt(), readInt())
-                4 -> Halt.StackUnderflow(readInt())
-                5 -> Halt.StackOverflow(readInt())
-                6 -> Halt.InvalidBitPlane(readInt(), readInt())
-                else -> throw IllegalStateException("Unknown halt type $firstByte")
-            }
+    @TypeConverter
+    fun fromString(data: String): Halt? {
+        val fields = data.split(",")
+        return when (fields[0]) {
+            "" -> null
+            "Exit" -> Halt.Exit(fields[1].toInt())
+            "Spin" -> Halt.Spin(fields[1].toInt())
+            "IllegalOpcode" -> Halt.IllegalOpcode(fields[1].toInt(), fields[2].toInt())
+            "StackUnderflow" -> Halt.StackUnderflow(fields[1].toInt())
+            "StackOverflow" -> Halt.StackOverflow(fields[1].toInt())
+            "InvalidBitPlane" -> Halt.InvalidBitPlane(fields[1].toInt(), fields[2].toInt())
+            else -> throw IllegalStateException("Unknown halt type $fields[0]")
         }
     }
 }

@@ -34,7 +34,7 @@ data class Program(
     /** The display name for the program. */
     val name: String,
     /** The actual program data. */
-    val data: ByteArrayWrapper
+    val data: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf())
 )
 
 /** The store of programs that Ultra8 can run. */
