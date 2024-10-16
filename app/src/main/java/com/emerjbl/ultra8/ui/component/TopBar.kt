@@ -9,15 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import com.emerjbl.ultra8.data.Program
 
 @Composable
 fun TopBar(
-    loadedProgram: Program?,
+    loadedProgram: String?,
     openDrawer: () -> Unit
 
 ) {
-    val title = if (loadedProgram?.name == null) "Ultra8" else "Ultra8: ${loadedProgram.name}"
+    val title = if (loadedProgram == null) "Ultra8" else "Ultra8: ${loadedProgram}"
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = openDrawer) {

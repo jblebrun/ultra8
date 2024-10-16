@@ -2,9 +2,11 @@ package com.emerjbl.ultra8.ui.viewmodel
 
 import android.content.Intent
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.Ultra8Application
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.TimeSource
 
 
@@ -30,6 +33,7 @@ import kotlin.time.TimeSource
 class Chip8ViewModel(
     private val chip8StateStore: Chip8StateStore,
     private val programStore: ProgramStore,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val keys = Chip8Keys()
     private fun newMachine(program: ByteArray): Chip8 =
@@ -49,8 +53,8 @@ class Chip8ViewModel(
     val running: StateFlow<Boolean>
         get() = runner.running
 
-    private val _loadedProgram = MutableStateFlow<Program?>(null)
-    val loadedProgram: StateFlow<Program?>
+    private val _loadedProgram = MutableStateFlow<String?>(null)
+    val loadedProgram: StateFlow<String?>
         get() = _loadedProgram.asStateFlow()
 
     val cyclesPerTick = MutableStateFlow(runner.cyclesPerTick).apply {
@@ -60,13 +64,18 @@ class Chip8ViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            when (val savedState = chip8StateStore.lastSavedState()) {
-                null -> load(programStore.forName("breakout")!!)
-                else -> {
-                    Log.i("Chip8", "Restoring saved state: ${savedState.pc}")
-                    machine = newMachine(savedState)
-                    resume()
-                }
+            val lastProgramName = savedStateHandle.get<String>("lastProgram") ?: "breakout"
+            val savedState = lastProgramName.let { chip8StateStore.findState(it) }
+            val program = lastProgramName.let { programStore.forName(lastProgramName) }!!
+
+            if (savedState != null) {
+                _loadedProgram.value = lastProgramName
+                machine = newMachine(savedState)
+                resume()
+            } else {
+                _loadedProgram.value = program.name
+                machine = newMachine(program.data.bytes)
+                resume()
             }
         }
     }
@@ -83,7 +92,8 @@ class Chip8ViewModel(
         runner.pause()
         val state = machine.stateView.clone()
         viewModelScope.launch(Dispatchers.IO) {
-            chip8StateStore.saveSate(state)
+            savedStateHandle.set("lastProgram", loadedProgram.value)
+            chip8StateStore.saveState(loadedProgram.value ?: "init", state)
             Log.i("Chip8", "State Saved: ${state.pc}")
         }
     }
@@ -92,7 +102,8 @@ class Chip8ViewModel(
         runner.run(machine)
         val state = machine.stateView.clone()
         viewModelScope.launch(Dispatchers.IO) {
-            chip8StateStore.saveSate(state)
+            savedStateHandle.set("lastProgram", loadedProgram.value)
+            chip8StateStore.saveState(loadedProgram.value ?: "init", state)
             Log.i("Chip8", "State Saved: ${state.pc}")
         }
     }
@@ -108,7 +119,7 @@ class Chip8ViewModel(
                     Log.i("Chip8", "Opening program from URI: $data")
                     viewModelScope.launch {
                         val program = programStore.addForUri(data)
-                        if (program != loadedProgram.value) {
+                        if (program.name != loadedProgram.value) {
                             loadInternal(program)
                         }
                     }
@@ -123,8 +134,12 @@ class Chip8ViewModel(
 
     private suspend fun loadInternal(program: Program) {
         Log.i("Chip8", "Program size: ${program.data.bytes.size}")
-        _loadedProgram.value = program
-        machine = newMachine(program.data.bytes)
+        _loadedProgram.value = program.name
+        val existingState = withContext(Dispatchers.IO) {
+            chip8StateStore.findState(program.name)
+        }
+        machine =
+            if (existingState != null) newMachine(existingState) else newMachine(program.data.bytes)
         resume()
     }
 
@@ -153,6 +168,7 @@ class Chip8ViewModel(
                     Chip8ViewModel(
                         application.provider.chip8StateStore,
                         application.provider.programStore,
+                        extras.createSavedStateHandle()
                     ) as T
                 }
         }
