@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.emerjbl.ultra8.ui.screen.MainScreen
+import com.emerjbl.ultra8.ui.screen.AppEntryPoint
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,7 +12,7 @@ class MainActivity : ComponentActivity() {
         actionBar?.hide()
         enableEdgeToEdge()
         setContent {
-            MainScreen()
+            AppEntryPoint()
         }
     }
 

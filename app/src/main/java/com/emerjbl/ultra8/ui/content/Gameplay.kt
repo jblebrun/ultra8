@@ -14,13 +14,13 @@ import com.emerjbl.ultra8.ui.component.BottomBar
 import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
 import com.emerjbl.ultra8.ui.helpers.FrameConfig
-import com.emerjbl.ultra8.ui.viewmodel.Chip8ViewModel
+import com.emerjbl.ultra8.ui.viewmodel.PlayGameViewModel
 
 @Composable
 fun PortraitGameplay(
     running: Boolean,
     frameConfig: FrameConfig,
-    viewModel: Chip8ViewModel,
+    viewModel: PlayGameViewModel,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -48,7 +48,7 @@ fun LandscapeGameplay(
     innerPadding: PaddingValues,
     running: Boolean,
     frameConfig: FrameConfig,
-    viewModel: Chip8ViewModel
+    viewModel: PlayGameViewModel
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,

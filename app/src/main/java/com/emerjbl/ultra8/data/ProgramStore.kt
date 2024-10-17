@@ -2,6 +2,7 @@ package com.emerjbl.ultra8.data
 
 import android.content.Context
 import android.net.Uri
+import android.provider.MediaStore.MediaColumns
 import com.emerjbl.ultra8.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +63,7 @@ class ProgramStore(private val context: Context, initScope: CoroutineScope) {
             val name = withContext(Dispatchers.IO) {
                 context.contentResolver.query(
                     uri,
-                    null,
+                    arrayOf(MediaColumns.DISPLAY_NAME),
                     null,
                     null,
                     null
