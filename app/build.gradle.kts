@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
+
 }
 
 android {
@@ -83,6 +85,8 @@ dependencies {
     implementation(libs.androidx.graphics.shapes.android)
     implementation(libs.androidx.lifecycle.runtime.compose.android)
     implementation(libs.androidx.datastore.core.android)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.strikt.core)
