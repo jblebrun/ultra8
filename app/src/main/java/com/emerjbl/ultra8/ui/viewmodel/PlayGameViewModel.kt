@@ -1,14 +1,11 @@
 package com.emerjbl.ultra8.ui.viewmodel
 
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import androidx.navigation.toRoute
 import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.input.Chip8Keys
@@ -16,9 +13,7 @@ import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
 import com.emerjbl.ultra8.data.Chip8StateStore
-import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
-import com.emerjbl.ultra8.ui.screen.PlayGame
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,19 +26,15 @@ import kotlin.time.TimeSource
 
 /** A [androidx.lifecycle.ViewModel] maintaining the state of a running Chip8 machine. */
 class PlayGameViewModel(
+    val programName: String,
     private val chip8StateStore: Chip8StateStore,
     private val programStore: ProgramStore,
-    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    val programName = savedStateHandle.toRoute<PlayGame>().programName
-
     private val keys = Chip8Keys()
 
     private var machine = newMachine(byteArrayOf())
 
     private val runner = Chip8ThreadRunner()
-
-    val programs: StateFlow<List<Program>> = programStore.programs
 
     val running: StateFlow<Boolean>
         get() = runner.running
@@ -123,10 +114,12 @@ class PlayGameViewModel(
                 extras: CreationExtras
             ): T =
                 checkNotNull(extras[APPLICATION_KEY] as? Ultra8Application).let { application ->
+                    // We share viewModels for all running games in the nav stack
+                    val programName = extras[ViewModelProvider.VIEW_MODEL_KEY]!!
                     PlayGameViewModel(
+                        programName,
                         application.provider.chip8StateStore,
                         application.provider.programStore,
-                        extras.createSavedStateHandle()
                     ) as T
                 }
         }

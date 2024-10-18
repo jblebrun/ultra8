@@ -69,9 +69,8 @@ fun Ultra8Theme(
         pixel3Color = colorScheme.primary,
     )
 
-
     CompositionLocalProvider(
-        LocalChip8ColorScheme provides chip8ColorScheme
+        LocalChip8ColorScheme provides chip8ColorScheme,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
