@@ -21,6 +21,13 @@ fun Assertion.Builder<Chip8.State>.contentEquals(other: Chip8.State): Assertion.
             .isEqualTo(other.sp)
         strikt.api.expectThat(subject.pc).describedAs("PC: %s")
             .isEqualTo(other.pc)
-        strikt.api.expectThat(subject.targetPlane).describedAs("TargetPlane: %s")
-            .isEqualTo(other.targetPlane)
+        strikt.api.expectThat(subject.gfx.targetPlane).describedAs("TargetPlane: %s")
+            .isEqualTo(other.gfx.targetPlane)
+        val subjectFrame = subject.gfx.nextFrame(null)
+        val otherFrame = other.gfx.nextFrame(null)
+        strikt.api.expectThat(subjectFrame.width).isEqualTo(otherFrame.width)
+        strikt.api.expectThat(subjectFrame.height).isEqualTo(otherFrame.height)
+        strikt.api.expectThat(subjectFrame.plane1.data).contentEquals(otherFrame.plane1.data)
+        strikt.api.expectThat(subjectFrame.plane2.data).contentEquals(otherFrame.plane2.data)
+
     }

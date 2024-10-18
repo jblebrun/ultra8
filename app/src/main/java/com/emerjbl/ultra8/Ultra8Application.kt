@@ -29,8 +29,6 @@ class Ultra8Application : Application() {
                 .apply {
                     if (BuildConfig.DEBUG) {
                         fallbackToDestructiveMigration()
-                        fallbackToDestructiveMigrationOnDowngrade()
-
                     }
                 }
                 .addTypeConverter(IntArrayTypeConverter())
