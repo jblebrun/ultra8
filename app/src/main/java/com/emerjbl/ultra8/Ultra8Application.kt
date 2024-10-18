@@ -26,6 +26,13 @@ class Ultra8Application : Application() {
                 this@Ultra8Application,
                 Ultra8Database::class.java, "ultra8-database"
             )
+                .apply {
+                    if (BuildConfig.DEBUG) {
+                        fallbackToDestructiveMigration()
+                        fallbackToDestructiveMigrationOnDowngrade()
+
+                    }
+                }
                 .addTypeConverter(IntArrayTypeConverter())
                 .addTypeConverter(HaltTypeConverter()).build()
         }
