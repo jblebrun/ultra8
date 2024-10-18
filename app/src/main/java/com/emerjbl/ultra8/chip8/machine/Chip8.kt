@@ -50,8 +50,6 @@ class Chip8(
         var sp: Int = 0,
         /** Program counter. */
         var pc: Int = EXEC_START,
-        /** Chip-XO target plane for drawing (0-3). */
-        var targetPlane: Int = 0x1,
 
         /** Graphics buffer is an important part of state, too. */
         val gfx: FrameManager = FrameManager(),
@@ -74,7 +72,6 @@ class Chip8(
             val i: Int get() = state.i
             val sp: Int get() = state.sp
             val pc: Int get() = state.pc
-            val targetPlane: Int get() = state.targetPlane
             val halted: Halt? get() = state.halted
 
             /** Create a deep copy of the entire state. */
@@ -86,7 +83,6 @@ class Chip8(
                 i,
                 sp,
                 pc,
-                targetPlane,
                 state.gfx.clone(),
                 state.halted
             )
@@ -254,7 +250,7 @@ class Chip8(
                 0xB0 -> pc = v[0] + nnn
                 0xC0 -> v[x] = random.nextInt(0xFF) and b2
                 0xD0 -> v[0xF] =
-                    if (gfx.putSprite(v[x], v[y], mem, i, subOp, targetPlane)) 1 else 0
+                    if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
                     0x9E -> if (keys.pressed(v[x])) skipNextInstruction()
@@ -273,7 +269,7 @@ class Chip8(
                         if (inst.x > 3 || inst.x < 0) {
                             return Halt.InvalidBitPlane(pc - 2, x)
                         }
-                        targetPlane = inst.x
+                        gfx.targetPlane = inst.x
                     }
 
                     0x02 -> {

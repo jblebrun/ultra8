@@ -63,9 +63,10 @@ class FrameHolder(
     /** Update this frame's data for the provided `frameDiff`. */
     fun update(frame: FrameManager.Frame, frameDiff: Int, frameConfig: FrameConfig) {
         var currentlyFading = 0
-        for (i in frame.data.indices) {
+        for (i in frame.plane1.data.indices) {
+            val pixel = frame.plane1.data[i].toInt() or (frame.plane2.data[i].toInt() shl 1);
             // If the pixel is being unset, start its fade timer
-            if (frame.data[i] == 0 && pixelData[i].alpha == 0xFF) {
+            if (pixel == 0 && pixelData[i].alpha == 0xFF) {
                 fadeTimes[i] = frameConfig.fadeMillisInt
             }
 
@@ -83,12 +84,12 @@ class FrameHolder(
             }
 
             // Set Pixel
-            when (frame.data[i]) {
+            when (pixel) {
                 1 -> pixelData[i] = frameConfig.colorInt
                 2 -> pixelData[i] = frameConfig.color2Int
                 3 -> pixelData[i] = frameConfig.color3Int
             }
-            if (frame.data[i] != 0) fadeTimes[i] = 0
+            if (pixel != 0) fadeTimes[i] = 0
         }
 
         fadingPixels = currentlyFading
@@ -116,12 +117,12 @@ fun FrameHolder?.next(
     frameConfig: FrameConfig
 ): FrameHolder {
     val fadeTimes = this?.fadeTimes
-        ?.takeIf { it.size == frame.data.size }
-        ?: IntArray(frame.data.size)
+        ?.takeIf { it.size == frame.plane1.data.size }
+        ?: IntArray(frame.plane1.data.size)
 
     val pixelData = this?.pixelData
-        ?.takeIf { it.size == frame.data.size }
-        ?: IntArray(frame.data.size)
+        ?.takeIf { it.size == frame.plane1.data.size }
+        ?: IntArray(frame.plane1.data.size)
 
     // Add some space for filter blur to extend into.
     val bitmapWidth = frame.width + 2 * FILTER_PADDING_PX

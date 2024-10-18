@@ -59,20 +59,25 @@ class Chip8State(
     val hpRegisters: IntArray,
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
     val stack: IntArray,
-    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
-    val frameData: IntArray,
     val mem: ByteArray,
     val i: Int,
     val sp: Int,
     val pc: Int,
+    @Embedded val gfx: Chip8GraphicsState,
+)
+
+class Chip8GraphicsState(
     val hires: Boolean,
     val targetPlane: Int,
     val width: Int,
     val height: Int,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val plane1Data: ByteArray,
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    val plane2Data: ByteArray,
 )
 
 private fun Chip8.State.toDbState(): Chip8State {
-    val frame = gfx.nextFrame(null)
     return Chip8State(
         halt = halted,
         vRegisters = v,
@@ -82,18 +87,33 @@ private fun Chip8.State.toDbState(): Chip8State {
         i = i,
         sp = sp,
         pc = pc,
-        hires = gfx.hires,
+        gfx = gfx.toDbState()
+    )
+}
+
+private fun FrameManager.toDbState(): Chip8GraphicsState {
+    val frame = nextFrame(null)
+    return Chip8GraphicsState(
+        hires = hires,
         targetPlane = targetPlane,
         width = frame.width,
         height = frame.height,
-        frameData = frame.data.also {
+        plane1Data = frame.plane1.data.also {
+            check(it.size == frame.width * frame.height)
+        },
+        plane2Data = frame.plane2.data.also {
             check(it.size == frame.width * frame.height)
         }
     )
 }
 
+private fun Chip8GraphicsState.toFrameManager(): FrameManager = FrameManager(
+    hires,
+    targetPlane,
+    FrameManager.Frame(width, height, plane1Data, plane2Data)
+)
+
 private fun Chip8State.toMachineState(): Chip8.State {
-    val gfx = FrameManager(hires, FrameManager.Frame(width, height, frameData))
     return Chip8.State(
         halted = halt,
         v = vRegisters,
@@ -103,8 +123,7 @@ private fun Chip8State.toMachineState(): Chip8.State {
         i = i,
         sp = sp,
         pc = pc,
-        targetPlane = targetPlane,
-        gfx = gfx,
+        gfx = gfx.toFrameManager(),
     )
 }
 
