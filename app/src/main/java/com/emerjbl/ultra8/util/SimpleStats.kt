@@ -1,5 +1,6 @@
 package com.emerjbl.ultra8.util
 
+@Suppress("unused")
 class SimpleStats(
     val unit: String,
     val actionInterval: Int,

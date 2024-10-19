@@ -16,7 +16,6 @@ interface Provider {
     val db: RoomDatabase
 }
 
-
 class Ultra8Application : Application() {
     val provider = object : Provider {
         override val chip8StateStore by lazy { Chip8StateStore(db) }

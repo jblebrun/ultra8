@@ -47,7 +47,7 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
         fun down() = pointers != 0
     }
 
-    /** The keystates for the 16 keys on the Chip8 hex keypad. */
+    /** The key states for the 16 keys on the Chip8 hex keypad. */
     private val keyBounds = Array(16) { ButtonState(Rect.Zero) }
 
     /** The bounds of the parent that (hopefully) encloses all added keys. */
@@ -57,7 +57,7 @@ class KeyHitManager(val onKeyDown: (Int) -> Unit, val onKeyUp: (Int) -> Unit) {
      *  Set the position on-screen for the key with the provided values.
      *
      *  The provided [Rect] should be in screen coordinates. The [value] parameter corresponds to
-     *  the hex value on the Chip8 keycap.
+     *  the hex value on the Chip8 key cap.
      * */
     internal fun setKeyPosition(value: Int, keyCoords: LayoutCoordinates) {
         val pc = parentCoordinates

@@ -16,7 +16,7 @@ fun TopBar(
     openDrawer: () -> Unit
 
 ) {
-    val title = if (loadedProgram == null) "Ultra8" else "Ultra8: ${loadedProgram}"
+    val title = if (loadedProgram == null) "Ultra8" else "Ultra8: $loadedProgram"
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = openDrawer) {
