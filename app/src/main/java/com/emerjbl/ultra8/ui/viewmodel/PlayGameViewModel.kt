@@ -88,11 +88,14 @@ class PlayGameViewModel(
     private val initJob = viewModelScope.launch {
         machine = withContext(Dispatchers.IO) {
             val savedState = chip8StateStore.findState(programName)
-            val program = programStore.forName(programName)!!
+            val programData = programStore.dataForName(programName)
             if (savedState != null) {
                 newMachine(savedState)
+            } else if (programData != null) {
+                newMachine(programData)
             } else {
-                newMachine(program.data.bytes)
+                // TODO -- something useful
+                newMachine(byteArrayOf())
             }
         }
         resume()

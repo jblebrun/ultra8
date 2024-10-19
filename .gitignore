@@ -3,4 +3,6 @@
 local.properties
 app/release
 app/debug
+app/build
 .DS_Store
+programs/seed.db

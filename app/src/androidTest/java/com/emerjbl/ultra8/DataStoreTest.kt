@@ -82,7 +82,7 @@ class DataStoreTest {
             .addTypeConverter(IntArrayTypeConverter())
             .build()
 
-        return Chip8StateStore(db)
+        return Chip8StateStore(db.chip8StateDao())
     }
 
     companion object {

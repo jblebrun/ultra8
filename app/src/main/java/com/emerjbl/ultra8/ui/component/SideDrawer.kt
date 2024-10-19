@@ -1,15 +1,23 @@
 package com.emerjbl.ultra8.ui.component
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.emerjbl.ultra8.data.Program
@@ -20,7 +28,8 @@ fun SideDrawer(
     programs: List<Program>,
     selectedProgram: String?,
     onProgramSelected: (Program) -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    onRemoveProgram: (String) -> Unit
 ) {
     ModalDrawerSheet(
         drawerState = drawerState,
@@ -55,7 +64,21 @@ fun SideDrawer(
                 NavigationDrawerItem(
                     onClick = { onProgramSelected(program) },
                     label = {
-                        Text(program.name)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(program.name)
+                            if (!program.builtIn) {
+                                IconButton({ onRemoveProgram(program.name) }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Remove ${program.name}"
+                                    )
+                                }
+                            }
+                        }
                     },
                     selected = program.name == selectedProgram
                 )
