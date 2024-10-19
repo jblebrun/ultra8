@@ -65,7 +65,7 @@ class Chip8(
          * A given instance wraps an actual live machine state, so it will change as the machine does;
          * it's not a static copy.
          */
-        @Suppress("MemberVisibilityCanBePrivate")
+        @Suppress("unused", "MemberVisibilityCanBePrivate")
         class View(private val state: State) {
             val v: IntBuffer = IntBuffer.wrap(state.v).asReadOnlyBuffer()
             val hp: IntBuffer = IntBuffer.wrap(state.hp).asReadOnlyBuffer()
@@ -122,10 +122,10 @@ class Chip8(
     /** Skip instructions, including skipping over 2-byte long jump instruction. */
     private fun skipNextInstruction() {
         state.run {
-            if (mem[pc].i == 0xF0 && mem[pc + 1].i == 0x00) {
-                pc += 4
+            pc += if (mem[pc].i == 0xF0 && mem[pc + 1].i == 0x00) {
+                4
             } else {
-                pc += 2
+                2
             }
         }
 

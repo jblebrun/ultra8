@@ -16,12 +16,12 @@ private const val MAX_ALPHA = 0xFF
 /**
  * Filter padding in Chip8 pixels.
  *
- * We add some empty base around the borer of the graphics bitmap, so that wehn the image
+ * We add some empty base around the borer of the graphics bitmap, so that when the image
  * filter is applied, there's no sharp edge at the borders where the filtering is clipped
  * by the image bounds. I couldn't find a way to allow the image to draw out of bounds,
  * but this approach works nicely.
  */
-private const val FILTER_PADDING_PX = 1;
+private const val FILTER_PADDING_PX = 1
 
 data class FrameConfig(
     /** The color of an "on" pixel. */

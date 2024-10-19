@@ -25,7 +25,7 @@ class Chip8Keys {
         }
     }
 
-    /** Return wether or not the key [idx] is pressed */
+    /** Return whether or not the key [idx] is pressed */
     fun pressed(idx: Int) = keys.withLock { it[idx] }
 
     /** Wait until the next key is pressed, and return its index. */

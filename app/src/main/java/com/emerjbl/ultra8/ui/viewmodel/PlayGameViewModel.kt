@@ -59,7 +59,7 @@ class PlayGameViewModel(
             withContext(Dispatchers.IO) {
                 val state = machine.stateView.clone()
                 chip8StateStore.saveState(programName, state)
-                Log.i("Chip8", "(PAUSE) ${programName} State Saved: ${state.pc}")
+                Log.i("Chip8", "(PAUSE) $programName State Saved: ${state.pc}")
             }
         }
     }
@@ -71,7 +71,7 @@ class PlayGameViewModel(
             withContext(Dispatchers.IO) {
                 val state = machine.stateView.clone()
                 chip8StateStore.saveState(programName, state)
-                Log.i("Chip8", "(RESUME) ${programName} State Saved: ${state.pc}")
+                Log.i("Chip8", "(RESUME) $programName State Saved: ${state.pc}")
             }
         }
     }
