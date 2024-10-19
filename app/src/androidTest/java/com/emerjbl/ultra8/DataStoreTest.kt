@@ -97,10 +97,10 @@ class DataStoreTest {
             i = 0x0242,
             pc = 0x0343,
             sp = 0x0545,
-            targetPlane = 0x03,
             gfx = FrameManager(),
         ).apply {
-            gfx.putSprite(10, 10, byteArrayOf(2, 3, 4, 56, 7, 7), 0, 5, 2)
+            gfx.targetPlane = 0x2
+            gfx.putSprite(10, 10, byteArrayOf(2, 3, 4, 56, 7, 7), 0, 5)
         }
 
         val STATE_2 = Chip8.State(
@@ -111,10 +111,10 @@ class DataStoreTest {
             i = 0x0342,
             pc = 0x0443,
             sp = 0x0845,
-            targetPlane = 0x02,
             gfx = FrameManager(),
         ).apply {
-            gfx.putSprite(15, 15, byteArrayOf(2, 3, 4, 56, 8, 8, 67, 12), 0, 4, 3)
+            gfx.targetPlane = 0x3
+            gfx.putSprite(15, 15, byteArrayOf(2, 3, 4, 56, 8, 8, 67, 12), 0, 4)
         }
     }
 }
