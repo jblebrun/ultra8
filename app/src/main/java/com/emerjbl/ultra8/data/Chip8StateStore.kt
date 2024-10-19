@@ -20,16 +20,16 @@ import java.io.DataOutputStream
 
 /** Manages the save states for Chip8 instances. */
 class Chip8StateStore(
-    private val db: Ultra8Database,
+    private val chip8StateDao: Chip8ProgramStateDao,
 ) {
     /** Save the provided [Chip8.State] associated with the program [name]. */
     suspend fun saveState(name: String, state: Chip8.State) {
-        db.chip8StateDao().saveState(Chip8ProgramState(name, state.toDbState()))
+        chip8StateDao.saveState(Chip8ProgramState(name, state.toDbState()))
     }
 
     /** Look for a previously saved [Chip8.State] for the provided [name]. */
     suspend fun findState(name: String): Chip8.State? {
-        return db.chip8StateDao().findByName(name)?.state?.toMachineState()
+        return chip8StateDao.findByName(name)?.state?.toMachineState()
     }
 }
 

@@ -8,7 +8,6 @@ import com.emerjbl.ultra8.data.HaltTypeConverter
 import com.emerjbl.ultra8.data.IntArrayTypeConverter
 import com.emerjbl.ultra8.data.ProgramStore
 import com.emerjbl.ultra8.data.Ultra8Database
-import kotlinx.coroutines.MainScope
 
 interface Provider {
     val chip8StateStore: Chip8StateStore
@@ -18,8 +17,8 @@ interface Provider {
 
 class Ultra8Application : Application() {
     val provider = object : Provider {
-        override val chip8StateStore by lazy { Chip8StateStore(db) }
-        override val programStore by lazy { ProgramStore(this@Ultra8Application, MainScope()) }
+        override val chip8StateStore by lazy { Chip8StateStore(db.chip8StateDao()) }
+        override val programStore by lazy { ProgramStore(this@Ultra8Application, db.programDao()) }
         override val db by lazy {
             Room.databaseBuilder(
                 this@Ultra8Application,
@@ -30,6 +29,7 @@ class Ultra8Application : Application() {
                         fallbackToDestructiveMigration()
                     }
                 }
+                .createFromAsset("seed.db")
                 .addTypeConverter(IntArrayTypeConverter())
                 .addTypeConverter(HaltTypeConverter()).build()
         }
