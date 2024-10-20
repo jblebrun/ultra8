@@ -34,7 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun PlayScreen(
     programName: String,
-    paused: Boolean,
+    gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit
 ) {
@@ -54,11 +54,11 @@ fun PlayScreen(
         }
     }
 
-    DisposableEffect(paused) {
-        if (paused) {
-            viewModel.pause()
-        } else {
+    DisposableEffect(gameShouldRun) {
+        if (gameShouldRun) {
             viewModel.resume()
+        } else {
+            viewModel.pause()
         }
         onDispose {
             viewModel.pause()
@@ -83,7 +83,6 @@ fun PlayScreen(
 
     @Composable
     fun isLandscape(): Boolean = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
-
 
     Scaffold(
         modifier = Modifier
