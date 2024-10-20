@@ -149,6 +149,21 @@ class Chip8(
             Chip8Instruction(state.mem[state.pc].i, state.mem[state.pc + 1].i)
 
     /**
+     * Execute up to cyclesPerTick instructions.
+     *
+     * This allows the machine to make tick-based decisions, which is useful for some quirks,
+     * and to relinquish control during key awaits.
+     */
+    fun tick(cyclesPerTick: Int): StepResult {
+        repeat(cyclesPerTick) {
+            step()
+                .takeIf { it !is StepResult.Continue }
+                ?.let { return it }
+        }
+        return StepResult.Continue
+    }
+
+    /**
      * Execute the next program instruction.
      *
      * If the instruction results in a halt, the halt is returned.
@@ -321,7 +336,10 @@ class Chip8(
                     }
 
                     0x07 -> v[x] = timer.value
-                    0x0A -> v[x] = Keys.awaitKey()
+                    0x0A -> return StepResult.Await {
+                        v[x] = Keys.awaitKey()
+                        pc += 2
+                    }
 
                     0x15 -> timer.value = v[x]
                     0x18 -> sound.play(v[x])
@@ -411,6 +429,8 @@ class Chip8(
 /** The various halt conditions that can happen during execution. */
 sealed interface StepResult {
     data object Continue : StepResult
+
+    class Await(val await: () -> Unit) : StepResult
 
     sealed interface Halt : StepResult {
         val pc: Int
