@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
-import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
@@ -30,8 +29,6 @@ class PlayGameViewModel(
     private val chip8StateStore: Chip8StateStore,
     private val programStore: ProgramStore,
 ) : ViewModel() {
-    private val keys = Chip8Keys()
-
     private var machine = newMachine(byteArrayOf())
 
     private val runner = Chip8ThreadRunner()
@@ -45,11 +42,11 @@ class PlayGameViewModel(
     }
 
     fun keyDown(idx: Int) {
-        keys.keyDown(idx)
+        machine.keyDown(idx)
     }
 
     fun keyUp(idx: Int) {
-        keys.keyUp(idx)
+        machine.keyUp(idx)
     }
 
     fun pause() {
@@ -106,7 +103,7 @@ class PlayGameViewModel(
 
     private fun newMachine(state: Chip8.State): Chip8 {
         val sound = AudioTrackSynthSound(viewModelScope, 48000)
-        return Chip8(keys, sound, TimeSource.Monotonic, state)
+        return Chip8(sound, TimeSource.Monotonic, state)
     }
 
     companion object {

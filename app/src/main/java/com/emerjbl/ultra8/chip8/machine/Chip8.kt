@@ -4,18 +4,18 @@ import android.util.Log
 import com.emerjbl.ultra8.chip8.graphics.Chip8Font
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
-import com.emerjbl.ultra8.chip8.input.Chip8Keys
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import java.util.Random
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.math.pow
 import kotlin.time.TimeSource
 
 /** All state of a running Chip8 Machine. */
 class Chip8(
-    private val keys: Chip8Keys,
     private val sound: Chip8Sound,
     timeSource: TimeSource,
     private val state: State,
@@ -102,6 +102,45 @@ class Chip8(
 
     private val random: Random = Random()
     private val timer: Chip8Timer = Chip8Timer(timeSource)
+
+    private object Keys {
+        private var keys: Int = 0
+        private val lock = ReentrantLock()
+        private val cond = lock.newCondition()
+        private fun mask(idx: Int) = 1 shl idx
+        fun keyDown(idx: Int) {
+            lock.withLock {
+                keys = keys or mask(idx)
+                cond.signal()
+            }
+        }
+
+        fun keyUp(idx: Int) {
+            lock.withLock {
+                keys = keys and mask(idx).inv()
+                cond.signal()
+            }
+        }
+
+        fun isKeyPressed(idx: Int): Boolean =
+            lock.withLock {
+                keys and mask(idx) > 0
+            }
+
+        fun awaitKey(): Int {
+            lock.withLock {
+                while (keys == 0) cond.await()
+                val down = keys.countTrailingZeroBits()
+                // Also wait for the key to come back up
+                val mask = 1 shl down
+                while (keys and mask != 0) cond.await()
+                return down
+            }
+        }
+    }
+
+    fun keyDown(idx: Int) = Keys.keyDown(idx)
+    fun keyUp(idx: Int) = Keys.keyUp(idx)
 
     /**
      * Execute the next program instruction.
@@ -253,8 +292,8 @@ class Chip8(
                     if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
-                    0x9E -> if (keys.pressed(v[x])) skipNextInstruction()
-                    0xA1 -> if (!keys.pressed(v[x])) skipNextInstruction()
+                    0x9E -> if (Keys.isKeyPressed(v[x])) skipNextInstruction()
+                    0xA1 -> if (!Keys.isKeyPressed(v[x])) skipNextInstruction()
                     else -> return Halt.IllegalOpcode(pc - 2, word)
                 }
 
@@ -290,7 +329,7 @@ class Chip8(
                         // come back to waiting.
                         pc -= 2
                         Log.i("ultra8", "WAITING FOR PRESS")
-                        v[x] = keys.awaitKey()
+                        v[x] = Keys.awaitKey()
                         pc += 2
                     }
 
