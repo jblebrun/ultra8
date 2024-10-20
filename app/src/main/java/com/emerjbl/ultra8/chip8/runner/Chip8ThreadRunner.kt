@@ -2,6 +2,7 @@ package com.emerjbl.ultra8.chip8.runner
 
 import android.util.Log
 import com.emerjbl.ultra8.chip8.machine.Chip8
+import com.emerjbl.ultra8.chip8.machine.StepResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,8 +33,9 @@ class Chip8ThreadRunner {
             try {
                 while (machine.stateView.halted == null) {
                     val instructionTime = measureTime {
-                        repeat(cyclesPerTick) {
-                            machine.step()
+                        when (val result = machine.tick(cyclesPerTick)) {
+                            is StepResult.Await -> result.await()
+                            else -> Unit
                         }
                     }
                     val remaining = FRAME_TIME - instructionTime
