@@ -23,17 +23,23 @@ class Program(
     /** True if this is one of the included programs. */
     val builtIn: Boolean = false,
 
+    /** The last chosen cycles per second. */
+    val cyclesPerTick: Int,
+
     /** The Chip-8 byte code. */
     val data: ByteArray? = null,
 )
 
 @Dao
 interface ProgramDao {
-    @Query("SELECT name, builtIn from program ORDER BY builtIn, name")
+    @Query("SELECT name, builtIn, cyclesPerTick from program ORDER BY builtIn, name")
     fun allFlow(): Flow<List<Program>>
 
-    @Query("SELECT data from program where name == :name limit 1")
-    suspend fun dataForName(name: String): ByteArray?
+    @Query("SELECT * from program where name == :name limit 1")
+    suspend fun withData(name: String): Program?
+
+    @Query("UPDATE program set cyclesPerTick = :cyclesPerTick WHERE name = :programName")
+    suspend fun updateCyclesPerTick(programName: String, cyclesPerTick: Int)
 
     @Delete
     suspend fun remove(program: Program)
@@ -69,13 +75,16 @@ class ProgramStore(
             val data = context.contentResolver.openInputStream(uri)!!.use {
                 it.readBytes()
             }
-            Program(name, false, data).also {
+            Program(name, false, 10, data).also {
                 programDao.add(it)
             }
 
         }
 
-    suspend fun dataForName(name: String): ByteArray? = programDao.dataForName(name)
+    suspend fun withData(name: String): Program? = programDao.withData(name)
 
-    suspend fun remove(name: String) = programDao.remove(Program(name, false))
+    suspend fun updateCyclesPerTick(name: String, cyclesPerTick: Int) =
+        programDao.updateCyclesPerTick(name, cyclesPerTick)
+
+    suspend fun remove(name: String) = programDao.remove(Program(name, false, 0))
 }

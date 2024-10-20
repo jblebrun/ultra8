@@ -37,7 +37,10 @@ class PlayGameViewModel(
         get() = runner.running
 
     val cyclesPerTick = MutableStateFlow(runner.cyclesPerTick).apply {
-        onEach { runner.cyclesPerTick = it }
+        onEach {
+            runner.cyclesPerTick = it
+            programStore.updateCyclesPerTick(programName, it)
+        }
             .launchIn(viewModelScope)
     }
 
@@ -85,11 +88,12 @@ class PlayGameViewModel(
     private val initJob = viewModelScope.launch {
         machine = withContext(Dispatchers.IO) {
             val savedState = chip8StateStore.findState(programName)
-            val programData = programStore.dataForName(programName)
+            val program = programStore.withData(programName)
             if (savedState != null) {
                 newMachine(savedState)
-            } else if (programData != null) {
-                newMachine(programData)
+            } else if (program != null) {
+                cyclesPerTick.value = program.cyclesPerTick
+                newMachine(program.data!!)
             } else {
                 // TODO -- something useful
                 newMachine(byteArrayOf())
