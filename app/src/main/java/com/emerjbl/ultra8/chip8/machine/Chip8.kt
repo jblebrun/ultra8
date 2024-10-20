@@ -4,6 +4,7 @@ import android.util.Log
 import com.emerjbl.ultra8.chip8.graphics.Chip8Font
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
+import com.emerjbl.ultra8.chip8.machine.StepResult.Halt
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
 import java.nio.ByteBuffer
@@ -148,10 +149,10 @@ class Chip8(
      * If the instruction results in a halt, the halt is returned.
      * If the machine was already halted, the last halt is returned.
      */
-    fun step(): Halt? {
-        if (state.halted != null) return state.halted
+    fun step(): StepResult {
+        state.halted?.let { return it }
         val inst = Chip8Instruction(state.mem[state.pc++].i, state.mem[state.pc++].i)
-        return state.run(inst).also { state.halted = it }
+        return state.run(inst).also { if (it is Halt) state.halted = it }
     }
 
     /** Skip instructions, including skipping over 2-byte long jump instruction. */
@@ -166,7 +167,7 @@ class Chip8(
 
     }
 
-    private fun State.run(inst: Chip8Instruction): Halt? {
+    private fun State.run(inst: Chip8Instruction): StepResult {
         inst.run {
             when (majOp) {
                 0x00 -> when (b2) {
@@ -398,7 +399,7 @@ class Chip8(
                 else -> return Halt.IllegalOpcode(pc - 2, word)
             }
         }
-        return null
+        return StepResult.Continue
     }
 
     companion object {
@@ -418,36 +419,42 @@ class Chip8(
 }
 
 /** The various halt conditions that can happen during execution. */
-sealed class Halt(val pc: Int) {
-    /** The EXIT command was encountered. */
-    class Exit(pc: Int) : Halt(pc) {
-        override fun toString() = "EXIT at ${pc.sx}"
-    }
+sealed interface StepResult {
+    data object Continue : StepResult
 
-    /** A spin-jump was encountered (JMP to self). */
-    class Spin(pc: Int) : Halt(pc) {
-        override fun toString() = "SPIN at 0x${pc.sx}"
-    }
+    sealed interface Halt : StepResult {
+        val pc: Int
 
-    /** Unknown or unimplemented opcode. */
-    class IllegalOpcode(pc: Int, val opcode: Int) : Halt(pc) {
-        override fun toString() =
-            "ILLOP 0x${opcode.sx} at 0x${pc.sx}"
-    }
+        /** The EXIT command was encountered. */
+        data class Exit(override val pc: Int) : Halt {
+            override fun toString() = "EXIT at ${pc.sx}"
+        }
 
-    /** A return underflowed the stack. */
-    class StackUnderflow(pc: Int) : Halt(pc) {
-        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
-    }
+        /** A spin-jump was encountered (JMP to self). */
+        data class Spin(override val pc: Int) : Halt {
+            override fun toString() = "SPIN at 0x${pc.sx}"
+        }
 
-    /** A call overflowed the stack. */
-    class StackOverflow(pc: Int) : Halt(pc) {
-        override fun toString() = "UNDERFLOW at 0x${pc.sx}"
-    }
+        /** Unknown or unimplemented opcode. */
+        data class IllegalOpcode(override val pc: Int, val opcode: Int) : Halt {
+            override fun toString() =
+                "ILLOP 0x${opcode.sx} at 0x${pc.sx}"
+        }
 
-    /** An attempt to draw to an invalid bitplane. */
-    class InvalidBitPlane(pc: Int, val x: Int) : Halt(pc) {
-        override fun toString() = "BADPLANE ($x) at 0x${pc.sx}"
+        /** A return underflowed the stack. */
+        data class StackUnderflow(override val pc: Int) : Halt {
+            override fun toString() = "UNDERFLOW at 0x${pc.sx}"
+        }
+
+        /** A call overflowed the stack. */
+        data class StackOverflow(override val pc: Int) : Halt {
+            override fun toString() = "UNDERFLOW at 0x${pc.sx}"
+        }
+
+        /** An attempt to draw to an invalid bitplane. */
+        data class InvalidBitPlane(override val pc: Int, val x: Int) : Halt {
+            override fun toString() = "BADPLANE ($x) at 0x${pc.sx}"
+        }
     }
 }
 

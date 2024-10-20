@@ -2,7 +2,6 @@ package com.emerjbl.ultra8.chip8.runner
 
 import android.util.Log
 import com.emerjbl.ultra8.chip8.machine.Chip8
-import com.emerjbl.ultra8.chip8.machine.Halt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,15 +29,11 @@ class Chip8ThreadRunner {
         runThread?.join()
         runThread = thread(name = "Chip8Runner") {
             _running.value = true
-            var halt: Halt? = null
             try {
-                while (halt == null) {
+                while (machine.stateView.halted == null) {
                     val instructionTime = measureTime {
                         repeat(cyclesPerTick) {
-                            halt = machine.step()
-                            if (halt != null) {
-                                return@measureTime
-                            }
+                            machine.step()
                         }
                     }
                     val remaining = FRAME_TIME - instructionTime
@@ -46,7 +41,7 @@ class Chip8ThreadRunner {
                         maxOf(0, remaining.inWholeMilliseconds)
                     Thread.sleep(millisRemaining)
                 }
-                Log.i("Chip8", "Finished with: $halt")
+                Log.i("Chip8", "Finished with: ${machine.stateView.halted}")
             } catch (ex: InterruptedException) {
                 Log.i("Chip8", "Thread interrupted at ${machine.stateView.pc}")
             }

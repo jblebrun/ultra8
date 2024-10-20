@@ -12,7 +12,8 @@ import androidx.room.TypeConverters
 import androidx.room.Upsert
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
-import com.emerjbl.ultra8.chip8.machine.Halt
+import com.emerjbl.ultra8.chip8.machine.StepResult
+import com.emerjbl.ultra8.chip8.machine.StepResult.Halt
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -52,7 +53,7 @@ class Chip8ProgramState(
 /** An embedding representation of a Chip8.State. */
 @TypeConverters(IntArrayTypeConverter::class, HaltTypeConverter::class)
 class Chip8State(
-    val halt: Halt?,
+    val halt: StepResult.Halt?,
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
     val vRegisters: IntArray,
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
