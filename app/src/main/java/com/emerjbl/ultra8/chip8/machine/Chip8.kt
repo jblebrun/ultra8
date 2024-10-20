@@ -129,6 +129,7 @@ class Chip8(
             }
 
         fun awaitKey(): Int {
+            Log.i("ultra8", "WAITING FOR PRESS")
             lock.withLock {
                 while (keys == 0) cond.await()
                 val down = keys.countTrailingZeroBits()
@@ -143,6 +144,10 @@ class Chip8(
     fun keyDown(idx: Int) = Keys.keyDown(idx)
     fun keyUp(idx: Int) = Keys.keyUp(idx)
 
+    private val currentInstruction
+        get() =
+            Chip8Instruction(state.mem[state.pc].i, state.mem[state.pc + 1].i)
+
     /**
      * Execute the next program instruction.
      *
@@ -151,20 +156,16 @@ class Chip8(
      */
     fun step(): StepResult {
         state.halted?.let { return it }
-        val inst = Chip8Instruction(state.mem[state.pc++].i, state.mem[state.pc++].i)
-        return state.run(inst).also { if (it is Halt) state.halted = it }
+        return state.run(currentInstruction).also { if (it is Halt) state.halted = it }
     }
 
-    /** Skip instructions, including skipping over 2-byte long jump instruction. */
-    private fun skipNextInstruction() {
-        state.run {
-            pc += if (mem[pc].i == 0xF0 && mem[pc + 1].i == 0x00) {
-                4
-            } else {
-                2
-            }
+    private fun jump(nnn: Int): StepResult {
+        return if (state.pc == nnn) {
+            Halt.Spin(state.pc)
+        } else {
+            state.pc = nnn
+            StepResult.Continue
         }
-
     }
 
     private fun State.run(inst: Chip8Instruction): StepResult {
@@ -174,13 +175,13 @@ class Chip8(
                     0xE0 -> gfx.clear()
 
                     0xEE -> {
-                        if (sp < 1) return Halt.StackUnderflow(pc - 2)
-                        pc = stack[--sp]
+                        if (sp < 1) return Halt.StackUnderflow(pc)
+                        pc = stack[--sp] - 2
                     }
 
                     0xFB -> gfx.scrollRight()
                     0xFC -> gfx.scrollLeft()
-                    0xFD -> return Halt.Exit(pc - 2)
+                    0xFD -> return Halt.Exit(pc)
 
                     0xFE -> gfx.hires = false
                     0xFF -> gfx.hires = true
@@ -188,31 +189,26 @@ class Chip8(
                     else -> when (y) {
                         0xC -> gfx.scrollDown(subOp)
                         0xD -> gfx.scrollUp(subOp)
-                        else -> return Halt.IllegalOpcode(pc - 2, word)
+                        else -> return Halt.IllegalOpcode(pc, word)
                     }
                 }
 
                 0x20 -> {
-                    if (sp == stack.size - 1) return Halt.StackOverflow(pc - 2)
-                    stack[sp++] = pc
+                    if (sp == stack.size - 1) return Halt.StackOverflow(pc)
+                    if (pc == nnn) return Halt.Spin(pc)
 
-                    if (pc == nnn + 2) return Halt.Spin(pc - 2)
-
-                    pc = nnn
+                    stack[sp++] = pc + 2
+                    return jump(nnn)
                 }
 
-                0x10 -> if (pc == nnn + 2) {
-                    return Halt.Spin(pc - 2)
-                } else {
-                    pc = nnn
-                }
+                0x10 -> return jump(nnn)
 
-                0x30 -> if (v[x] == b2) skipNextInstruction()
-                0x40 -> if (v[x] != b2) skipNextInstruction()
+                0x30 -> if (v[x] == b2) pc += 2
+                0x40 -> if (v[x] != b2) pc += 2
 
                 0x50 -> {
                     when (subOp) {
-                        0x00 -> if (v[x] == v[y]) skipNextInstruction()
+                        0x00 -> if (v[x] == v[y]) pc += 2
 
                         0x02 -> {
                             // Load vx-vy into memory starting at i, don't change i
@@ -228,7 +224,7 @@ class Chip8(
                             }
                         }
 
-                        else -> return Halt.IllegalOpcode(pc - 2, word)
+                        else -> return Halt.IllegalOpcode(pc, word)
                     }
                 }
 
@@ -278,36 +274,36 @@ class Chip8(
                         v[0xF] = vf
                     }
 
-                    else -> return Halt.IllegalOpcode(pc - 2, word)
+                    else -> return Halt.IllegalOpcode(pc, word)
                 }
 
                 0x90 -> {
-                    if (subOp != 0) return Halt.IllegalOpcode(pc - 2, word)
-                    if (v[x] != v[y]) skipNextInstruction()
+                    if (subOp != 0) return Halt.IllegalOpcode(pc, word)
+                    if (v[x] != v[y]) pc += 2
                 }
 
                 0xA0 -> i = nnn
-                0xB0 -> pc = v[0] + nnn
+                0xB0 -> return jump(v[0] + nnn)
                 0xC0 -> v[x] = random.nextInt(0xFF) and b2
                 0xD0 -> v[0xF] =
                     if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
 
                 0xE0 -> when (b2) {
-                    0x9E -> if (Keys.isKeyPressed(v[x])) skipNextInstruction()
-                    0xA1 -> if (!Keys.isKeyPressed(v[x])) skipNextInstruction()
-                    else -> return Halt.IllegalOpcode(pc - 2, word)
+                    0x9E -> if (Keys.isKeyPressed(v[x])) pc += 2
+                    0xA1 -> if (!Keys.isKeyPressed(v[x])) pc += 2
+                    else -> return Halt.IllegalOpcode(pc, word)
                 }
 
                 0xF0 -> when (b2) {
                     0x00 -> {
-                        i = mem[pc++].i
+                        i = mem[pc + 2].i
                         i = i shl 8
-                        i = i or mem[pc++].i
+                        i = i or mem[pc + 3].i
                     }
 
                     0x01 -> {
                         if (inst.x > 3 || inst.x < 0) {
-                            return Halt.InvalidBitPlane(pc - 2, x)
+                            return Halt.InvalidBitPlane(pc, x)
                         }
                         gfx.targetPlane = inst.x
                     }
@@ -325,14 +321,7 @@ class Chip8(
                     }
 
                     0x07 -> v[x] = timer.value
-                    0x0A -> {
-                        // If we are interrupted while waiting,
-                        // come back to waiting.
-                        pc -= 2
-                        Log.i("ultra8", "WAITING FOR PRESS")
-                        v[x] = Keys.awaitKey()
-                        pc += 2
-                    }
+                    0x0A -> v[x] = Keys.awaitKey()
 
                     0x15 -> timer.value = v[x]
                     0x18 -> sound.play(v[x])
@@ -393,12 +382,13 @@ class Chip8(
                         }
                     }
 
-                    else -> return Halt.IllegalOpcode(pc - 2, word)
+                    else -> return Halt.IllegalOpcode(pc, word)
                 }
 
-                else -> return Halt.IllegalOpcode(pc - 2, word)
+                else -> return Halt.IllegalOpcode(pc, word)
             }
         }
+        pc += currentInstruction.instructionBytes
         return StepResult.Continue
     }
 
