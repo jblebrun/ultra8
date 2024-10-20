@@ -8,8 +8,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.emerjbl.ultra8.ui.component.SideDrawer
@@ -26,23 +28,22 @@ fun AppEntryPoint() {
     val programs = topLevelViewModel.programs.collectAsState(emptyList())
     val selectedProgram = topLevelViewModel.selectedProgram.collectAsState("")
 
-    val drawerState = rememberDrawerState(
-        initialValue = DrawerValue.Closed,
-    )
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val windowFocused = LocalWindowInfo.current.isWindowFocused
-    val gameShouldPause = remember { mutableStateOf(false) }
-    LifecycleResumeEffect(windowFocused) {
-        gameShouldPause.value = !windowFocused
-        onPauseOrDispose {
-            gameShouldPause.value = true
-        }
-    }
+    val activityState = (LocalContext.current as LifecycleOwner).lifecycle.currentState
+
+    val gameShouldRun = remember { mutableStateOf(false) }
+
+    gameShouldRun.value =
+        windowFocused
+                && activityState.isAtLeast(Lifecycle.State.RESUMED)
+                && drawerState.isClosed
 
     Ultra8Theme {
         ModalNavigationDrawer(
             drawerState = drawerState,
-            // Allow swipe/scrim tap to close, but don't try to open it with swipes when its not.
+            // Allow swipe/scrim tap to close, but don't try to open it with swipes when it's not.
             gesturesEnabled = drawerState.isOpen,
             drawerContent = {
                 SideDrawer(
@@ -69,7 +70,7 @@ fun AppEntryPoint() {
             }) {
             Ultra8NavHost(
                 navController,
-                gameShouldPause = gameShouldPause.value || drawerState.isOpen,
+                gameShouldRun = gameShouldRun.value,
                 resetEvents = topLevelViewModel.resetEvents,
                 onDrawerOpen = { scope.launch { drawerState.open() } }
             )

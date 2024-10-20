@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Composable
 fun Ultra8NavHost(
     navController: NavHostController,
-    gameShouldPause: Boolean,
+    gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
 ) {
@@ -20,7 +20,7 @@ fun Ultra8NavHost(
         composable<PlayGame> { entry ->
             PlayScreen(
                 programName = entry.toRoute<PlayGame>().programName,
-                paused = gameShouldPause,
+                gameShouldRun = gameShouldRun,
                 resetEvents = resetEvents,
                 onDrawerOpen = onDrawerOpen,
             )
