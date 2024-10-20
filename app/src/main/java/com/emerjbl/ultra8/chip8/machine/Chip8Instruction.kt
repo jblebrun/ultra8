@@ -26,9 +26,15 @@ value class Chip8Instruction(val word: Int) {
     val n
         get() = b2 and 0x0F
 
-    override fun toString(): String {
-        return asm ?: "?? 0x${b1.b}${b2.b}"
-    }
+    /**
+     * Return the number of bytes of the full instruction.
+     *
+     * Most instructions are 2, but 0xF000 is 4 (long address).
+     */
+    val instructionBytes
+        get() = if (b1 == 0xF0 && b2 == 0x00) 4 else 2
+
+    override fun toString(): String = asm ?: "${word.sx}:????"
 
     val asm: String?
         get() = when (majOp) {
