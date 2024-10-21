@@ -25,31 +25,31 @@ import com.emerjbl.ultra8.ui.helpers.FrameConfig
 import com.emerjbl.ultra8.ui.helpers.FrameHolder
 import com.emerjbl.ultra8.ui.helpers.next
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
 
 @Composable
 fun frameGrabber(
     running: Boolean,
     frameConfig: FrameConfig,
-    nextFrame: (FrameManager.Frame?) -> FrameManager.Frame
+    frame: FrameManager.Frame,
 ): State<FrameHolder> {
     val frameHolder =
-        remember { mutableStateOf(null.next(nextFrame(null), 0, frameConfig)) }
+        remember { mutableStateOf(null.next(frame, 0, frameConfig)) }
 
-    if (running || frameHolder.value.stillFading) {
-        LaunchedEffect(true) {
-            Log.i("Chip8", "Begin Render Loop")
-            coroutineContext[Job]?.invokeOnCompletion { Log.i("Chip8", "End Render Loop") }
-            while (isActive) {
-                withFrameMillis { ft ->
-                    frameHolder.value = frameHolder.value.next(
-                        nextFrame(frameHolder.value.frame),
-                        ft,
-                        frameConfig
-                    )
-                }
+    // Frame is fairly constant (mutable arrays)
+    // Relaunch to render a frame at least once
+    // TOOD: change this to a frametime ticker, remove constant frameholder allocation
+    LaunchedEffect(frame) {
+        Log.i("Chip8", "Begin Render Loop (frame $frame)")
+        coroutineContext[Job]?.invokeOnCompletion { Log.i("Chip8", "End Render Loop") }
+        do {
+            withFrameMillis { ft ->
+                frameHolder.value = frameHolder.value.next(
+                    frame,
+                    ft,
+                    frameConfig
+                )
             }
-        }
+        } while (running || frameHolder.value.stillFading)
     }
     return frameHolder
 }
@@ -59,9 +59,11 @@ fun Graphics(
     running: Boolean,
     frameConfig: FrameConfig,
     modifier: Modifier = Modifier,
-    nextFrame: (FrameManager.Frame?) -> FrameManager.Frame
+    frame: FrameManager.Frame,
 ) {
-    val frameHolder = frameGrabber(running, frameConfig, nextFrame)
+    // TODO: See if we can improve this.
+    // Using a frame timer instead of re-allocating holders.
+    val frameHolder = frameGrabber(running, frameConfig, frame)
 
     Box(
         modifier = Modifier

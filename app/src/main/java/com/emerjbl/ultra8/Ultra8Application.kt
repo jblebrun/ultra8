@@ -17,7 +17,6 @@ class Ultra8Application : Application() {
         override val chip8StateStore by lazy { Chip8StateStore(db.chip8StateDao()) }
         override val programStore by lazy { ProgramStore(this@Ultra8Application, db.programDao()) }
         override val db by lazy {
-            deleteDatabase("ultra8-database")
             Ultra8Database.newForFile(this@Ultra8Application, "ultra8-database", "seed.db")
         }
     }

@@ -7,20 +7,26 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.Ultra8Application
-import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
-import com.emerjbl.ultra8.chip8.runner.Chip8ThreadRunner
+import com.emerjbl.ultra8.chip8.machine.StepResult
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.data.ProgramStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
+import kotlin.time.measureTime
 
 
 /** A [androidx.lifecycle.ViewModel] maintaining the state of a running Chip8 machine. */
@@ -31,18 +37,22 @@ class PlayGameViewModel(
 ) : ViewModel() {
     private var machine = newMachine(byteArrayOf())
 
-    private val runner = Chip8ThreadRunner()
+    val running = MutableStateFlow<Boolean>(false)
 
-    val running: StateFlow<Boolean>
-        get() = runner.running
+    private var resumer: Continuation<Unit>? = null
 
-    val cyclesPerTick = MutableStateFlow(runner.cyclesPerTick).apply {
+    private val resumeJob = running.filter { it }.onEach { running ->
+        resumer?.resume(Unit)
+        resumer = null
+    }.launchIn(viewModelScope)
+
+    val cyclesPerTick = MutableStateFlow(10).apply {
         onEach {
-            runner.cyclesPerTick = it
             programStore.updateCyclesPerTick(programName, it)
-        }
-            .launchIn(viewModelScope)
+        }.launchIn(viewModelScope)
     }
+
+    val frames = MutableStateFlow(machine.nextFrame(null).clone())
 
     fun keyDown(idx: Int) {
         machine.keyDown(idx)
@@ -52,54 +62,69 @@ class PlayGameViewModel(
         machine.keyUp(idx)
     }
 
-    fun pause() {
-        viewModelScope.launch {
-            initJob.join()
-            runner.pause()
-            withContext(Dispatchers.IO) {
-                val state = machine.stateView.clone()
-                chip8StateStore.saveState(programName, state)
-                Log.i("Chip8", "(PAUSE) $programName State Saved: ${state.pc}")
-            }
-        }
-    }
-
-    fun resume() {
-        viewModelScope.launch {
-            initJob.join()
-            runner.run(machine)
-            withContext(Dispatchers.IO) {
-                val state = machine.stateView.clone()
-                chip8StateStore.saveState(programName, state)
-                Log.i("Chip8", "(RESUME) $programName State Saved: ${state.pc}")
-            }
+    private suspend fun saveState(reason: String) {
+        withContext(Dispatchers.IO) {
+            val state = machine.stateView.clone()
+            chip8StateStore.saveState(programName, state)
+            Log.i("Chip8", "($reason) $programName State Saved: ${state.pc}")
         }
     }
 
     fun reset() {
         machine.reset()
-        resume()
+        resumer?.resume(Unit)
     }
 
-    fun nextFrame(lastFrame: FrameManager.Frame?): FrameManager.Frame =
-        machine.nextFrame(lastFrame)
-
-
-    private val initJob = viewModelScope.launch {
+    private val runJob = viewModelScope.launch {
         machine = withContext(Dispatchers.IO) {
             val savedState = chip8StateStore.findState(programName)
             val program = programStore.withData(programName)
+            if (program != null) {
+                cyclesPerTick.value = program.cyclesPerTick
+            }
             if (savedState != null) {
+                Log.i("Chip8", "Restored save state for $programName")
                 newMachine(savedState)
             } else if (program != null) {
-                cyclesPerTick.value = program.cyclesPerTick
                 newMachine(program.data!!)
             } else {
-                // TODO -- something useful
+                Log.i("Chip8", "Could not find $programName at all")
                 newMachine(byteArrayOf())
             }
         }
-        resume()
+
+        withContext(Dispatchers.Default) {
+            // Force a new frame instance to trigger certain recomposes.
+            // TODO: See if we can improve this.
+            frames.value = machine.nextFrame(null)
+            while (isActive) {
+                if (!running.value || machine.stateView.halted != null) {
+                    Log.i("Chip8", "$programName paused at ${machine.stateView.pc.toHexString()}")
+                    saveState("pause")
+                    suspendCancellableCoroutine<Unit> {
+                        resumer = it
+                    }
+                    // Force a new frame instance to trigger certain recomposes.
+                    // TODO: See if we can improve this.
+                    frames.value = machine.nextFrame(null)
+                    Log.i("Chip8", "$programName resumed at ${machine.stateView.pc.toHexString()}")
+                }
+                val instructionTime = measureTime {
+                    val result = machine.tick(cyclesPerTick.value)
+                    frames.value = machine.nextFrame(frames.value)
+                    when (result) {
+                        is StepResult.Halt -> {
+                            Log.i("Chip8", "Halted $programName: $result")
+                            running.value = false
+                        }
+
+                        is StepResult.Await -> result.await()
+                        is StepResult.Continue -> {}
+                    }
+                }
+                delay(FRAME_TIME - instructionTime)
+            }
+        }
     }
 
     private fun newMachine(program: ByteArray): Chip8 =
@@ -111,6 +136,8 @@ class PlayGameViewModel(
     }
 
     companion object {
+        val FRAME_TIME = (1.0 / 60).seconds
+
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(

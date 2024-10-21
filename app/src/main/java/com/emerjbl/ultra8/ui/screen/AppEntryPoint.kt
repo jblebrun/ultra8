@@ -54,8 +54,10 @@ fun AppEntryPoint() {
                         scope.launch {
                             drawerState.close()
                         }
-                        topLevelViewModel.selectedProgram.value = program.name
-                        navController.navigate(PlayGame(program.name))
+                        if (topLevelViewModel.selectedProgram.value != program.name) {
+                            topLevelViewModel.selectedProgram.value = program.name
+                            navController.navigate(PlayGame(program.name))
+                        }
                     },
                     onRemoveProgram = {
                         topLevelViewModel.removeProgram(it)

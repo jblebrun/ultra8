@@ -55,13 +55,9 @@ fun PlayScreen(
     }
 
     DisposableEffect(gameShouldRun) {
-        if (gameShouldRun) {
-            viewModel.resume()
-        } else {
-            viewModel.pause()
-        }
+        viewModel.running.value = gameShouldRun
         onDispose {
-            viewModel.pause()
+            viewModel.running.value = false
         }
     }
 
@@ -72,8 +68,9 @@ fun PlayScreen(
         fadeTime = 400.milliseconds,
     )
 
-    val loadedProgram = remember { viewModel.programName }
     val running by viewModel.running.collectAsState(initial = false)
+    val frame by viewModel.frames.collectAsState()
+
     val focusRequester = remember { FocusRequester() }
 
     fun onKeyEvent(event: KeyEvent): Boolean {
@@ -91,9 +88,8 @@ fun PlayScreen(
             .onKeyEvent(::onKeyEvent),
         topBar = {
             if (!isLandscape()) TopBar(
-                loadedProgram,
+                programName,
                 openDrawer = {
-                    viewModel.pause()
                     onDrawerOpen()
                 }
             )
@@ -108,12 +104,22 @@ fun PlayScreen(
 
 
         if (isLandscape()) {
-            LandscapeGameplay(innerPadding, running, frameConfig, viewModel)
+            LandscapeGameplay(
+                innerPadding,
+                running,
+                frameConfig,
+                frame,
+                viewModel.cyclesPerTick,
+                viewModel::keyDown,
+                viewModel::keyUp
+            )
         } else {
             PortraitGameplay(
                 running,
                 frameConfig,
-                viewModel,
+                frame,
+                viewModel::keyDown,
+                viewModel::keyUp,
                 modifier = Modifier
                     .padding(innerPadding)
             )
