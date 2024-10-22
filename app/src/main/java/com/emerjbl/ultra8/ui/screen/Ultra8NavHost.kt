@@ -12,15 +12,21 @@ import kotlinx.coroutines.flow.Flow
 @Composable
 fun Ultra8NavHost(
     navController: NavHostController,
+    selectedProgram: String,
     gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
 ) {
     NavHost(navController, startDestination = PlayGame("breakout")) {
         composable<PlayGame> { entry ->
+            val routeProgram = entry.toRoute<PlayGame>().programName
+            // During navigation, the previous route is still in composition for a few
+            // 100 milliseonds (maybe due to animation?) So this makes sure the previous
+            // game doesn't still play.
+            val isSelectedProgram = selectedProgram == routeProgram
             PlayScreen(
-                programName = entry.toRoute<PlayGame>().programName,
-                gameShouldRun = gameShouldRun,
+                programName = routeProgram,
+                gameShouldRun = gameShouldRun && isSelectedProgram,
                 resetEvents = resetEvents,
                 onDrawerOpen = onDrawerOpen,
             )

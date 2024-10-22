@@ -39,6 +39,7 @@ fun AppEntryPoint() {
         windowFocused
                 && activityState.isAtLeast(Lifecycle.State.RESUMED)
                 && drawerState.isClosed
+                && !drawerState.isAnimationRunning
 
     Ultra8Theme {
         ModalNavigationDrawer(
@@ -54,8 +55,10 @@ fun AppEntryPoint() {
                         scope.launch {
                             drawerState.close()
                         }
-                        topLevelViewModel.selectedProgram.value = program.name
-                        navController.navigate(PlayGame(program.name))
+                        if (topLevelViewModel.selectedProgram.value != program.name) {
+                            topLevelViewModel.selectedProgram.value = program.name
+                            navController.navigate(PlayGame(program.name))
+                        }
                     },
                     onRemoveProgram = {
                         topLevelViewModel.removeProgram(it)
@@ -70,6 +73,7 @@ fun AppEntryPoint() {
             }) {
             Ultra8NavHost(
                 navController,
+                selectedProgram = selectedProgram.value,
                 gameShouldRun = gameShouldRun.value,
                 resetEvents = topLevelViewModel.resetEvents,
                 onDrawerOpen = { scope.launch { drawerState.open() } }

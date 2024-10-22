@@ -7,11 +7,13 @@ import com.emerjbl.ultra8.chip8.graphics.StandardChip8Font
 import com.emerjbl.ultra8.chip8.machine.StepResult.Halt
 import com.emerjbl.ultra8.chip8.sound.Chip8Sound
 import com.emerjbl.ultra8.chip8.sound.Pattern
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import java.util.Random
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
 import kotlin.time.TimeSource
 
@@ -105,39 +107,28 @@ class Chip8(
     private val timer: Chip8Timer = Chip8Timer(timeSource)
 
     private object Keys {
-        private var keys: Int = 0
-        private val lock = ReentrantLock()
-        private val cond = lock.newCondition()
+        private val keys = AtomicInteger(0)
         private fun mask(idx: Int) = 1 shl idx
+        private val keyDown = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+        private val keyUp = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+
         fun keyDown(idx: Int) {
-            lock.withLock {
-                keys = keys or mask(idx)
-                cond.signal()
-            }
+            keys.getAndUpdate { it or mask(idx) }
+            keyDown.tryEmit(idx)
         }
 
         fun keyUp(idx: Int) {
-            lock.withLock {
-                keys = keys and mask(idx).inv()
-                cond.signal()
-            }
+            keys.getAndUpdate { it and mask(idx).inv() }
+            keyUp.tryEmit(idx)
         }
 
-        fun isKeyPressed(idx: Int): Boolean =
-            lock.withLock {
-                keys and mask(idx) > 0
-            }
+        fun isKeyPressed(idx: Int): Boolean = keys.get() and mask(idx) > 0
 
-        fun awaitKey(): Int {
+        suspend fun awaitKey(): Int {
             Log.i("ultra8", "WAITING FOR PRESS")
-            lock.withLock {
-                while (keys == 0) cond.await()
-                val down = keys.countTrailingZeroBits()
-                // Also wait for the key to come back up
-                val mask = 1 shl down
-                while (keys and mask != 0) cond.await()
-                return down
-            }
+            val nextDown = keyDown.first()
+            keyUp.filter { it == nextDown }.first()
+            return nextDown
         }
     }
 
@@ -336,9 +327,11 @@ class Chip8(
                     }
 
                     0x07 -> v[x] = timer.value
-                    0x0A -> return StepResult.Await {
-                        v[x] = Keys.awaitKey()
-                        pc += 2
+                    0x0A -> {
+                        return StepResult.Await {
+                            v[x] = Keys.awaitKey()
+                            pc += 2
+                        }
                     }
 
                     0x15 -> timer.value = v[x]
@@ -430,7 +423,13 @@ class Chip8(
 sealed interface StepResult {
     data object Continue : StepResult
 
-    class Await(val await: () -> Unit) : StepResult
+    /**
+     * The machine is waiting for a condition and will suspend until it's met.
+     *
+     * The continuation of the action is returned to the runner, so it can have
+     * a chance to do other things before suspending.
+     */
+    data class Await(val await: suspend () -> Unit) : StepResult
 
     sealed interface Halt : StepResult {
         val pc: Int
