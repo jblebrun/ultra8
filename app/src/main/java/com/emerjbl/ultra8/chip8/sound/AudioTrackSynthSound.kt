@@ -2,6 +2,7 @@ package com.emerjbl.ultra8.chip8.sound
 
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +30,11 @@ class AudioTrackSynthSound(
     private fun newTrack(): AudioTrack {
         val data = pattern.render(patternRate, sampleRate)
         val track = AudioTrack.Builder().setTransferMode(AudioTrack.MODE_STATIC)
-            .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+            .apply {
+                if (Build.VERSION.SDK_INT >= 26) {
+                    setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
+                }
+            }
             .setBufferSizeInBytes(data.size * 4)
             .setAudioFormat(
                 AudioFormat.Builder()
