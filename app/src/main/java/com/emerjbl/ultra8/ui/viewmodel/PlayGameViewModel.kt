@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -39,9 +40,13 @@ class PlayGameViewModel(
     private val halted = MutableStateFlow(false)
 
     val cyclesPerTick = MutableStateFlow(10).apply {
-        onEach {
-            programStore.updateCyclesPerTick(programName, it)
-        }.launchIn(viewModelScope)
+        // Don't overwrite with default
+        drop(1)
+            .onEach {
+                programStore.updateCyclesPerTick(programName, it)
+                // Throttle updates a bit
+                delay(1000)
+            }.launchIn(viewModelScope)
     }
 
     val frames = MutableStateFlow(machine.nextFrame(null).clone())
