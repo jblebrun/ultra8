@@ -10,12 +10,12 @@ import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class TopLevelViewModel(
     private val programStore: ProgramStore,
 ) : ViewModel() {
+
     val programs: Flow<List<Program>> = programStore.programsFlow()
 
     // Pass reset events from the navigation drawer down to gameplay children.
@@ -23,7 +23,13 @@ class TopLevelViewModel(
     // But I'll probably find a better approach eventually.
     val resetEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    val selectedProgram = MutableStateFlow("")
+    val selectedProgram = programStore.selectedProgram
+
+    fun setSelectedProgram(name: String) {
+        viewModelScope.launch {
+            programStore.setSelectedProgram(name)
+        }
+    }
 
     fun removeProgram(name: String) {
         viewModelScope.launch {

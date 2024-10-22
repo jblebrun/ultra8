@@ -28,6 +28,10 @@ fun AppEntryPoint() {
     val programs = topLevelViewModel.programs.collectAsState(emptyList())
     val selectedProgram = topLevelViewModel.selectedProgram.collectAsState("")
 
+    if (selectedProgram.value == "") {
+        // TODO - Maybe show some splash screen kind of thing
+        return
+    }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val windowFocused = LocalWindowInfo.current.isWindowFocused
@@ -55,8 +59,8 @@ fun AppEntryPoint() {
                         scope.launch {
                             drawerState.close()
                         }
-                        if (topLevelViewModel.selectedProgram.value != program.name) {
-                            topLevelViewModel.selectedProgram.value = program.name
+                        if (selectedProgram.value != program.name) {
+                            topLevelViewModel.setSelectedProgram(program.name)
                             navController.navigate(PlayGame(program.name))
                         }
                     },

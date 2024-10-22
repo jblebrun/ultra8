@@ -3,14 +3,18 @@ package com.emerjbl.ultra8.data
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore.MediaColumns
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Upsert
+import com.emerjbl.ultra8.preferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 /** A single program entry. */
@@ -55,6 +59,17 @@ class ProgramStore(
 ) {
     fun programsFlow(): Flow<List<Program>> = programDao.allFlow()
 
+    val selectedProgram = context.preferences.data.map {
+        (it[SELECTED_PROGRAM_KEY] ?: DEFAULT_PROGRAM_NAME)
+    }
+
+    suspend fun setSelectedProgram(name: String) {
+        context.preferences.edit {
+            it[SELECTED_PROGRAM_KEY] = name
+        }
+    }
+
+
     suspend fun addForUri(uri: Uri): Program =
         withContext(Dispatchers.IO) {
             val name = withContext(Dispatchers.IO) {
@@ -87,4 +102,9 @@ class ProgramStore(
         programDao.updateCyclesPerTick(name, cyclesPerTick)
 
     suspend fun remove(name: String) = programDao.remove(Program(name, false, 0))
+
+    companion object {
+        private val SELECTED_PROGRAM_KEY = stringPreferencesKey("lastProgram")
+        private const val DEFAULT_PROGRAM_NAME = "breakout"
+    }
 }
