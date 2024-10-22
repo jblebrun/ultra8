@@ -17,7 +17,7 @@ fun Ultra8NavHost(
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
 ) {
-    NavHost(navController, startDestination = PlayGame("breakout")) {
+    NavHost(navController, startDestination = PlayGame(selectedProgram)) {
         composable<PlayGame> { entry ->
             val routeProgram = entry.toRoute<PlayGame>().programName
             // During navigation, the previous route is still in composition for a few
