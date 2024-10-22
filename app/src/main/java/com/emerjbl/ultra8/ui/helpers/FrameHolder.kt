@@ -48,9 +48,8 @@ fun Int.withAlpha(alpha: Int) = (this and 0x00FFFFFF) or (alpha shl 24)
 
 /** Holds data related to a frame to render, and its fade out times. */
 class FrameHolder(
-    val frame: FrameManager.Frame?,
-    val pixelData: IntArray,
-    val fadeTimes: IntArray,
+    var pixelData: IntArray,
+    var fadeTimes: IntArray,
     val bitmap: Bitmap,
     val frameTime: Long,
 ) {
@@ -133,7 +132,7 @@ fun FrameHolder?.next(
         ?: Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
 
     val frameDiff = (frameTime - (this?.frameTime ?: 0)).toInt()
-    return FrameHolder(frame, pixelData, fadeTimes, bitmap, frameTime).apply {
+    return FrameHolder(pixelData, fadeTimes, bitmap, frameTime).apply {
         update(frame, frameDiff, frameConfig)
     }
 }

@@ -10,17 +10,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.ui.component.BottomBar
 import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
 import com.emerjbl.ultra8.ui.helpers.FrameConfig
-import com.emerjbl.ultra8.ui.viewmodel.PlayGameViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun PortraitGameplay(
     running: Boolean,
     frameConfig: FrameConfig,
-    viewModel: PlayGameViewModel,
+    frame: FrameManager.Frame,
+    onKeyDown: (Int) -> Unit,
+    onKeyUp: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -32,14 +35,13 @@ fun PortraitGameplay(
         Graphics(
             running,
             frameConfig,
-            nextFrame = viewModel::nextFrame
+            frame = frame
         )
         Keypad(
             modifier = Modifier.padding(10.dp),
-            onKeyDown = viewModel::keyDown,
-            onKeyUp = viewModel::keyUp
+            onKeyDown = onKeyDown,
+            onKeyUp = onKeyUp
         )
-
     }
 }
 
@@ -48,7 +50,10 @@ fun LandscapeGameplay(
     innerPadding: PaddingValues,
     running: Boolean,
     frameConfig: FrameConfig,
-    viewModel: PlayGameViewModel
+    frame: FrameManager.Frame,
+    cyclesPerTick: MutableStateFlow<Int>,
+    onKeyDown: (Int) -> Unit,
+    onKeyUp: (Int) -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -57,15 +62,15 @@ fun LandscapeGameplay(
             .padding(innerPadding)
     ) {
         Keypad(
-            viewModel::keyDown,
-            viewModel::keyUp,
+            onKeyDown,
+            onKeyUp,
             modifier = Modifier.weight(1f)
         )
         Column(
             modifier = Modifier.weight(2f),
         ) {
-            Graphics(running, frameConfig, nextFrame = viewModel::nextFrame)
-            BottomBar(viewModel.cyclesPerTick)
+            Graphics(running, frameConfig, frame = frame)
+            BottomBar(cyclesPerTick)
         }
     }
 }
