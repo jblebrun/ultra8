@@ -22,16 +22,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppEntryPoint() {
     val navController = rememberNavController()
+
     val scope = rememberCoroutineScope()
 
     val topLevelViewModel = viewModel<TopLevelViewModel>(factory = TopLevelViewModel.Factory)
     val programs = topLevelViewModel.programs.collectAsState(emptyList())
     val selectedProgram = topLevelViewModel.selectedProgram.collectAsState("")
 
-    if (selectedProgram.value == "") {
-        // TODO - Maybe show some splash screen kind of thing
-        return
-    }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val windowFocused = LocalWindowInfo.current.isWindowFocused
@@ -80,7 +77,8 @@ fun AppEntryPoint() {
                 selectedProgram = selectedProgram.value,
                 gameShouldRun = gameShouldRun.value,
                 resetEvents = topLevelViewModel.resetEvents,
-                onDrawerOpen = { scope.launch { drawerState.open() } }
+                onDrawerOpen = { scope.launch { drawerState.open() } },
+                onProgramLoad = { topLevelViewModel.setSelectedProgram(it) }
             )
         }
     }

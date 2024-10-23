@@ -1,5 +1,6 @@
 package com.emerjbl.ultra8.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -16,8 +17,21 @@ fun Ultra8NavHost(
     gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
+    onProgramLoad: (String) -> Unit,
 ) {
-    NavHost(navController, startDestination = PlayGame(selectedProgram)) {
+    NavHost(navController, startDestination = InitialLoad) {
+        composable<InitialLoad> {
+            InitialLoadScreen(selectedProgram) {
+                navController.navigate(PlayGame(selectedProgram)) {
+                    // https://issuetracker.google.com/issues/370694831
+                    @SuppressLint("RestrictedApi")
+                    popUpTo(InitialLoad) {
+                        inclusive = true
+                    }
+                }
+            }
+
+        }
         composable<PlayGame> { entry ->
             val routeProgram = entry.toRoute<PlayGame>().programName
             // During navigation, the previous route is still in composition for a few
@@ -39,8 +53,17 @@ fun Ultra8NavHost(
                     mimeType = "*/*"
                 },
             )
-        ) {
-            LoadScreen(onProgramLoaded = { navController.navigate(PlayGame(it)) })
+        ) { entry ->
+            LoadScreen(onProgramLoaded = {
+                navController.navigate(PlayGame(it)) {
+                    // https://issuetracker.google.com/issues/370694831
+                    @SuppressLint("RestrictedApi")
+                    popUpTo(entry.toRoute<LoadGame>()) {
+                        inclusive = true
+                    }
+                }
+                onProgramLoad(it)
+            })
         }
     }
 }
