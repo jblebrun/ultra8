@@ -86,9 +86,9 @@ class PlayGameViewModel(
                 newMachine(program.data!!)
             } else {
                 Log.i("Chip8", "Could not find $programName at all")
-                newMachine(byteArrayOf())
+                null
             }
-        }
+        } ?: return@launch
 
         withContext(Dispatchers.Default) {
             // Force a new frame instance to trigger certain recomposes.

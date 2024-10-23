@@ -7,3 +7,6 @@ data class PlayGame(val programName: String)
 
 @Serializable
 data object LoadGame
+
+@Serializable
+data object InitialLoad

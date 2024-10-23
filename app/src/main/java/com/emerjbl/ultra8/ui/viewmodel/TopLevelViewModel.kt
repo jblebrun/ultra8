@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 class TopLevelViewModel(
     private val programStore: ProgramStore,
 ) : ViewModel() {
-
     val programs: Flow<List<Program>> = programStore.programsFlow()
 
     // Pass reset events from the navigation drawer down to gameplay children.
