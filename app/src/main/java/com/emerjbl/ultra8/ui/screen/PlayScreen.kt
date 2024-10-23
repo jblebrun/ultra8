@@ -59,6 +59,7 @@ fun PlayScreen(
 
     val running by viewModel.running.collectAsState(initial = false)
     val frame by viewModel.frames.collectAsState()
+    val halt by viewModel.halted.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
 
@@ -107,6 +108,7 @@ fun PlayScreen(
                 frame,
                 viewModel::keyDown,
                 viewModel::keyUp,
+                halt,
                 modifier = Modifier
                     .padding(innerPadding)
             )

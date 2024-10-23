@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.machine.StepResult
+import com.emerjbl.ultra8.chip8.machine.StepResult.Halt
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.data.ProgramStore
@@ -37,7 +38,7 @@ class PlayGameViewModel(
     private var machine = newMachine(byteArrayOf())
 
     val running = MutableStateFlow<Boolean>(false)
-    private val halted = MutableStateFlow(false)
+    val halted = MutableStateFlow<Halt?>(null)
 
     val cyclesPerTick = MutableStateFlow(10).apply {
         // Don't overwrite with default
@@ -69,7 +70,7 @@ class PlayGameViewModel(
 
     fun reset() {
         machine.reset()
-        halted.value = false
+        halted.value = null
     }
 
     private val runJob = viewModelScope.launch {
@@ -101,7 +102,7 @@ class PlayGameViewModel(
                     saveState("pause")
                     // Wait for halt to clear and running to go to true.
                     running
-                        .combine(halted) { r, h -> r && !h }
+                        .combine(halted) { r, h -> r && h == null }
                         .first { it }
                     // Force a new frame instance to trigger certain recomposes.
                     // TODO: See if we can improve this.
@@ -114,7 +115,7 @@ class PlayGameViewModel(
                     when (result) {
                         is StepResult.Halt -> {
                             Log.i("Chip8", "Halted $programName: $result")
-                            halted.value = true
+                            halted.value = result
                         }
 
                         is StepResult.Await -> result.await()
