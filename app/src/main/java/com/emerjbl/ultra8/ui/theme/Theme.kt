@@ -13,6 +13,8 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.emerjbl.ultra8.ui.helpers.FrameConfig
+import kotlin.time.Duration.Companion.milliseconds
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -37,6 +39,9 @@ class Chip8ColorScheme(
 
 val LocalChip8ColorScheme =
     compositionLocalOf<Chip8ColorScheme> { error("No chip8 scheme specified") }
+
+val LocalFrameConfig =
+    compositionLocalOf<FrameConfig> { error("No frame config set") }
 
 @Suppress("UnusedReceiverParameter")
 val MaterialTheme.chip8Colors: Chip8ColorScheme
@@ -69,8 +74,16 @@ fun Ultra8Theme(
         pixel3Color = colorScheme.primary,
     )
 
+    val frameConfig = FrameConfig(
+        color1 = chip8ColorScheme.pixel1Color,
+        color2 = chip8ColorScheme.pixel2Color,
+        color3 = chip8ColorScheme.pixel3Color,
+        fadeTime = 400.milliseconds,
+    )
+
     CompositionLocalProvider(
         LocalChip8ColorScheme provides chip8ColorScheme,
+        LocalFrameConfig provides frameConfig
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

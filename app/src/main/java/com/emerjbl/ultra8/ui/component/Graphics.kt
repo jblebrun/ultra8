@@ -21,17 +21,17 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
-import com.emerjbl.ultra8.ui.helpers.FrameConfig
 import com.emerjbl.ultra8.ui.helpers.FrameHolder
 import com.emerjbl.ultra8.ui.helpers.next
+import com.emerjbl.ultra8.ui.theme.LocalFrameConfig
 import kotlinx.coroutines.Job
 
 @Composable
 fun frameGrabber(
     running: Boolean,
-    frameConfig: FrameConfig,
     frame: FrameManager.Frame,
 ): State<FrameHolder> {
+    val frameConfig = LocalFrameConfig.current
     val frameHolder =
         remember { mutableStateOf(null.next(frame, 0, frameConfig)) }
 
@@ -57,13 +57,12 @@ fun frameGrabber(
 @Composable
 fun Graphics(
     running: Boolean,
-    frameConfig: FrameConfig,
     modifier: Modifier = Modifier,
     frame: FrameManager.Frame,
 ) {
     // TODO: See if we can improve this.
     // Using a frame timer instead of re-allocating holders.
-    val frameHolder = frameGrabber(running, frameConfig, frame)
+    val frameHolder = frameGrabber(running, frame)
 
     Box(
         modifier = Modifier
