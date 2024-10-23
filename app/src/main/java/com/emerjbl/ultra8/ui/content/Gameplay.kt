@@ -14,13 +14,11 @@ import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.ui.component.BottomBar
 import com.emerjbl.ultra8.ui.component.Graphics
 import com.emerjbl.ultra8.ui.component.Keypad
-import com.emerjbl.ultra8.ui.helpers.FrameConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun PortraitGameplay(
     running: Boolean,
-    frameConfig: FrameConfig,
     frame: FrameManager.Frame,
     onKeyDown: (Int) -> Unit,
     onKeyUp: (Int) -> Unit,
@@ -34,7 +32,6 @@ fun PortraitGameplay(
     ) {
         Graphics(
             running,
-            frameConfig,
             frame = frame
         )
         Keypad(
@@ -49,7 +46,6 @@ fun PortraitGameplay(
 fun LandscapeGameplay(
     innerPadding: PaddingValues,
     running: Boolean,
-    frameConfig: FrameConfig,
     frame: FrameManager.Frame,
     cyclesPerTick: MutableStateFlow<Int>,
     onKeyDown: (Int) -> Unit,
@@ -69,7 +65,7 @@ fun LandscapeGameplay(
         Column(
             modifier = Modifier.weight(2f),
         ) {
-            Graphics(running, frameConfig, frame = frame)
+            Graphics(running, frame = frame)
             BottomBar(cyclesPerTick)
         }
     }
