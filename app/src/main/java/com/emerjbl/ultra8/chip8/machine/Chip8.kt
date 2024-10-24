@@ -258,7 +258,7 @@ class Chip8(
                     0x05 -> {
                         val result = v[x] - v[y]
                         v[x] = result and 0xFF
-                        v[0xF] = if (result >= 0) 1 else 0
+                        v[0xF] = if (result > 0) 1 else 0
                     }
 
                     0x06 -> {
