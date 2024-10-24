@@ -13,7 +13,12 @@ class Chip8Timer(private val timeSource: TimeSource) {
     var value: Int
         get() {
             // If timer is still active, negative time has elapsed.
-            val elapsed = maxOf(Duration.ZERO, -timerActiveUntil.elapsedNow())
+            // Don't use minOf/mmaxOf, they cause boxing.
+            val elapsed = if (timerActiveUntil.hasPassedNow()) {
+                Duration.ZERO
+            } else {
+                -timerActiveUntil.elapsedNow()
+            }
             // Ceil because we don't decrement tick until the entire tick time
             // has passed; toInt would decrement tick right away.
             return ceil(elapsed / TICK_TIME).toInt()

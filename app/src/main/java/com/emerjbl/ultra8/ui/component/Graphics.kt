@@ -25,6 +25,10 @@ import com.emerjbl.ultra8.ui.helpers.FrameHolder
 import com.emerjbl.ultra8.ui.helpers.next
 import com.emerjbl.ultra8.ui.theme.LocalFrameConfig
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import java.util.concurrent.atomic.AtomicInteger
+
+private val activeRenderLoops = AtomicInteger(0)
 
 @Composable
 fun frameGrabber(
@@ -38,9 +42,13 @@ fun frameGrabber(
     // Frame is fairly constant (mutable arrays)
     // Relaunch to render a frame at least once
     // TOOD: change this to a frametime ticker, remove constant frameholder allocation
-    LaunchedEffect(frame) {
-        Log.i("Chip8", "Begin Render Loop (frame $frame)")
-        coroutineContext[Job]?.invokeOnCompletion { Log.i("Chip8", "End Render Loop") }
+    LaunchedEffect(Pair(running, frame)) {
+        val active = activeRenderLoops.addAndGet(1)
+        Log.i("Chip8", "Begin Render Loop (frame $frame) (Active now: $active)")
+        coroutineContext[Job]?.invokeOnCompletion {
+            val active = activeRenderLoops.addAndGet(-1)
+            Log.i("Chip8", "End Render Loop (Active now: $active)")
+        }
         do {
             withFrameMillis { ft ->
                 frameHolder.value = frameHolder.value.next(
@@ -49,7 +57,7 @@ fun frameGrabber(
                     frameConfig
                 )
             }
-        } while (running || frameHolder.value.stillFading)
+        } while (isActive && (running || frameHolder.value.stillFading))
     }
     return frameHolder
 }
