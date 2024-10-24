@@ -436,33 +436,33 @@ sealed interface StepResult {
 
         /** The EXIT command was encountered. */
         data class Exit(override val pc: Int) : Halt {
-            override fun toString() = "EXIT at ${pc.sx}"
+            override fun toString() = "Exit at ${pc.sx}"
         }
 
         /** A spin-jump was encountered (JMP to self). */
         data class Spin(override val pc: Int) : Halt {
-            override fun toString() = "SPIN at 0x${pc.sx}"
+            override fun toString() = "Exit (Spin) at ${pc.sx}"
         }
 
         /** Unknown or unimplemented opcode. */
         data class IllegalOpcode(override val pc: Int, val opcode: Int) : Halt {
             override fun toString() =
-                "ILLOP 0x${opcode.sx} at 0x${pc.sx}"
+                "Illegal Operation (${opcode.sx}) at ${pc.sx}"
         }
 
         /** A return underflowed the stack. */
         data class StackUnderflow(override val pc: Int) : Halt {
-            override fun toString() = "UNDERFLOW at 0x${pc.sx}"
+            override fun toString() = "Stack Underflow at ${pc.sx}"
         }
 
         /** A call overflowed the stack. */
         data class StackOverflow(override val pc: Int) : Halt {
-            override fun toString() = "UNDERFLOW at 0x${pc.sx}"
+            override fun toString() = "Stack Overflow at ${pc.sx}"
         }
 
         /** An attempt to draw to an invalid bitplane. */
         data class InvalidBitPlane(override val pc: Int, val x: Int) : Halt {
-            override fun toString() = "BADPLANE ($x) at 0x${pc.sx}"
+            override fun toString() = "Draw to Invalid Bitplane ($x) at ${pc.sx}"
         }
     }
 }
