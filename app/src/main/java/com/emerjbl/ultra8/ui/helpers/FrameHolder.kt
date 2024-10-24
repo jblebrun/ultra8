@@ -102,6 +102,7 @@ class FrameHolder(
             frame.width,
             frame.height
         )
+        bitmap.prepareToDraw()
     }
 }
 

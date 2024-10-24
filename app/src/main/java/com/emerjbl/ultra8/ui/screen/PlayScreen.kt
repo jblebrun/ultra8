@@ -57,7 +57,6 @@ fun PlayScreen(
         }
     }
 
-    val running by viewModel.running.collectAsState(initial = false)
     val frame by viewModel.frames.collectAsState()
     val halt by viewModel.halted.collectAsState()
 
@@ -88,7 +87,7 @@ fun PlayScreen(
             if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)
         }
     ) { innerPadding ->
-        if (running) {
+        if (gameShouldRun) {
             focusRequester.requestFocus()
         }
 
@@ -96,7 +95,7 @@ fun PlayScreen(
         if (isLandscape()) {
             LandscapeGameplay(
                 innerPadding,
-                running,
+                gameShouldRun && halt == null,
                 frame,
                 viewModel.cyclesPerTick,
                 viewModel::keyDown,
@@ -104,7 +103,7 @@ fun PlayScreen(
             )
         } else {
             PortraitGameplay(
-                running,
+                gameShouldRun && halt == null,
                 frame,
                 viewModel::keyDown,
                 viewModel::keyUp,

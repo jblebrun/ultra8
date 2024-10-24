@@ -38,7 +38,7 @@ fun PortraitGameplay(
         Box(contentAlignment = Alignment.BottomCenter) {
             Graphics(
                 running,
-                frame = frame
+                frame = frame,
             )
             if (halt != null) {
                 Text(halt.toString(), style = MaterialTheme.typography.labelSmall)
