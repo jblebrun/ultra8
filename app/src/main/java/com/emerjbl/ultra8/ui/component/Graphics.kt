@@ -9,7 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
+import androidx.compose.runtime.LongState
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameMillis
@@ -17,11 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
-import com.emerjbl.ultra8.ui.helpers.FrameHolder
 import com.emerjbl.ultra8.ui.helpers.next
 import com.emerjbl.ultra8.ui.theme.LocalFrameConfig
 import kotlinx.coroutines.Job
@@ -31,35 +30,23 @@ import java.util.concurrent.atomic.AtomicInteger
 private val activeRenderLoops = AtomicInteger(0)
 
 @Composable
-fun frameGrabber(
-    running: Boolean,
-    frame: FrameManager.Frame,
-): State<FrameHolder> {
-    val frameConfig = LocalFrameConfig.current
-    val frameHolder =
-        remember { mutableStateOf(null.next(frame, 0, frameConfig)) }
-
-    // Frame is fairly constant (mutable arrays)
-    // Relaunch to render a frame at least once
-    // TOOD: change this to a frametime ticker, remove constant frameholder allocation
-    LaunchedEffect(Pair(running, frame)) {
+fun frameTicker(
+    running: Boolean
+): LongState {
+    val frameTime = remember { mutableLongStateOf(0L) }
+    val onFrame: (Long) -> Unit = { ft -> frameTime.longValue = ft }
+    LaunchedEffect(running) {
         val active = activeRenderLoops.addAndGet(1)
-        Log.i("Chip8", "Begin Render Loop (frame $frame) (Active now: $active)")
+        Log.i("Chip8", "Begin Render Loop (Active now: $active)")
         coroutineContext[Job]?.invokeOnCompletion {
             val active = activeRenderLoops.addAndGet(-1)
             Log.i("Chip8", "End Render Loop (Active now: $active)")
         }
         do {
-            withFrameMillis { ft ->
-                frameHolder.value = frameHolder.value.next(
-                    frame,
-                    ft,
-                    frameConfig
-                )
-            }
-        } while (isActive && (running || frameHolder.value.stillFading))
+            withFrameMillis(onFrame)
+        } while (isActive && (running))
     }
-    return frameHolder
+    return frameTime
 }
 
 @Composable
@@ -68,9 +55,16 @@ fun Graphics(
     modifier: Modifier = Modifier,
     frame: FrameManager.Frame,
 ) {
-    // TODO: See if we can improve this.
-    // Using a frame timer instead of re-allocating holders.
-    val frameHolder = frameGrabber(running, frame)
+    val frameConfig = LocalFrameConfig.current
+    val lastDrawTime = remember { mutableLongStateOf(0L) }
+    val frameHolder =
+        remember { mutableStateOf(null.next(frame, 0, frameConfig)) }
+    val frameTime = frameTicker(running || frameHolder.value.stillFading)
+    val next = frameHolder.value.next(
+        frame,
+        (frameTime.longValue - lastDrawTime.longValue).toInt(),
+        frameConfig
+    )
 
     Box(
         modifier = Modifier
@@ -81,10 +75,12 @@ fun Graphics(
             .aspectRatio(2f)
             .drawBehind {
                 drawImage(
-                    frameHolder.value.bitmap.asImageBitmap(),
+                    next.imageBitmap,
                     filterQuality = FilterQuality.Low,
                     dstSize = size.toIntSize(),
                 )
+                frameHolder.value = next
+                lastDrawTime.longValue = frameTime.longValue
             }
                 then modifier,
     )

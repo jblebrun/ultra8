@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.view.animation.AccelerateInterpolator
 import androidx.annotation.ColorInt
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.alpha
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
@@ -47,12 +49,29 @@ data class FrameConfig(
 fun Int.withAlpha(alpha: Int) = (this and 0x00FFFFFF) or (alpha shl 24)
 
 /** Holds data related to a frame to render, and its fade out times. */
-class FrameHolder(
+class FrameHolder private constructor(
     var pixelData: IntArray,
     var fadeTimes: IntArray,
     val bitmap: Bitmap,
-    val frameTime: Long,
 ) {
+    constructor(width: Int, height: Int) : this(
+        IntArray(width * height),
+        IntArray(width * height),
+        Bitmap.createBitmap(
+            // Add some space for filter blur to extend into.
+            width + 2 * FILTER_PADDING_PX,
+            height + 2 * FILTER_PADDING_PX,
+            Bitmap.Config.ARGB_8888
+        )
+    )
+
+    fun holds(frame: FrameManager.Frame): Boolean {
+        // Doesn't work in the general case (90 deg rot), but works for us.
+        return frame.height * frame.width == pixelData.size
+    }
+
+    val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
+
     private var fadingPixels = 0
 
     /** Let the renderer know that we still have pixels to fade out. */
@@ -113,27 +132,9 @@ class FrameHolder(
  */
 fun FrameHolder?.next(
     frame: FrameManager.Frame,
-    frameTime: Long,
+    frameDiff: Int,
     frameConfig: FrameConfig
-): FrameHolder {
-    val fadeTimes = this?.fadeTimes
-        ?.takeIf { it.size == frame.plane1.data.size }
-        ?: IntArray(frame.plane1.data.size)
-
-    val pixelData = this?.pixelData
-        ?.takeIf { it.size == frame.plane1.data.size }
-        ?: IntArray(frame.plane1.data.size)
-
-    // Add some space for filter blur to extend into.
-    val bitmapWidth = frame.width + 2 * FILTER_PADDING_PX
-    val bitmapHeight = frame.height + 2 * FILTER_PADDING_PX
-
-    val bitmap = this?.bitmap
-        ?.takeIf { it.width == bitmapWidth && it.height == bitmapHeight }
-        ?: Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
-
-    val frameDiff = (frameTime - (this?.frameTime ?: 0)).toInt()
-    return FrameHolder(pixelData, fadeTimes, bitmap, frameTime).apply {
-        update(frame, frameDiff, frameConfig)
-    }
-}
+): FrameHolder =
+    (takeIf { it?.holds(frame) == true }
+        ?: FrameHolder(frame.width, frame.height))
+        .apply { update(frame, frameDiff, frameConfig) }
