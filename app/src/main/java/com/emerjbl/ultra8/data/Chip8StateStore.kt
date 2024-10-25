@@ -28,6 +28,11 @@ class Chip8StateStore(
         chip8StateDao.saveState(Chip8ProgramState(name, state.toDbState()))
     }
 
+    /** Clear any state associated with the program [name]. */
+    suspend fun clearState(name: String) {
+        chip8StateDao.clearState(name)
+    }
+
     /** Look for a previously saved [Chip8.State] for the provided [name]. */
     suspend fun findState(name: String): Chip8.State? {
         return chip8StateDao.findByName(name)?.state?.toMachineState()
@@ -41,6 +46,9 @@ interface Chip8ProgramStateDao {
 
     @Query("SELECT * FROM chip8ProgramState WHERE name == :name LIMIT 1")
     suspend fun findByName(name: String): Chip8ProgramState?
+
+    @Query("DELETE FROM chip8ProgramState WHERE name == :name")
+    suspend fun clearState(name: String)
 }
 
 /** A program state stored along with the program name. */
