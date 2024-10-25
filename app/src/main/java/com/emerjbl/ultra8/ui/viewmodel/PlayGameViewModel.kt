@@ -69,11 +69,21 @@ class PlayGameViewModel(
     }
 
     fun reset() {
-        machine.reset()
+        val lastJob = runJob
+        lastJob.cancel()
+        runJob = viewModelScope.launch {
+            lastJob.join()
+            chip8StateStore.clearState(programName)
+            runMachine()
+        }
         halted.value = null
     }
 
-    private val runJob = viewModelScope.launch {
+    private var runJob = viewModelScope.launch {
+        runMachine()
+    }
+
+    suspend fun runMachine() {
         machine = withContext(Dispatchers.IO) {
             val savedState = chip8StateStore.findState(programName)
             val program = programStore.withData(programName)
@@ -89,7 +99,7 @@ class PlayGameViewModel(
                 Log.i("Chip8", "Could not find $programName at all")
                 null
             }
-        } ?: return@launch
+        } ?: return
 
         withContext(Dispatchers.Default) {
             // Force a new frame instance to trigger certain recomposes.

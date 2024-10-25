@@ -57,7 +57,7 @@ class Chip8(
         /** Graphics buffer is an important part of state, too. */
         val gfx: FrameManager = FrameManager(),
 
-        /** The last halt condition for the machine. Clear with [reset]. */
+        /** The last halt condition for the machine. */
         var halted: Halt? = null
     ) {
         /**
@@ -93,13 +93,6 @@ class Chip8(
     }
 
     val stateView = State.View(state)
-
-    /** Soft reset the machine: clear screen, reset to program start. */
-    fun reset() {
-        state.halted = null
-        state.gfx.clear()
-        state.pc = EXEC_START
-    }
 
     fun nextFrame(frame: FrameManager.Frame?): FrameManager.Frame = state.gfx.nextFrame(frame)
 
