@@ -2,12 +2,10 @@ package com.emerjbl.ultra8.ui.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.CreationExtras
-import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
+import com.emerjbl.ultra8.util.viewModelFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -37,18 +35,8 @@ class TopLevelViewModel(
     }
 
     companion object {
-        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: Class<T>,
-                extras: CreationExtras
-            ): T =
-                checkNotNull(extras[APPLICATION_KEY] as? Ultra8Application).let { application ->
-                    TopLevelViewModel(
-                        application.provider.programStore,
-                    ) as T
-                }
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            TopLevelViewModel(application.provider.programStore)
         }
-
     }
 }
