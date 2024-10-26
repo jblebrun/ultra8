@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.navigation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

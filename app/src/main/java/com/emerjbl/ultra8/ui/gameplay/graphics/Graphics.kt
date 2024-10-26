@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.gameplay.graphics
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
-import com.emerjbl.ultra8.ui.helpers.next
 import com.emerjbl.ultra8.ui.theme.LocalFrameConfig
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive

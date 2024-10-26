@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.helpers
+package com.emerjbl.ultra8.ui.gameplay.input
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent

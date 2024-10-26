@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.viewmodel
+package com.emerjbl.ultra8.ui.loading
 
 import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
@@ -11,7 +11,7 @@ import androidx.navigation.NavController
 import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
-import com.emerjbl.ultra8.ui.viewmodel.LoadResult.Companion.toLoadResult
+import com.emerjbl.ultra8.ui.loading.LoadResult.Companion.toLoadResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext

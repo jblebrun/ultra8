@@ -1,5 +1,6 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.gameplay.input
 
+import androidx.collection.FloatFloatPair
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.TransformResult
 import androidx.graphics.shapes.toPath
-import com.emerjbl.ultra8.ui.helpers.KeyHitManager
-import com.emerjbl.ultra8.ui.helpers.addKeyToKeyHitManager
-import com.emerjbl.ultra8.ui.helpers.keyHitManager
 import com.emerjbl.ultra8.ui.theme.chip8Colors
 import java.util.Locale
 
@@ -76,7 +73,7 @@ private val unitKeyPoly = RoundedPolygon(
 
 /** A shape that will draw the key poly at the correct size. */
 private val keyPathShape = GenericShape { size, _ ->
-    unitKeyPoly.transformed { x, y -> TransformResult(x * size.width, y * size.height) }
+    unitKeyPoly.transformed { x, y -> FloatFloatPair(x * size.width, y * size.height) }
         .toPath(this@GenericShape.asAndroidPath())
 }
 

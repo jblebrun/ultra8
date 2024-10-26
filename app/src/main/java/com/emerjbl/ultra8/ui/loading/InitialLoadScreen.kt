@@ -1,6 +1,7 @@
-package com.emerjbl.ultra8.ui.screen
+package com.emerjbl.ultra8.ui.loading
 
 import androidx.compose.runtime.Composable
+import com.emerjbl.ultra8.ui.gameplay.PlayScreen
 import kotlinx.coroutines.flow.flowOf
 
 @Composable

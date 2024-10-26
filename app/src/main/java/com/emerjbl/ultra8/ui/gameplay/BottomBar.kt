@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.gameplay
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.BottomAppBar

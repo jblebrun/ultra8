@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.helpers
+package com.emerjbl.ultra8.ui.gameplay.input
 
 import android.util.Log
 import android.view.MotionEvent

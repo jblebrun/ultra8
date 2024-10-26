@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.component
+package com.emerjbl.ultra8.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu

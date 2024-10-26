@@ -1,9 +1,7 @@
-package com.emerjbl.ultra8.ui.screen
+package com.emerjbl.ultra8.ui.gameplay
 
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -13,18 +11,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.emerjbl.ultra8.ui.component.BottomBar
-import com.emerjbl.ultra8.ui.component.TopBar
-import com.emerjbl.ultra8.ui.content.LandscapeGameplay
-import com.emerjbl.ultra8.ui.content.PortraitGameplay
-import com.emerjbl.ultra8.ui.helpers.onKeyEvent
-import com.emerjbl.ultra8.ui.viewmodel.PlayGameViewModel
+import com.emerjbl.ultra8.ui.gameplay.input.onKeyEvent
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -60,42 +52,30 @@ fun PlayScreen(
     val frame by viewModel.frames.collectAsState()
     val halt by viewModel.halted.collectAsState()
 
-    val focusRequester = remember { FocusRequester() }
+    val gameShouldRun = gameShouldRun && halt == null
 
-    fun onKeyEvent(event: KeyEvent): Boolean {
-        onKeyEvent(event, viewModel::keyDown, viewModel::keyUp)
-        return false
-    }
+    val focusRequester = remember { FocusRequester() }
 
     @Composable
     fun isLandscape(): Boolean = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE
 
-    Scaffold(
+    Box(
         modifier = Modifier
-            .fillMaxSize()
             .focusRequester(focusRequester)
-            .onKeyEvent(::onKeyEvent),
-        topBar = {
-            if (!isLandscape()) TopBar(
-                programName,
-                openDrawer = {
-                    onDrawerOpen()
-                }
-            )
-        },
-        bottomBar = {
-            if (!isLandscape()) BottomBar(cyclesPerTick = viewModel.cyclesPerTick)
+            .onKeyEvent {
+                onKeyEvent(it, viewModel::keyDown, viewModel::keyUp)
+                false
+            },
+    ) {
+        LaunchedEffect(true) {
+            if (gameShouldRun) {
+                focusRequester.requestFocus()
+            }
         }
-    ) { innerPadding ->
-        if (gameShouldRun) {
-            focusRequester.requestFocus()
-        }
-
 
         if (isLandscape()) {
             LandscapeGameplay(
-                innerPadding,
-                gameShouldRun && halt == null,
+                gameShouldRun,
                 frame,
                 viewModel.cyclesPerTick,
                 viewModel::keyDown,
@@ -103,13 +83,14 @@ fun PlayScreen(
             )
         } else {
             PortraitGameplay(
-                gameShouldRun && halt == null,
+                gameShouldRun,
+                programName,
                 frame,
+                viewModel.cyclesPerTick,
                 viewModel::keyDown,
                 viewModel::keyUp,
                 halt,
-                modifier = Modifier
-                    .padding(innerPadding)
+                onDrawerOpen
             )
         }
     }

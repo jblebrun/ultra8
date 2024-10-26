@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.screen
+package com.emerjbl.ultra8.ui.navigation
 
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
@@ -14,9 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.emerjbl.ultra8.ui.component.SideDrawer
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
-import com.emerjbl.ultra8.ui.viewmodel.TopLevelViewModel
 import kotlinx.coroutines.launch
 
 @Composable

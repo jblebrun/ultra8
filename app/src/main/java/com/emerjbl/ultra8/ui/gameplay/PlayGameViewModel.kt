@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.viewmodel
+package com.emerjbl.ultra8.ui.gameplay
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -123,7 +123,7 @@ class PlayGameViewModel(
                     val result = machine.tick(cyclesPerTick.value)
                     frames.value = machine.nextFrame(frames.value)
                     when (result) {
-                        is StepResult.Halt -> {
+                        is Halt -> {
                             Log.i("Chip8", "Halted $programName: $result")
                             halted.value = result
                         }
