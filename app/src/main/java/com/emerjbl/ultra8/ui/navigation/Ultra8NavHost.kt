@@ -3,14 +3,15 @@ package com.emerjbl.ultra8.ui.navigation
 import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import com.emerjbl.ultra8.ui.gameplay.PlayScreen
 import com.emerjbl.ultra8.ui.loading.InitialLoadScreen
 import com.emerjbl.ultra8.ui.loading.LoadScreen
-import com.emerjbl.ultra8.ui.gameplay.PlayScreen
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -37,13 +38,12 @@ fun Ultra8NavHost(
         }
         composable<PlayGame> { entry ->
             val routeProgram = entry.toRoute<PlayGame>().programName
-            // During navigation, the previous route is still in composition for a few
-            // 100 milliseonds (maybe due to animation?) So this makes sure the previous
-            // game doesn't still play.
-            val isSelectedProgram = selectedProgram == routeProgram
+            // Prevent game running when view is animating away.
+            val gameShouldRun =
+                gameShouldRun && entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             PlayScreen(
                 programName = routeProgram,
-                gameShouldRun = gameShouldRun && isSelectedProgram,
+                gameShouldRun = gameShouldRun,
                 resetEvents = resetEvents,
                 onDrawerOpen = onDrawerOpen,
             )
