@@ -3,16 +3,14 @@ package com.emerjbl.ultra8.ui.gameplay
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.CreationExtras
-import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.chip8.machine.StepResult
 import com.emerjbl.ultra8.chip8.machine.StepResult.Halt
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.data.ProgramStore
+import com.emerjbl.ultra8.util.viewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -148,21 +146,15 @@ class PlayGameViewModel(
     companion object {
         val FRAME_TIME = (1.0 / 60).seconds
 
-        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: Class<T>,
-                extras: CreationExtras
-            ): T =
-                checkNotNull(extras[APPLICATION_KEY] as? Ultra8Application).let { application ->
-                    // We share viewModels for all running games in the nav stack
-                    val programName = extras[ViewModelProvider.VIEW_MODEL_KEY]!!
-                    PlayGameViewModel(
-                        programName,
-                        application.provider.chip8StateStore,
-                        application.provider.programStore,
-                    ) as T
-                }
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            // We share viewModels for all running games in the nav stack
+            PlayGameViewModel(
+                checkNotNull(extras[ViewModelProvider.VIEW_MODEL_KEY]) {
+                    "Missing VIEW_MODEL_KEY for PlayGameViewModel factory"
+                },
+                application.provider.chip8StateStore,
+                application.provider.programStore,
+            )
         }
     }
 }

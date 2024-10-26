@@ -4,14 +4,12 @@ import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.createSavedStateHandle
-import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.navigation.NavController
-import com.emerjbl.ultra8.Ultra8Application
 import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
 import com.emerjbl.ultra8.ui.loading.LoadResult.Companion.toLoadResult
+import com.emerjbl.ultra8.util.viewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -48,19 +46,11 @@ class LoadGameViewModel(
 
 
     companion object {
-        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: Class<T>,
-                extras: CreationExtras
-            ): T =
-                checkNotNull(extras[APPLICATION_KEY] as? Ultra8Application).let { application ->
-                    LoadGameViewModel(
-                        application.provider.programStore,
-                        extras.createSavedStateHandle()
-                    ) as T
-                }
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            LoadGameViewModel(
+                application.provider.programStore,
+                extras.createSavedStateHandle()
+            )
         }
-
     }
 }
