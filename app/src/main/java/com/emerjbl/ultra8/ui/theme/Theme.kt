@@ -13,7 +13,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import com.emerjbl.ultra8.ui.helpers.FrameConfig
+import com.emerjbl.ultra8.ui.gameplay.graphics.FrameConfig
 import kotlin.time.Duration.Companion.milliseconds
 
 private val DarkColorScheme = darkColorScheme(

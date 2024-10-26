@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.viewmodel
+package com.emerjbl.ultra8.ui.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

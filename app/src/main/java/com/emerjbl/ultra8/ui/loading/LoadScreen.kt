@@ -1,11 +1,9 @@
-package com.emerjbl.ultra8.ui.screen
+package com.emerjbl.ultra8.ui.loading
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.emerjbl.ultra8.ui.viewmodel.LoadGameViewModel
-import com.emerjbl.ultra8.ui.viewmodel.LoadResult
 
 @Composable
 fun LoadScreen(onProgramLoaded: (String) -> Unit) {

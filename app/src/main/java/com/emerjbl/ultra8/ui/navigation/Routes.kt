@@ -1,4 +1,4 @@
-package com.emerjbl.ultra8.ui.screen
+package com.emerjbl.ultra8.ui.navigation
 
 import kotlinx.serialization.Serializable
 
