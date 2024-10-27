@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
+import com.emerjbl.ultra8.util.matchesRoute
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,8 +55,8 @@ fun AppEntryPoint() {
                         scope.launch {
                             drawerState.close()
                         }
-                        if (selectedProgram.value != program.name) {
-                            topLevelViewModel.setSelectedProgram(program.name)
+                        val route = PlayGame(program.name)
+                        if (!navController.currentBackStackEntry.matchesRoute(route)) {
                             navController.navigate(PlayGame(program.name))
                         }
                     },
