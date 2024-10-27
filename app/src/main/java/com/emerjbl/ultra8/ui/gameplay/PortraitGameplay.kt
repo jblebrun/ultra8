@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 @Composable
 fun PortraitGameplay(
     running: Boolean,
-    programName: String,
+    title: String,
     frame: FrameManager.Frame,
     cyclesPerTick: MutableStateFlow<Int>,
     onKeyDown: (Int) -> Unit,
@@ -36,7 +36,7 @@ fun PortraitGameplay(
             .fillMaxSize(),
         topBar = {
             TopBar(
-                programName,
+                title,
                 openDrawer = {
                     onDrawerOpen()
                 }

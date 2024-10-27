@@ -104,6 +104,7 @@ class PlayGameViewModel(
             // TODO: See if we can improve this.
             frames.value = machine.nextFrame(null)
 
+            programStore.setSelectedProgram(programName)
             while (isActive) {
                 if (!running.value || machine.stateView.halted != null) {
                     Log.i("Chip8", "$programName paused at ${machine.stateView.pc.toHexString()}")
@@ -116,6 +117,7 @@ class PlayGameViewModel(
                     // TODO: See if we can improve this.
                     frames.value = machine.nextFrame(null)
                     Log.i("Chip8", "$programName resumed at ${machine.stateView.pc.toHexString()}")
+                    programStore.setSelectedProgram(programName)
                 }
                 val instructionTime = measureTime {
                     val result = machine.tick(cyclesPerTick.value)

@@ -17,16 +17,14 @@ import kotlinx.coroutines.flow.Flow
 @Composable
 fun Ultra8NavHost(
     navController: NavHostController,
-    selectedProgram: String,
     gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
-    onProgramLoad: (String) -> Unit,
 ) {
     NavHost(navController, startDestination = InitialLoad) {
         composable<InitialLoad> {
-            InitialLoadScreen(selectedProgram) {
-                navController.navigate(PlayGame(selectedProgram)) {
+            InitialLoadScreen(onDrawerOpen) {
+                navController.navigate(PlayGame(it)) {
                     // https://issuetracker.google.com/issues/370694831
                     @SuppressLint("RestrictedApi")
                     popUpTo(InitialLoad) {
@@ -34,7 +32,6 @@ fun Ultra8NavHost(
                     }
                 }
             }
-
         }
         composable<PlayGame> { entry ->
             val routeProgram = entry.toRoute<PlayGame>().programName
@@ -65,7 +62,6 @@ fun Ultra8NavHost(
                         inclusive = true
                     }
                 }
-                onProgramLoad(it)
             })
         }
     }
