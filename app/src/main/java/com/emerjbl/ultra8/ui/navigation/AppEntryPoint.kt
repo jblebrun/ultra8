@@ -54,9 +54,7 @@ fun AppEntryPoint() {
                     programs.value,
                     selectedProgram,
                     onProgramSelected = { program ->
-                        scope.launch {
-                            drawerState.close()
-                        }
+                        scope.launch { drawerState.close() }
                         val route = PlayGame(program.name)
                         if (!navController.currentBackStackEntry.matchesRoute(route)) {
                             navController.navigate(PlayGame(program.name))
@@ -65,10 +63,14 @@ fun AppEntryPoint() {
                     onRemoveProgram = {
                         topLevelViewModel.removeProgram(it)
                     },
-                    onReset = {
-                        scope.launch {
-                            drawerState.close()
+                    onCatalog = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate(Catalog) {
+                            launchSingleTop = true
                         }
+                    },
+                    onReset = {
+                        scope.launch { drawerState.close() }
                         topLevelViewModel.resetEvents.tryEmit(Unit)
                     }
                 )

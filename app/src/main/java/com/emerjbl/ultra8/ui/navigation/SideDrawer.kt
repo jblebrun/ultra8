@@ -30,6 +30,7 @@ fun SideDrawer(
     selectedProgram: SelectedProgram,
     onProgramSelected: (Program) -> Unit,
     onReset: () -> Unit,
+    onCatalog: () -> Unit,
     onRemoveProgram: (String) -> Unit
 ) {
     ModalDrawerSheet(
@@ -57,6 +58,19 @@ fun SideDrawer(
                 )
                 HorizontalDivider()
             }
+            item {
+                NavigationDrawerItem(
+                    onClick = onCatalog,
+                    label = {
+                        Text(
+                            "Catalog", modifier = Modifier.padding(10.dp),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    },
+                    selected = false
+                )
+                HorizontalDivider()
+            }
             items(programs.size,
                 contentType = { 1 },
                 key = { programs[it].name }
@@ -71,13 +85,11 @@ fun SideDrawer(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(program.name)
-                            if (!program.builtIn) {
-                                IconButton({ onRemoveProgram(program.name) }) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Remove ${program.name}"
-                                    )
-                                }
+                            IconButton({ onRemoveProgram(program.name) }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Remove ${program.name}"
+                                )
                             }
                         }
                     },

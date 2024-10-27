@@ -6,19 +6,38 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.emerjbl.ultra8.BuildConfig
 
+@Database(entities = [CatalogProgram::class], version = 1)
+abstract class CatalogDatabase : RoomDatabase() {
+    abstract fun catalogDao(): CatalogDao
+
+    companion object {
+        fun newForFile(
+            context: Context,
+            name: String,
+            seed: String
+        ): CatalogDatabase =
+            Room.databaseBuilder(context, CatalogDatabase::class.java, name)
+                .createFromAsset(seed)
+                .buildForApp()
+
+        private fun Builder<CatalogDatabase>.buildForApp() =
+            fallbackToDestructiveMigration()
+                .build()
+    }
+}
+
 @Database(entities = [Chip8ProgramState::class, Program::class], version = 2)
 abstract class Ultra8Database : RoomDatabase() {
     abstract fun chip8StateDao(): Chip8ProgramStateDao
     abstract fun programDao(): ProgramDao
 
     companion object {
-        fun newForFile(context: Context, name: String, seed: String): Ultra8Database =
+        fun newForFile(context: Context, name: String): Ultra8Database =
             Room.databaseBuilder(
                 context,
                 Ultra8Database::class.java,
                 name
             )
-                .createFromAsset(seed)
                 .buildForApp()
 
         private fun Builder<Ultra8Database>.buildForApp() = apply {

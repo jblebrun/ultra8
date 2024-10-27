@@ -10,3 +10,6 @@ data object LoadGame
 
 @Serializable
 data object InitialLoad
+
+@Serializable
+data object Catalog
