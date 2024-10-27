@@ -14,6 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.emerjbl.ultra8.data.SelectedProgram
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
 import com.emerjbl.ultra8.util.matchesRoute
 import kotlinx.coroutines.launch
@@ -26,7 +27,8 @@ fun AppEntryPoint() {
 
     val topLevelViewModel = viewModel<TopLevelViewModel>(factory = TopLevelViewModel.Factory)
     val programs = topLevelViewModel.programs.collectAsState(emptyList())
-    val selectedProgram = topLevelViewModel.selectedProgram.collectAsState("")
+    val selectedProgram =
+        topLevelViewModel.selectedProgram.collectAsState(SelectedProgram.Loading).value
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
@@ -50,7 +52,7 @@ fun AppEntryPoint() {
                 SideDrawer(
                     drawerState,
                     programs.value,
-                    selectedProgram.value,
+                    selectedProgram,
                     onProgramSelected = { program ->
                         scope.launch {
                             drawerState.close()
@@ -73,11 +75,9 @@ fun AppEntryPoint() {
             }) {
             Ultra8NavHost(
                 navController,
-                selectedProgram = selectedProgram.value,
                 gameShouldRun = gameShouldRun.value,
                 resetEvents = topLevelViewModel.resetEvents,
                 onDrawerOpen = { scope.launch { drawerState.open() } },
-                onProgramLoad = { topLevelViewModel.setSelectedProgram(it) }
             )
         }
     }

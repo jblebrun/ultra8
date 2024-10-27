@@ -21,12 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.emerjbl.ultra8.data.Program
+import com.emerjbl.ultra8.data.SelectedProgram
 
 @Composable
 fun SideDrawer(
     drawerState: DrawerState,
     programs: List<Program>,
-    selectedProgram: String?,
+    selectedProgram: SelectedProgram,
     onProgramSelected: (Program) -> Unit,
     onReset: () -> Unit,
     onRemoveProgram: (String) -> Unit
@@ -80,7 +81,7 @@ fun SideDrawer(
                             }
                         }
                     },
-                    selected = program.name == selectedProgram
+                    selected = SelectedProgram.Program(program.name) == selectedProgram
                 )
             }
         }

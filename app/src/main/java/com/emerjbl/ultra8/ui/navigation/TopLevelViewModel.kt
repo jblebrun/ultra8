@@ -22,12 +22,6 @@ class TopLevelViewModel(
 
     val selectedProgram = programStore.selectedProgram
 
-    fun setSelectedProgram(name: String) {
-        viewModelScope.launch {
-            programStore.setSelectedProgram(name)
-        }
-    }
-
     fun removeProgram(name: String) {
         viewModelScope.launch {
             programStore.remove(name)

@@ -16,7 +16,7 @@ fun TopBar(
     openDrawer: () -> Unit
 
 ) {
-    val title = loadedProgram.takeIf { it.isNotBlank() } ?: "Loading..."
+    val title = loadedProgram
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = openDrawer) {

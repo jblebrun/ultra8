@@ -52,6 +52,12 @@ interface ProgramDao {
     suspend fun add(program: Program)
 }
 
+sealed interface SelectedProgram {
+    data object Loading : SelectedProgram
+    data object None : SelectedProgram
+    data class Program(val programName: String) : SelectedProgram
+}
+
 /** The store of programs that Ultra8 can run. */
 class ProgramStore(
     private val context: Context,
@@ -59,8 +65,10 @@ class ProgramStore(
 ) {
     fun programsFlow(): Flow<List<Program>> = programDao.allFlow()
 
-    val selectedProgram = context.preferences.data.map {
-        (it[SELECTED_PROGRAM_KEY] ?: DEFAULT_PROGRAM_NAME)
+    val selectedProgram: Flow<SelectedProgram> = context.preferences.data.map {
+        it[SELECTED_PROGRAM_KEY]
+            ?.let { SelectedProgram.Program(it) }
+            ?: SelectedProgram.None
     }
 
     suspend fun setSelectedProgram(name: String) {

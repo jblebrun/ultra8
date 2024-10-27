@@ -24,7 +24,8 @@ fun PlayScreen(
     programName: String,
     gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
-    onDrawerOpen: () -> Unit
+    onDrawerOpen: () -> Unit,
+    title: String = programName,
 ) {
     val viewModel =
         viewModel<PlayGameViewModel>(
@@ -84,7 +85,7 @@ fun PlayScreen(
         } else {
             PortraitGameplay(
                 gameShouldRun,
-                programName,
+                title,
                 frame,
                 viewModel.cyclesPerTick,
                 viewModel::keyDown,
