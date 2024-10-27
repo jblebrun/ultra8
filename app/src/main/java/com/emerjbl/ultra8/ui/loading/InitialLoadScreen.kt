@@ -10,13 +10,14 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun InitialLoadScreen(
     onDrawerOpen: () -> Unit,
+    onCatalog: () -> Unit,
     onReady: (String) -> Unit,
 ) {
     val viewModel = viewModel<InitialLoadViewModel>(factory = InitialLoadViewModel.Factory)
     val selectedProgram = viewModel.selectedProgram.collectAsState(SelectedProgram.Loading).value
     println("SELECTED PROGRAM: $selectedProgram")
     when (selectedProgram) {
-        is SelectedProgram.None -> onDrawerOpen()
+        is SelectedProgram.None -> onCatalog()
         is SelectedProgram.Program -> onReady(selectedProgram.programName)
         else -> Unit
     }

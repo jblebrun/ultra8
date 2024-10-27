@@ -24,9 +24,6 @@ class Program(
     /** The display name for the program. */
     val name: String,
 
-    /** True if this is one of the included programs. */
-    val builtIn: Boolean = false,
-
     /** The last chosen cycles per second. */
     val cyclesPerTick: Int,
 
@@ -36,7 +33,7 @@ class Program(
 
 @Dao
 interface ProgramDao {
-    @Query("SELECT name, builtIn, cyclesPerTick from program ORDER BY builtIn, name")
+    @Query("SELECT name, cyclesPerTick from program ORDER BY name")
     fun allFlow(): Flow<List<Program>>
 
     @Query("SELECT * from program where name == :name limit 1")
@@ -77,6 +74,9 @@ class ProgramStore(
         }
     }
 
+    suspend fun add(program: Program) {
+        programDao.add(program)
+    }
 
     suspend fun addForUri(uri: Uri): Program =
         withContext(Dispatchers.IO) {
@@ -98,10 +98,9 @@ class ProgramStore(
             val data = context.contentResolver.openInputStream(uri)!!.use {
                 it.readBytes()
             }
-            Program(name, false, 10, data).also {
+            Program(name, 10, data).also {
                 programDao.add(it)
             }
-
         }
 
     suspend fun withData(name: String): Program? = programDao.withData(name)
@@ -109,7 +108,7 @@ class ProgramStore(
     suspend fun updateCyclesPerTick(name: String, cyclesPerTick: Int) =
         programDao.updateCyclesPerTick(name, cyclesPerTick)
 
-    suspend fun remove(name: String) = programDao.remove(Program(name, false, 0))
+    suspend fun remove(name: String) = programDao.remove(Program(name, 0))
 
     companion object {
         private val SELECTED_PROGRAM_KEY = stringPreferencesKey("lastProgram")

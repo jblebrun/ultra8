@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import com.emerjbl.ultra8.ui.catalog.CatalogScreen
 import com.emerjbl.ultra8.ui.gameplay.PlayScreen
 import com.emerjbl.ultra8.ui.loading.InitialLoadScreen
 import com.emerjbl.ultra8.ui.loading.LoadScreen
@@ -23,15 +24,42 @@ fun Ultra8NavHost(
 ) {
     NavHost(navController, startDestination = InitialLoad) {
         composable<InitialLoad> {
-            InitialLoadScreen(onDrawerOpen) {
-                navController.navigate(PlayGame(it)) {
-                    // https://issuetracker.google.com/issues/370694831
-                    @SuppressLint("RestrictedApi")
-                    popUpTo(InitialLoad) {
-                        inclusive = true
+            InitialLoadScreen(
+                onDrawerOpen,
+                onCatalog = {
+                    navController.navigate(Catalog) {
+                        // https://issuetracker.google.com/issues/370694831
+                        @SuppressLint("RestrictedApi")
+                        popUpTo(InitialLoad) {
+                            inclusive = true
+                        }
                     }
+                },
+                onReady = {
+                    navController.navigate(PlayGame(it)) {
+                        // https://issuetracker.google.com/issues/370694831
+                        @SuppressLint("RestrictedApi")
+                        popUpTo(InitialLoad) {
+                            inclusive = true
+                        }
+                    }
+                })
+        }
+        composable<Catalog> {
+            CatalogScreen(
+                onSelectProgram = {
+                    navController.navigate(PlayGame(it)) {
+                        // https://issuetracker.google.com/issues/370694831
+                        @SuppressLint("RestrictedApi")
+                        popUpTo(InitialLoad) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
                 }
-            }
+            )
         }
         composable<PlayGame> { entry ->
             val routeProgram = entry.toRoute<PlayGame>().programName
