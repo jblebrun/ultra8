@@ -15,11 +15,18 @@ fun InitialLoadScreen(
     val programCount = viewModel.programs.collectAsState(null).value
     when {
         programCount == null -> Unit
-        programCount.size == 0 -> onCatalog()
-        else -> onDrawerOpen()
+        programCount.size == 0 -> {
+            println("No programs, show catalog")
+            onCatalog()
+        }
+
+        else -> {
+            println("Some programs, show drawer")
+            onDrawerOpen()
+        }
     }
 
     // Just show a blank play screen while loading.
-    PlayScreen("", false, flowOf(), onDrawerOpen, "<- Choose a game")
+    PlayScreen("", false, flowOf(), onDrawerOpen, {}, "<- Choose a game")
 
 }

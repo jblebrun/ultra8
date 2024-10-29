@@ -28,13 +28,7 @@ fun Ultra8NavHost(
             InitialLoadScreen(
                 onDrawerOpen,
                 onCatalog = {
-                    navController.navigate(Catalog) {
-                        // https://issuetracker.google.com/issues/370694831
-                        @SuppressLint("RestrictedApi")
-                        popUpTo(InitialLoad) {
-                            inclusive = true
-                        }
-                    }
+                    navController.navigate(Catalog)
                 },
             )
         }
@@ -44,7 +38,7 @@ fun Ultra8NavHost(
                     navController.navigate(PlayGame(it)) {
                         // https://issuetracker.google.com/issues/370694831
                         @SuppressLint("RestrictedApi")
-                        popUpTo(InitialLoad) {
+                        popUpTo(Catalog) {
                             inclusive = true
                         }
                     }
@@ -64,6 +58,13 @@ fun Ultra8NavHost(
                 programName = routeProgram,
                 gameShouldRun = gameShouldRun,
                 resetEvents = resetEvents,
+                onProgramGone = {
+                    println("$routeProgram GONE!")
+                    if (!navController.popBackStack()) {
+                        println("Couldn't pop...")
+                        navController.navigate(InitialLoad)
+                    }
+                },
                 onDrawerOpen = onDrawerOpen,
             )
         }

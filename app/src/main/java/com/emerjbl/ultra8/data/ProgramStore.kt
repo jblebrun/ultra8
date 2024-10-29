@@ -33,6 +33,9 @@ interface ProgramDao {
     fun allFlow(): Flow<List<Program>>
 
     @Query("SELECT * from program where name == :name limit 1")
+    fun nameFlow(name: String): Flow<Program?>
+
+    @Query("SELECT * from program where name == :name limit 1")
     suspend fun withData(name: String): Program?
 
     @Query("UPDATE program set cyclesPerTick = :cyclesPerTick WHERE name = :programName")
@@ -45,18 +48,14 @@ interface ProgramDao {
     suspend fun add(program: Program)
 }
 
-sealed interface SelectedProgram {
-    data object Loading : SelectedProgram
-    data object None : SelectedProgram
-    data class Program(val programName: String) : SelectedProgram
-}
-
 /** The store of programs that Ultra8 can run. */
 class ProgramStore(
     private val context: Context,
     private val programDao: ProgramDao,
 ) {
     fun programsFlow(): Flow<List<Program>> = programDao.allFlow()
+
+    fun nameFlow(name: String): Flow<Program?> = programDao.nameFlow(name)
 
     suspend fun add(program: Program) {
         programDao.add(program)

@@ -34,6 +34,7 @@ class PlayGameViewModel(
     private val programStore: ProgramStore,
 ) : ViewModel() {
     private var machine = newMachine(byteArrayOf())
+    val program = programStore.nameFlow(programName)
 
     val running = MutableStateFlow<Boolean>(false)
     val halted = MutableStateFlow<Halt?>(null)
@@ -83,19 +84,19 @@ class PlayGameViewModel(
 
     suspend fun runMachine() {
         machine = withContext(Dispatchers.IO) {
-            val savedState = chip8StateStore.findState(programName)
             val program = programStore.withData(programName)
-            if (program != null) {
-                cyclesPerTick.value = program.cyclesPerTick
+            if (program == null) {
+                Log.i("Chip8", "Could not find $programName at all")
+                return@withContext null
             }
+
+            cyclesPerTick.value = program.cyclesPerTick
+            val savedState = chip8StateStore.findState(programName)
             if (savedState != null) {
                 Log.i("Chip8", "Restored save state for $programName")
                 newMachine(savedState)
-            } else if (program != null) {
-                newMachine(program.data!!)
             } else {
-                Log.i("Chip8", "Could not find $programName at all")
-                null
+                newMachine(program.data!!)
             }
         } ?: return
 
