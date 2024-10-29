@@ -3,7 +3,6 @@ package com.emerjbl.ultra8.ui.loading
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.emerjbl.ultra8.data.SelectedProgram
 import com.emerjbl.ultra8.ui.gameplay.PlayScreen
 import kotlinx.coroutines.flow.flowOf
 
@@ -11,23 +10,16 @@ import kotlinx.coroutines.flow.flowOf
 fun InitialLoadScreen(
     onDrawerOpen: () -> Unit,
     onCatalog: () -> Unit,
-    onReady: (String) -> Unit,
 ) {
     val viewModel = viewModel<InitialLoadViewModel>(factory = InitialLoadViewModel.Factory)
-    val selectedProgram = viewModel.selectedProgram.collectAsState(SelectedProgram.Loading).value
-    println("SELECTED PROGRAM: $selectedProgram")
-    when (selectedProgram) {
-        is SelectedProgram.None -> onCatalog()
-        is SelectedProgram.Program -> onReady(selectedProgram.programName)
-        else -> Unit
-    }
-    val title = when (selectedProgram) {
-        is SelectedProgram.Loading -> "Loading..."
-        is SelectedProgram.None -> "<- Choose a game"
-        is SelectedProgram.Program -> selectedProgram.programName
+    val programCount = viewModel.programs.collectAsState(null).value
+    when {
+        programCount == null -> Unit
+        programCount.size == 0 -> onCatalog()
+        else -> onDrawerOpen()
     }
 
     // Just show a blank play screen while loading.
-    PlayScreen("", false, flowOf(), onDrawerOpen, title)
+    PlayScreen("", false, flowOf(), onDrawerOpen, "<- Choose a game")
 
 }

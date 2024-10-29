@@ -20,8 +20,6 @@ class TopLevelViewModel(
     // But I'll probably find a better approach eventually.
     val resetEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    val selectedProgram = programStore.selectedProgram
-
     fun removeProgram(name: String) {
         viewModelScope.launch {
             programStore.remove(name)
