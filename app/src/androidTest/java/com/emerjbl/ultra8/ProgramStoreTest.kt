@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.emerjbl.ultra8.chip8.machine.Quirks
 import com.emerjbl.ultra8.data.HaltTypeConverter
 import com.emerjbl.ultra8.data.IntArrayTypeConverter
 import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
+import com.emerjbl.ultra8.data.QuirksTypeConverter
 import com.emerjbl.ultra8.data.Ultra8Database
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
@@ -25,7 +27,7 @@ class ProgramStoreTest {
         val store = store(appContext)
 
         runBlocking {
-            val program = Program("Foo", 10, byteArrayOf(0x42))
+            val program = Program("Foo", 10, Quirks(), byteArrayOf(0x42))
 
             strikt.api.expectThat(
                 store.nameFlow("Foo").firstOrNull()
@@ -52,6 +54,7 @@ class ProgramStoreTest {
             Ultra8Database::class.java,
         ).addTypeConverter(HaltTypeConverter())
             .addTypeConverter(IntArrayTypeConverter())
+            .addTypeConverter(QuirksTypeConverter())
             .build()
 
         return ProgramStore(context, db.programDao())

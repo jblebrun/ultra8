@@ -1,6 +1,7 @@
 package com.emerjbl.ultra8.ui.catalog
 
 import androidx.lifecycle.ViewModel
+import com.emerjbl.ultra8.chip8.machine.Quirks
 import com.emerjbl.ultra8.data.CatalogStore
 import com.emerjbl.ultra8.data.Program
 import com.emerjbl.ultra8.data.ProgramStore
@@ -19,7 +20,7 @@ class CatalogViewModel(
             "Requested a catalog program that doesn't exist"
         }
         println("Storing new program: $name")
-        programStore.add(Program(name, 10, programWithData.data))
+        programStore.add(Program(name, 10, Quirks(), programWithData.data))
     }
 
     companion object {
