@@ -27,6 +27,7 @@ fun PlayScreen(
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
     onProgramGone: () -> Unit,
+    onProgramSettings: () -> Unit,
     title: String = programName,
 ) {
     val viewModel =
@@ -100,7 +101,8 @@ fun PlayScreen(
                 viewModel::keyDown,
                 viewModel::keyUp,
                 halt,
-                onDrawerOpen
+                onDrawerOpen,
+                onProgramSettings
             )
         }
     }

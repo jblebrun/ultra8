@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
@@ -30,7 +26,6 @@ fun SideDrawer(
     onProgramSelected: (Program) -> Unit,
     onReset: () -> Unit,
     onCatalog: () -> Unit,
-    onRemoveProgram: (String) -> Unit
 ) {
     ModalDrawerSheet(
         drawerState = drawerState,
@@ -84,12 +79,6 @@ fun SideDrawer(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(program.name)
-                            IconButton({ onRemoveProgram(program.name) }) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Remove ${program.name}"
-                                )
-                            }
                         }
                     },
                     selected = program.name == selectedProgram

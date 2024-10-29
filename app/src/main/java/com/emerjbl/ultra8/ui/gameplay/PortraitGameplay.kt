@@ -29,6 +29,7 @@ fun PortraitGameplay(
     onKeyUp: (Int) -> Unit,
     halt: StepResult.Halt?,
     onDrawerOpen: () -> Unit,
+    onProgramSettings: () -> Unit,
     modifier: Modifier = Modifier.Companion
 ) {
     Scaffold(
@@ -39,7 +40,8 @@ fun PortraitGameplay(
                 title,
                 openDrawer = {
                     onDrawerOpen()
-                }
+                },
+                onProgramSettings = onProgramSettings
             )
         },
         bottomBar = { BottomBar(cyclesPerTick = cyclesPerTick) }
