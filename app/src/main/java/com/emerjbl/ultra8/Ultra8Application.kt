@@ -1,10 +1,6 @@
 package com.emerjbl.ultra8
 
 import android.app.Application
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.RoomDatabase
 import com.emerjbl.ultra8.data.CatalogDatabase
 import com.emerjbl.ultra8.data.CatalogStore
@@ -19,8 +15,6 @@ interface Provider {
     val userDb: RoomDatabase
     val catalogDb: RoomDatabase
 }
-
-val Context.preferences: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class Ultra8Application : Application() {
     val provider = object : Provider {

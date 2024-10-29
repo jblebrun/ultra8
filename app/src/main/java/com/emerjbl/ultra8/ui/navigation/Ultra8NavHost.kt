@@ -21,6 +21,7 @@ fun Ultra8NavHost(
     gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
+    onActiveProgram: (String) -> Unit,
 ) {
     NavHost(navController, startDestination = InitialLoad) {
         composable<InitialLoad> {
@@ -35,15 +36,7 @@ fun Ultra8NavHost(
                         }
                     }
                 },
-                onReady = {
-                    navController.navigate(PlayGame(it)) {
-                        // https://issuetracker.google.com/issues/370694831
-                        @SuppressLint("RestrictedApi")
-                        popUpTo(InitialLoad) {
-                            inclusive = true
-                        }
-                    }
-                })
+            )
         }
         composable<Catalog> {
             CatalogScreen(
@@ -66,6 +59,7 @@ fun Ultra8NavHost(
             // Prevent game running when view is animating away.
             val gameShouldRun =
                 gameShouldRun && entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+            onActiveProgram(routeProgram)
             PlayScreen(
                 programName = routeProgram,
                 gameShouldRun = gameShouldRun,
