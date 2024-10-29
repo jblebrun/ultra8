@@ -59,9 +59,6 @@ fun AppEntryPoint() {
                             navController.navigate(PlayGame(program.name))
                         }
                     },
-                    onRemoveProgram = {
-                        topLevelViewModel.removeProgram(it)
-                    },
                     onCatalog = {
                         scope.launch { drawerState.close() }
                         navController.navigate(Catalog) {

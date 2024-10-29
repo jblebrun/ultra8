@@ -27,6 +27,6 @@ fun InitialLoadScreen(
     }
 
     // Just show a blank play screen while loading.
-    PlayScreen("", false, flowOf(), onDrawerOpen, {}, "<- Choose a game")
+    PlayScreen("", false, flowOf(), onDrawerOpen, {}, {}, "<- Choose a game")
 
 }
