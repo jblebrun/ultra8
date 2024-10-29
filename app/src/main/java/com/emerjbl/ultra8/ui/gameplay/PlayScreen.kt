@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.emerjbl.ultra8.ui.gameplay.input.onKeyEvent
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 @Composable
 fun PlayScreen(
@@ -25,6 +26,7 @@ fun PlayScreen(
     gameShouldRun: Boolean,
     resetEvents: Flow<Unit>,
     onDrawerOpen: () -> Unit,
+    onProgramGone: () -> Unit,
     title: String = programName,
 ) {
     val viewModel =
@@ -35,6 +37,13 @@ fun PlayScreen(
             key = programName,
             factory = PlayGameViewModel.Factory
         )
+
+    // Listen for program disappearance
+    LaunchedEffect(viewModel.program) {
+        viewModel.program.first { it == null }
+        println("Program disappeared!")
+        onProgramGone()
+    }
 
     // Collect reset events from above
     LaunchedEffect(resetEvents) {
