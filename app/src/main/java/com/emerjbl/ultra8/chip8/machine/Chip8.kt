@@ -21,6 +21,7 @@ import kotlin.time.TimeSource
 class Chip8(
     private val sound: Chip8Sound,
     timeSource: TimeSource,
+    private val quirks: Quirks,
     private val state: State,
 ) {
     /** Collect all Chip8 state in one place. Convenient for eventual save/restore. */
@@ -167,6 +168,14 @@ class Chip8(
         }
     }
 
+    private fun State.handleMemIncrement(x: Int) {
+        when {
+            quirks.memoryIUnchanged.enabled -> Unit
+            quirks.memoryIncrementByX.enabled -> i += x
+            else -> i += x + 1
+        }
+    }
+
     private fun State.run(inst: Chip8Instruction): StepResult {
         inst.run {
             when (majOp) {
@@ -238,39 +247,61 @@ class Chip8(
                 0x80 -> when (subOp) {
                     0x00 -> v[x] = v[y]
 
-                    0x01 -> v[x] = v[x] or v[y]
-                    0x02 -> v[x] = v[x] and v[y]
-                    0x03 -> v[x] = v[x] xor v[y]
+                    0x01 -> {
+                        v[x] = v[x] or v[y]
+                        if (quirks.cosmacLogicQuirk.enabled) v[0xf] = 0
+                    }
+
+                    0x02 -> {
+                        v[x] = v[x] and v[y]
+                        if (quirks.cosmacLogicQuirk.enabled) v[0xf] = 0
+                    }
+
+                    0x03 -> {
+                        v[x] = v[x] xor v[y]
+                        if (quirks.cosmacLogicQuirk.enabled) v[0xf] = 0
+                    }
 
                     0x04 -> {
                         val result = v[x] + v[y]
                         v[x] = result and 0xFF
-                        v[0xF] = if (result > 0xFF) 1 else 0
+                        if (!quirks.overwriteVFQuirk.enabled || x != 0xF) {
+                            v[0xF] = if (result > 0xFF) 1 else 0
+                        }
                     }
 
                     0x05 -> {
                         val result = v[x] - v[y]
                         v[x] = result and 0xFF
-                        v[0xF] = if (result >= 0) 1 else 0
+                        if (!quirks.overwriteVFQuirk.enabled || x != 0xF) {
+                            v[0xF] = if (result >= 0) 1 else 0
+                        }
                     }
 
                     0x06 -> {
-                        val vf = (v[x] and 0x01)
-                        v[x] = v[x] ushr 1
-                        v[0xF] = vf
+                        val src = if (quirks.shiftXOnly.enabled) x else y
+                        val vf = (v[src] and 0x01)
+                        v[x] = v[src] ushr 1
+                        if (!quirks.overwriteVFQuirk.enabled || x != 0xF) {
+                            v[0xF] = vf
+                        }
                     }
 
                     0x07 -> {
                         val result = v[y] - v[x]
                         v[x] = result and 0xFF
-                        v[0xF] = if (result >= 0) 1 else 0
+                        if (!quirks.overwriteVFQuirk.enabled || x != 0xF) {
+                            v[0xF] = if (result >= 0) 1 else 0
+                        }
                     }
 
                     0x0E -> {
-                        val vf = (if ((v[x] and 0x80) == 0x80) 1 else 0)
-                        v[x] = v[x] shl 1
-                        v[x] = v[x] and 0xFF
-                        v[0xF] = vf
+                        val src = if (quirks.shiftXOnly.enabled) x else y
+                        val vf = (if ((v[src] and 0x80) == 0x80) 1 else 0)
+                        v[x] = (v[src] shl 1) and 0xFF
+                        if (!quirks.overwriteVFQuirk.enabled || x != 0xF) {
+                            v[0xF] = vf
+                        }
                     }
 
                     else -> return Halt.IllegalOpcode(pc, word)
@@ -282,10 +313,29 @@ class Chip8(
                 }
 
                 0xA0 -> i = nnn
-                0xB0 -> return jump(v[0] + nnn)
+                0xB0 -> return if (quirks.bxnnJumpQuirk.enabled) {
+                    jump(v[x] + nnn)
+                } else {
+                    jump(v[0] + nnn)
+                }
+
                 0xC0 -> v[x] = random.nextInt(0xFF) and b2
-                0xD0 -> v[0xF] =
-                    if (gfx.putSprite(v[x], v[y], mem, i, subOp)) 1 else 0
+                0xD0 -> {
+                    v[0xF] =
+                        if (gfx.putSprite(
+                                v[x],
+                                v[y],
+                                mem,
+                                i,
+                                subOp,
+                                quirks.spriteWrapQuirk
+                            )
+                        ) 1 else 0
+                    if (quirks.vSyncDraw.enabled) {
+                        pc += currentInstruction.instructionBytes
+                        return StepResult.VSync
+                    }
+                }
 
                 0xE0 -> when (b2) {
                     0x9E -> if (Keys.isKeyPressed(v[x])) pc += 2
@@ -366,24 +416,28 @@ class Chip8(
                         for (j in 0..x) {
                             mem[i + j] = v[j].b
                         }
+                        handleMemIncrement(x)
                     }
 
                     0x65 -> {
                         for (j in 0..x) {
                             v[j] = mem[i + j].i
                         }
+                        handleMemIncrement(x)
                     }
 
                     0x75 -> {
                         for (j in 0..x) {
                             hp[i + j] = v[j]
                         }
+                        handleMemIncrement(x)
                     }
 
                     0x85 -> {
                         for (j in 0..x) {
                             v[j] = hp[i + j]
                         }
+                        handleMemIncrement(x)
                     }
 
                     else -> return Halt.IllegalOpcode(pc, word)
@@ -415,6 +469,9 @@ class Chip8(
 /** The various halt conditions that can happen during execution. */
 sealed interface StepResult {
     data object Continue : StepResult
+
+    /** Instruct the runner to end the tick early for VSync. */
+    data object VSync : StepResult
 
     /**
      * The machine is waiting for a condition and will suspend until it's met.

@@ -27,7 +27,7 @@ abstract class CatalogDatabase : RoomDatabase() {
     }
 }
 
-@Database(entities = [Chip8ProgramState::class, Program::class], version = 4)
+@Database(entities = [Chip8ProgramState::class, Program::class], version = 5)
 @TypeConverters(QuirksTypeConverter::class)
 abstract class Ultra8Database : RoomDatabase() {
     abstract fun chip8StateDao(): Chip8ProgramStateDao
