@@ -22,7 +22,7 @@ abstract class CatalogDatabase : RoomDatabase() {
                 .buildForApp()
 
         private fun Builder<CatalogDatabase>.buildForApp() =
-            fallbackToDestructiveMigration()
+            fallbackToDestructiveMigration().addTypeConverter(QuirksTypeConverter())
                 .build()
     }
 }

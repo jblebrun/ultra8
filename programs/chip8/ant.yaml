@@ -1,0 +1,3 @@
+name: Ant!
+cyclesPerSecond: 30
+quirks: MemoryIUnchanged:true,ShiftXOnly:true
