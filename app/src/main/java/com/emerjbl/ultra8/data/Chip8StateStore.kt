@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import androidx.room.ProvidedTypeConverter
 import androidx.room.Query
@@ -52,7 +53,14 @@ interface Chip8ProgramStateDao {
 }
 
 /** A program state stored along with the program name. */
-@Entity
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = Program::class,
+        parentColumns = ["name"],
+        childColumns = ["name"],
+        onDelete = ForeignKey.CASCADE
+    )]
+)
 class Chip8ProgramState(
     @PrimaryKey val name: String,
     @Embedded val state: Chip8State
