@@ -9,6 +9,7 @@ import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.data.HaltTypeConverter
 import com.emerjbl.ultra8.data.IntArrayTypeConverter
+import com.emerjbl.ultra8.data.QuirksTypeConverter
 import com.emerjbl.ultra8.data.Ultra8Database
 import com.emerjbl.ultra8.testutil.contentEquals
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +81,7 @@ class DataStoreTest {
             Ultra8Database::class.java,
         ).addTypeConverter(HaltTypeConverter())
             .addTypeConverter(IntArrayTypeConverter())
+            .addTypeConverter(QuirksTypeConverter())
             .build()
 
         return Chip8StateStore(db.chip8StateDao())

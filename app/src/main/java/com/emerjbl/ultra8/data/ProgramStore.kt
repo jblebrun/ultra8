@@ -7,13 +7,19 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ProvidedTypeConverter
 import androidx.room.Query
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import androidx.room.Upsert
+import com.emerjbl.ultra8.chip8.machine.Quirk
+import com.emerjbl.ultra8.chip8.machine.Quirks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 /** A single program entry. */
+@TypeConverters(QuirksTypeConverter::class)
 @Entity
 class Program(
     @PrimaryKey
@@ -23,13 +29,16 @@ class Program(
     /** The last chosen cycles per second. */
     val cyclesPerTick: Int,
 
+    /** The quirks settings for this program. */
+    val quirks: Quirks = Quirks(),
+
     /** The Chip-8 byte code. */
     val data: ByteArray? = null,
 )
 
 @Dao
 interface ProgramDao {
-    @Query("SELECT name, cyclesPerTick from program ORDER BY name")
+    @Query("SELECT name, cyclesPerTick, quirks from program ORDER BY name")
     fun allFlow(): Flow<List<Program>>
 
     @Query("SELECT * from program where name == :name limit 1")
@@ -40,6 +49,9 @@ interface ProgramDao {
 
     @Query("UPDATE program set cyclesPerTick = :cyclesPerTick WHERE name = :programName")
     suspend fun updateCyclesPerTick(programName: String, cyclesPerTick: Int)
+
+    @Query("UPDATE program set quirks = :quirks WHERE name = :programName")
+    suspend fun updateQuirks(programName: String, quirks: Quirks)
 
     @Delete
     suspend fun remove(program: Program)
@@ -61,7 +73,7 @@ class ProgramStore(
         programDao.add(program)
     }
 
-    suspend fun addForUri(uri: Uri): Program =
+    suspend fun addForUri(uri: Uri, quirks: Quirks = Quirks()): Program =
         withContext(Dispatchers.IO) {
             val name = withContext(Dispatchers.IO) {
                 context.contentResolver.query(
@@ -81,7 +93,7 @@ class ProgramStore(
             val data = context.contentResolver.openInputStream(uri)!!.use {
                 it.readBytes()
             }
-            Program(name, 10, data).also {
+            Program(name, 10, quirks, data).also {
                 programDao.add(it)
             }
         }
@@ -92,4 +104,63 @@ class ProgramStore(
         programDao.updateCyclesPerTick(name, cyclesPerTick)
 
     suspend fun remove(name: String) = programDao.remove(Program(name, 0))
+
+    suspend fun updateQuirks(name: String, quirks: Quirks) {
+        programDao.updateQuirks(name, quirks)
+    }
+}
+
+@ProvidedTypeConverter
+class QuirksTypeConverter {
+    @TypeConverter
+    fun toString(quirks: Quirks): String {
+        val serialized = listOf(
+            quirks.shiftXOnly.serialize(),
+            quirks.memoryIncrementByX.serialize(),
+            quirks.memoryIUnchanged.serialize(),
+            quirks.spriteWrapQuirk.serialize(),
+            quirks.bxnnJumpQuirk.serialize(),
+            quirks.vSyncDraw.serialize(),
+            quirks.cosmacLogicQuirk.serialize(),
+            quirks.overwriteVFQuirk.serialize()
+        ).joinToString(",")
+        println("QUIRKS: $serialized")
+        return serialized
+    }
+
+    @TypeConverter
+    fun fromString(data: String): Quirks {
+        println("QUIRKS FROM $data")
+        val items = data.split(",").map { it.toQuirkField() }
+        return Quirks(
+            shiftXOnly = Quirk.ShiftXOnly(items.findQuirk<Quirk.ShiftXOnly>()),
+            memoryIncrementByX = Quirk.MemoryIncrementByX(items.findQuirk<Quirk.MemoryIncrementByX>()),
+            memoryIUnchanged = Quirk.MemoryIUnchanged(items.findQuirk<Quirk.MemoryIUnchanged>()),
+            spriteWrapQuirk = Quirk.SpriteWrapQuirk(items.findQuirk<Quirk.SpriteWrapQuirk>()),
+            bxnnJumpQuirk = Quirk.BXNNJumpQuirk(items.findQuirk<Quirk.BXNNJumpQuirk>()),
+            vSyncDraw = Quirk.VSyncDraw(items.findQuirk<Quirk.VSyncDraw>()),
+            cosmacLogicQuirk = Quirk.CosmacLogicQuirk(items.findQuirk<Quirk.CosmacLogicQuirk>()),
+            overwriteVFQuirk = Quirk.OverwriteVFQuirk(items.findQuirk<Quirk.OverwriteVFQuirk>())
+        )
+    }
+}
+
+data class QuirkField(val name: String, val enabled: Boolean)
+
+inline fun <reified T : Quirk> List<QuirkField>.findQuirk(): Boolean {
+    return firstOrNull { it.name == T::class.simpleName }?.enabled ?: false
+}
+
+fun String.toQuirkField(): QuirkField {
+    val fields = split(":")
+    if (fields.size != 2) {
+        println("Couldn't understand quirk data $this")
+        return QuirkField("", false)
+    }
+    return QuirkField(fields[0], if (fields[1] == "true") true else false)
+}
+
+fun Quirk.serialize(): String {
+    val name = this::class.simpleName
+    return "$name:$enabled"
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.emerjbl.ultra8.BuildConfig
 
 @Database(entities = [CatalogProgram::class], version = 1)
@@ -26,7 +27,8 @@ abstract class CatalogDatabase : RoomDatabase() {
     }
 }
 
-@Database(entities = [Chip8ProgramState::class, Program::class], version = 2)
+@Database(entities = [Chip8ProgramState::class, Program::class], version = 4)
+@TypeConverters(QuirksTypeConverter::class)
 abstract class Ultra8Database : RoomDatabase() {
     abstract fun chip8StateDao(): Chip8ProgramStateDao
     abstract fun programDao(): ProgramDao
@@ -47,6 +49,7 @@ abstract class Ultra8Database : RoomDatabase() {
         }
             .addTypeConverter(IntArrayTypeConverter())
             .addTypeConverter(HaltTypeConverter())
+            .addTypeConverter(QuirksTypeConverter())
             .build()
     }
 }
