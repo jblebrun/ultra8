@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.emerjbl.ultra8.chip8.machine.Chip8
+import com.emerjbl.ultra8.chip8.machine.Quirks
 import com.emerjbl.ultra8.chip8.machine.StepResult
 import com.emerjbl.ultra8.chip8.machine.StepResult.Halt
 import com.emerjbl.ultra8.chip8.sound.AudioTrackSynthSound
@@ -33,7 +34,7 @@ class PlayGameViewModel(
     private val chip8StateStore: Chip8StateStore,
     private val programStore: ProgramStore,
 ) : ViewModel() {
-    private var machine = newMachine(byteArrayOf())
+    private var machine = newMachine(Quirks(), byteArrayOf())
     val program = programStore.nameFlow(programName)
 
     val running = MutableStateFlow<Boolean>(false)
@@ -94,9 +95,9 @@ class PlayGameViewModel(
             val savedState = chip8StateStore.findState(programName)
             if (savedState != null) {
                 Log.i("Chip8", "Restored save state for $programName")
-                newMachine(savedState)
+                newMachine(program.quirks, savedState)
             } else {
-                newMachine(program.data!!)
+                newMachine(program.quirks, program.data!!)
             }
         } ?: return
 
@@ -128,7 +129,8 @@ class PlayGameViewModel(
                         }
 
                         is StepResult.Await -> result.await()
-                        is StepResult.Continue -> {}
+                        is StepResult.Continue, StepResult.VSync
+                            -> Unit
                     }
                 }
                 delay(FRAME_TIME - instructionTime)
@@ -136,12 +138,12 @@ class PlayGameViewModel(
         }
     }
 
-    private fun newMachine(program: ByteArray): Chip8 =
-        newMachine(Chip8.stateForProgram(program))
+    private fun newMachine(quirks: Quirks, program: ByteArray): Chip8 =
+        newMachine(quirks, Chip8.stateForProgram(program))
 
-    private fun newMachine(state: Chip8.State): Chip8 {
+    private fun newMachine(quirks: Quirks, state: Chip8.State): Chip8 {
         val sound = AudioTrackSynthSound(viewModelScope, 48000)
-        return Chip8(sound, TimeSource.Monotonic, state)
+        return Chip8(sound, TimeSource.Monotonic, quirks, state)
     }
 
     companion object {

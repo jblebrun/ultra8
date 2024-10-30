@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.emerjbl.ultra8.chip8.graphics.FrameManager
 import com.emerjbl.ultra8.chip8.machine.Chip8
+import com.emerjbl.ultra8.chip8.machine.Quirk
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.data.HaltTypeConverter
 import com.emerjbl.ultra8.data.IntArrayTypeConverter
@@ -99,7 +100,14 @@ class DataStoreTest {
             gfx = FrameManager(),
         ).apply {
             gfx.targetPlane = 0x2
-            gfx.putSprite(10, 10, byteArrayOf(2, 3, 4, 56, 7, 7), 0, 5)
+            gfx.putSprite(
+                10,
+                10,
+                byteArrayOf(2, 3, 4, 56, 7, 7),
+                0,
+                5,
+                Quirk.SpriteWrapQuirk(false)
+            )
         }
 
         val STATE_2 = Chip8.State(
@@ -113,7 +121,14 @@ class DataStoreTest {
             gfx = FrameManager(),
         ).apply {
             gfx.targetPlane = 0x3
-            gfx.putSprite(15, 15, byteArrayOf(2, 3, 4, 56, 8, 8, 67, 12), 0, 4)
+            gfx.putSprite(
+                15,
+                15,
+                byteArrayOf(2, 3, 4, 56, 8, 8, 67, 12),
+                0,
+                4,
+                Quirk.SpriteWrapQuirk(false)
+            )
         }
     }
 }

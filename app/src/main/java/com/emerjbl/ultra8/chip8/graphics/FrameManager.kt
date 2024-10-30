@@ -1,5 +1,6 @@
 package com.emerjbl.ultra8.chip8.graphics
 
+import com.emerjbl.ultra8.chip8.machine.Quirk
 import com.emerjbl.ultra8.util.LockGuarded
 import java.util.concurrent.locks.ReentrantLock
 
@@ -112,15 +113,17 @@ class FrameManager(hires: Boolean, var targetPlane: Int, frame: Frame) {
         offset: Int,
         /** The number of lines of sprite data. */
         linesIn: Int,
+        /** The wrapping quirk value. */
+        wrapQuirk: Quirk.SpriteWrapQuirk
     ): Boolean {
         val plane3Offset = offset + if (linesIn == 0) 32 else linesIn
         return frame.withLock { frame ->
             when (targetPlane) {
-                1 -> frame.plane1.putSprite(xBase, yBase, src, offset, linesIn)
-                2 -> frame.plane2.putSprite(xBase, yBase, src, offset, linesIn)
+                1 -> frame.plane1.putSprite(xBase, yBase, src, offset, linesIn, wrapQuirk)
+                2 -> frame.plane2.putSprite(xBase, yBase, src, offset, linesIn, wrapQuirk)
                 // Note: Use of non-short-circuiting `or` here, so both plans are always drawn.
-                3 -> frame.plane1.putSprite(xBase, yBase, src, offset, linesIn) or
-                        frame.plane2.putSprite(xBase, yBase, src, plane3Offset, linesIn)
+                3 -> frame.plane1.putSprite(xBase, yBase, src, offset, linesIn, wrapQuirk) or
+                        frame.plane2.putSprite(xBase, yBase, src, plane3Offset, linesIn, wrapQuirk)
 
                 else -> false
             }
@@ -133,19 +136,28 @@ class FrameManager(hires: Boolean, var targetPlane: Int, frame: Frame) {
         src: ByteArray,
         offset: Int,
         linesIn: Int,
+        wrapQuirk: Quirk.SpriteWrapQuirk
     ): Boolean {
         var unset = false
         val bytesPerRow = if (linesIn == 0) 2 else 1
         val lines = if (linesIn == 0) 16 else linesIn
 
+        val yBase = yBase and height - 1
+        val xBase = xBase and width - 1
         for (yOffset in 0 until lines) {
+            val y = yBase + yOffset
+            if (!wrapQuirk.enabled && y >= height) {
+                continue
+            }
             for (rowByte in 0 until bytesPerRow) {
                 var row = src[offset + (yOffset * bytesPerRow) + rowByte].toInt()
-                val y = ((yBase + yOffset) and height - 1)
                 for (xOffset in 0..7) {
                     if ((row and 0x80) != 0) {
-                        val x = ((xBase + xOffset + rowByte * 8) and (width - 1))
-                        val i = y * width + x
+                        val x = (xBase + xOffset + rowByte * 8)
+                        if (!wrapQuirk.enabled && x >= width) {
+                            continue
+                        }
+                        val i = (y and height - 1) * width + (x and (width - 1))
                         unset = unset || (data[i].toInt() == 1)
                         data[i] = (data[i].toInt() xor 1).toByte()
                     }
