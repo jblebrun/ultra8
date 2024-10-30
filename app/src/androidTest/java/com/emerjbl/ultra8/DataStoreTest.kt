@@ -1,6 +1,5 @@
 package com.emerjbl.ultra8
 
-import android.content.Context
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -9,6 +8,8 @@ import com.emerjbl.ultra8.chip8.machine.Chip8
 import com.emerjbl.ultra8.data.Chip8StateStore
 import com.emerjbl.ultra8.data.HaltTypeConverter
 import com.emerjbl.ultra8.data.IntArrayTypeConverter
+import com.emerjbl.ultra8.data.Program
+import com.emerjbl.ultra8.data.ProgramStore
 import com.emerjbl.ultra8.data.QuirksTypeConverter
 import com.emerjbl.ultra8.data.Ultra8Database
 import com.emerjbl.ultra8.testutil.contentEquals
@@ -22,6 +23,15 @@ import strikt.assertions.isNotNull
 @RunWith(AndroidJUnit4::class)
 class DataStoreTest {
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    val db = Room.inMemoryDatabaseBuilder(
+        appContext,
+        Ultra8Database::class.java,
+    ).addTypeConverter(HaltTypeConverter())
+        .addTypeConverter(IntArrayTypeConverter())
+        .addTypeConverter(QuirksTypeConverter())
+        .build()
+    val stateStore = Chip8StateStore(db.chip8StateDao())
+    val programStore = ProgramStore(appContext, db.programDao())
 
     @Test
     fun ensure_testData_Different() {
@@ -30,61 +40,48 @@ class DataStoreTest {
 
     @Test
     fun stateStore_store1_retrieve1() {
-        val store = store(appContext)
-
         runBlocking(Dispatchers.Default) {
-            store.saveState(PROGRAM_NAME_1, STATE_1)
+            programStore.add(Program(PROGRAM_NAME_1, 10))
+            stateStore.saveState(PROGRAM_NAME_1, STATE_1)
             strikt.api.expectThat(
-                store.findState(PROGRAM_NAME_1)
+                stateStore.findState(PROGRAM_NAME_1)
             ).isNotNull().contentEquals(STATE_1)
         }
     }
 
     @Test
     fun stateStore_store2_retrieve2() {
-        val store = store(appContext)
-
         runBlocking(Dispatchers.Default) {
-            store.saveState(PROGRAM_NAME_1, STATE_1)
+            programStore.add(Program(PROGRAM_NAME_1, 10))
+            programStore.add(Program(PROGRAM_NAME_2, 10))
+            stateStore.saveState(PROGRAM_NAME_1, STATE_1)
             strikt.api.expectThat(
-                store.findState(PROGRAM_NAME_1)
+                stateStore.findState(PROGRAM_NAME_1)
             ).isNotNull().contentEquals(STATE_1)
 
-            store.saveState(PROGRAM_NAME_2, STATE_2)
+            stateStore.saveState(PROGRAM_NAME_2, STATE_2)
             strikt.api.expectThat(
-                store.findState(PROGRAM_NAME_2)
+                stateStore.findState(PROGRAM_NAME_2)
             ).isNotNull().contentEquals(STATE_2)
         }
     }
 
     @Test
     fun stateStore_store1_overwrite1() {
-        val store = store(appContext)
-
         runBlocking(Dispatchers.Default) {
-            store.saveState(PROGRAM_NAME_1, STATE_1)
+            programStore.add(Program(PROGRAM_NAME_1, 10))
+            programStore.add(Program(PROGRAM_NAME_2, 10))
+            stateStore.saveState(PROGRAM_NAME_1, STATE_1)
             strikt.api.expectThat(
-                store.findState(PROGRAM_NAME_1)
+                stateStore.findState(PROGRAM_NAME_1)
             ).isNotNull().contentEquals(STATE_1)
 
             // Overwrite state
-            store.saveState(PROGRAM_NAME_1, STATE_2)
+            stateStore.saveState(PROGRAM_NAME_1, STATE_2)
             strikt.api.expectThat(
-                store.findState(PROGRAM_NAME_1)
+                stateStore.findState(PROGRAM_NAME_1)
             ).isNotNull().contentEquals(STATE_2)
         }
-    }
-
-    private fun store(context: Context): Chip8StateStore {
-        val db = Room.inMemoryDatabaseBuilder(
-            context,
-            Ultra8Database::class.java,
-        ).addTypeConverter(HaltTypeConverter())
-            .addTypeConverter(IntArrayTypeConverter())
-            .addTypeConverter(QuirksTypeConverter())
-            .build()
-
-        return Chip8StateStore(db.chip8StateDao())
     }
 
     companion object {
