@@ -12,18 +12,13 @@ abstract class CatalogDatabase : RoomDatabase() {
     abstract fun catalogDao(): CatalogDao
 
     companion object {
-        fun newForFile(
-            context: Context,
-            name: String,
-            seed: String
-        ): CatalogDatabase =
-            Room.databaseBuilder(context, CatalogDatabase::class.java, name)
-                .createFromAsset(seed)
-                .buildForApp()
+        fun newForFile(context: Context, name: String, seed: String): CatalogDatabase =
+                Room.databaseBuilder(context, CatalogDatabase::class.java, name)
+                        .createFromAsset(seed)
+                        .buildForApp()
 
         private fun Builder<CatalogDatabase>.buildForApp() =
-            fallbackToDestructiveMigration(true)
-                .build()
+                fallbackToDestructiveMigration(true).addTypeConverter(QuirksTypeConverter()).build()
     }
 }
 
@@ -35,21 +30,17 @@ abstract class Ultra8Database : RoomDatabase() {
 
     companion object {
         fun newForFile(context: Context, name: String): Ultra8Database =
-            Room.databaseBuilder(
-                context,
-                Ultra8Database::class.java,
-                name
-            )
-                .buildForApp()
+                Room.databaseBuilder(context, Ultra8Database::class.java, name).buildForApp()
 
-        private fun Builder<Ultra8Database>.buildForApp() = apply {
-            if (BuildConfig.DEBUG) {
-                fallbackToDestructiveMigration(true)
-            }
-        }
-            .addTypeConverter(IntArrayTypeConverter())
-            .addTypeConverter(HaltTypeConverter())
-            .addTypeConverter(QuirksTypeConverter())
-            .build()
+        private fun Builder<Ultra8Database>.buildForApp() =
+                apply {
+                            if (BuildConfig.DEBUG) {
+                                fallbackToDestructiveMigration(true)
+                            }
+                        }
+                        .addTypeConverter(IntArrayTypeConverter())
+                        .addTypeConverter(HaltTypeConverter())
+                        .addTypeConverter(QuirksTypeConverter())
+                        .build()
     }
 }
