@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.emerjbl.ultra8.testutil"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24

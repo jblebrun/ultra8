@@ -18,16 +18,11 @@ jobs:
         with:
           java-version: 17
 
-      - name: Build all artifacts
-        id: buildAllApks
-        uses: eskatos/gradle-command-action@v1.4.0
-        with:
-          gradle-version: current
-          wrapper-cache-enabled: true
-          dependencies-cache-enabled: true
-          configuration-cache-enabled: true
-          arguments: assembleRelease
-
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+      
+      - name: Build with Gradle
+        run: ./gradlew assembleRelease 
   test:
     runs-on: ubuntu-latest
     steps:

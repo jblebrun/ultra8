@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.emerjbl.ultra8.ui.theme.Ultra8Theme
@@ -32,7 +33,8 @@ fun AppEntryPoint() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val windowFocused = LocalWindowInfo.current.isWindowFocused
-    val activityState = (LocalContext.current as LifecycleOwner).lifecycle.currentState
+    val activityState =
+        (LocalContext.current as LifecycleOwner).lifecycle.currentStateAsState().value
 
     val gameShouldRun = remember { mutableStateOf(false) }
 
