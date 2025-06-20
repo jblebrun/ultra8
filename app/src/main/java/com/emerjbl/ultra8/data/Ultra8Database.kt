@@ -22,7 +22,7 @@ abstract class CatalogDatabase : RoomDatabase() {
                 .buildForApp()
 
         private fun Builder<CatalogDatabase>.buildForApp() =
-            fallbackToDestructiveMigration()
+            fallbackToDestructiveMigration(true)
                 .build()
     }
 }
@@ -44,7 +44,7 @@ abstract class Ultra8Database : RoomDatabase() {
 
         private fun Builder<Ultra8Database>.buildForApp() = apply {
             if (BuildConfig.DEBUG) {
-                fallbackToDestructiveMigration()
+                fallbackToDestructiveMigration(true)
             }
         }
             .addTypeConverter(IntArrayTypeConverter())

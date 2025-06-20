@@ -18,7 +18,7 @@ class CatalogProgram(
 
 @Dao
 interface CatalogDao {
-    @Query("SELECT name from catalogProgram ORDER BY name")
+    @Query("SELECT name, NULL as data from catalogProgram ORDER BY name")
     fun allFlow(): Flow<List<CatalogProgram>>
 
     @Query("SELECT * from catalogProgram where name == :name limit 1")

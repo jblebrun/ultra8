@@ -1,5 +1,6 @@
 package com.emerjbl.ultra8.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore.MediaColumns
@@ -38,7 +39,7 @@ class Program(
 
 @Dao
 interface ProgramDao {
-    @Query("SELECT name, cyclesPerTick, quirks from program ORDER BY name")
+    @Query("SELECT name, cyclesPerTick, quirks, NULL as data from program ORDER BY name")
     fun allFlow(): Flow<List<Program>>
 
     @Query("SELECT * from program where name == :name limit 1")
@@ -103,6 +104,7 @@ class ProgramStore(
     suspend fun updateCyclesPerTick(name: String, cyclesPerTick: Int) =
         programDao.updateCyclesPerTick(name, cyclesPerTick)
 
+    @SuppressLint("ImplicitSamInstance")
     suspend fun remove(name: String) = programDao.remove(Program(name, 0))
 
     suspend fun updateQuirks(name: String, quirks: Quirks) {
