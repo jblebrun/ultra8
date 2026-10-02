@@ -1,5 +1,6 @@
 package com.emerjbl.ultra8.ui.catalog
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -61,8 +62,18 @@ fun CatalogScreen(
                         tonalElevation = 0.dp,
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Row(modifier = Modifier.padding(10.dp)) {
-                            Text(program.name)
+                        Column {
+                            Row(modifier = Modifier.padding(10.dp)) {
+                                Text(program.name, style = MaterialTheme.typography.titleLarge)
+                            }
+                            if (program.description.isNotBlank()) {
+                                Row(modifier = Modifier.padding(horizontal = 10.dp)) {
+                                    Text(
+                                        program.description,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
                         }
                     }
                 }

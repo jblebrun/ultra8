@@ -1,0 +1,4 @@
+name: Ant!
+description: Rumors through the grape vine of the local ant community indicate that there is a partially empty Coke can in Zoom''s room. So far many brave ants have gone in search of the mystic can, yet none have returned. They are feared to be dead. It is your mission as Bink to find a safe path to the Coke can so that others may follow. Game written by Erin; includes a nice front end by Joe Horn.
+cyclesPerSecond: 30
+quirks: MemoryIUnchanged:true,ShiftXOnly:true
