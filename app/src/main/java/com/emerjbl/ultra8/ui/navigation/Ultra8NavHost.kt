@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -91,8 +92,9 @@ fun Ultra8NavHost(
         ) { entry ->
             val routeProgram = entry.toRoute<PlayGame>().programName
             // Prevent game running when view is animating away.
+            val lifecycleState = entry.lifecycle.currentStateAsState().value
             val gameShouldRun =
-                gameShouldRun && entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                gameShouldRun && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
             onActiveProgram(routeProgram)
             PlayScreen(
                 programName = routeProgram,

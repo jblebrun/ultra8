@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.emerjbl.ultra8.BuildConfig
 
-@Database(entities = [CatalogProgram::class], version = 1)
+@Database(entities = [CatalogProgram::class], version = 1, exportSchema = false)
 abstract class CatalogDatabase : RoomDatabase() {
     abstract fun catalogDao(): CatalogDao
 
@@ -27,7 +27,7 @@ abstract class CatalogDatabase : RoomDatabase() {
     }
 }
 
-@Database(entities = [Chip8ProgramState::class, Program::class], version = 5)
+@Database(entities = [Chip8ProgramState::class, Program::class], version = 5, exportSchema = false)
 @TypeConverters(QuirksTypeConverter::class)
 abstract class Ultra8Database : RoomDatabase() {
     abstract fun chip8StateDao(): Chip8ProgramStateDao
