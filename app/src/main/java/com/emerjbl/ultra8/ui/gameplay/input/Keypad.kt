@@ -82,7 +82,7 @@ fun RowScope.Chip8Button(
     value: Int,
     keyHitManager: KeyHitManager,
 ) {
-    val text = Integer.toHexString(value).uppercase(Locale.getDefault())
+    val text = Integer.toHexString(value).uppercase(Locale.ROOT)
     val buttonColor = MaterialTheme.chip8Colors.keyCapBackground
     val keyCapTextSize = remember { mutableStateOf(16.sp) }
 
