@@ -1,2 +1,6 @@
 name: Brix
-cyclesPerSecond: 10
+description: The original CHIP-8 breakout game written by Andreas Gustafsson (1990). Control a paddle to bounce a ball and destroy all bricks.
+cyclesPerSecond: 15
+author: Andreas Gustafsson
+year: 1990
+category: classic chip8

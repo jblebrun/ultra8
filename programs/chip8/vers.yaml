@@ -1,3 +1,4 @@
 name: Vers
-cyclesPerSecond: 10
-quirks:
+description: A competitive two-player duel or strategy game for CHIP-8.
+cyclesPerSecond: 15
+category: classic chip8

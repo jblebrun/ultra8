@@ -1,0 +1,6 @@
+name: Bulb
+description: Interpreter for a language which resembles toenail clippings.
+cyclesPerSecond: 100
+author: JohnEarnest
+year: 2020
+category: octojam 7

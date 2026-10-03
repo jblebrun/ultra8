@@ -1,3 +1,4 @@
 name: Missile
-cyclesPerSecond: 10
-quirks:
+description: Defend your cities from incoming ballistic missiles by firing interceptors. Inspired by Missile Command.
+cyclesPerSecond: 15
+category: classic chip8

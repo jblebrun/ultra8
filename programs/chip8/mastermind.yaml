@@ -1,0 +1,6 @@
+name: Mastermind
+description: The classic puzzle game of deduction.
+cyclesPerSecond: 20
+author: WilliamDonnelly
+year: 2015
+category: octojam 3

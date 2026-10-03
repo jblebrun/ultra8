@@ -1,2 +1,4 @@
 name: Clostro
-cyclesPerSecond: 1000
+description: A fast-paced reflex and dexterity game written for CHIP-8.
+cyclesPerSecond: 20
+category: classic chip8

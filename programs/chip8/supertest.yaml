@@ -1,3 +1,4 @@
 name: SuperTest
-cyclesPerSecond: 5
-quirks:
+description: A comprehensive diagnostic and hardware test suite for CHIP-8 interpreters, verifying instruction correctness, timers, and graphic rendering.
+cyclesPerSecond: 10
+category: classic chip8

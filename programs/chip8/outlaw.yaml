@@ -1,0 +1,6 @@
+name: Outlaw
+description: An adaptation of the Atari 2600 game "Outlaw" for the Chip8.
+cyclesPerSecond: 15
+author: JohnEarnest
+year: 2014
+category: octo

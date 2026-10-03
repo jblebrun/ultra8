@@ -1,0 +1,6 @@
+name: Nokia 3310 Template
+description: SCHIP template program for resembling the Nokia 3310
+cyclesPerSecond: 30
+author: JohnEarnest
+year: 2020
+category: nokiajam

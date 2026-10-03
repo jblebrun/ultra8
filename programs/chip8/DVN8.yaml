@@ -1,0 +1,7 @@
+name: DVN8
+description: |
+  This is your great-grandma's dungeon crawler. You can see it with the manual at https://systemlogoff.com/share/DVN8/index.html
+cyclesPerSecond: 20
+author: SystemLogoff
+year: 2017
+category: octojam 4

@@ -5,9 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.emerjbl.ultra8.BuildConfig
 
-@Database(entities = [CatalogProgram::class], version = 1, exportSchema = false)
+@Database(entities = [CatalogProgram::class], version = 2, exportSchema = false)
 abstract class CatalogDatabase : RoomDatabase() {
     abstract fun catalogDao(): CatalogDao
 
@@ -22,7 +21,7 @@ abstract class CatalogDatabase : RoomDatabase() {
     }
 }
 
-@Database(entities = [Chip8ProgramState::class, Program::class], version = 5, exportSchema = false)
+@Database(entities = [Chip8ProgramState::class, Program::class], version = 6, exportSchema = false)
 @TypeConverters(QuirksTypeConverter::class)
 abstract class Ultra8Database : RoomDatabase() {
     abstract fun chip8StateDao(): Chip8ProgramStateDao
@@ -33,11 +32,7 @@ abstract class Ultra8Database : RoomDatabase() {
                 Room.databaseBuilder(context, Ultra8Database::class.java, name).buildForApp()
 
         private fun Builder<Ultra8Database>.buildForApp() =
-                apply {
-                            if (BuildConfig.DEBUG) {
-                                fallbackToDestructiveMigration(true)
-                            }
-                        }
+                fallbackToDestructiveMigration(true)
                         .addTypeConverter(IntArrayTypeConverter())
                         .addTypeConverter(HaltTypeConverter())
                         .addTypeConverter(QuirksTypeConverter())

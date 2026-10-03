@@ -1,0 +1,6 @@
+name: ChipWar
+description: A (loose) adaptation of the classic DiceWars.
+cyclesPerSecond: 15
+author: JohnEarnest
+year: 2014
+category: octo

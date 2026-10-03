@@ -1,3 +1,4 @@
 name: UFO
-cyclesPerSecond: 10
-quirks: 
+description: Defend against descending UFO flying saucers before they land or destroy your base.
+cyclesPerSecond: 15
+category: classic chip8

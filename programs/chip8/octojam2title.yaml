@@ -1,0 +1,7 @@
+name: Octojam 2 Title
+description: |
+  This title card draws a nearly full screen 64x30 animation with very low flicker.
+cyclesPerSecond: 7
+author: JohnEarnest
+year: 2015
+category: octojam 2

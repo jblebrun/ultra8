@@ -1,0 +1,6 @@
+name: Dodge
+description: Dodging asteroids in 56 bytes.
+cyclesPerSecond: 1000
+author: JohnEarnest
+year: 2021
+category: octojam 8

@@ -1,3 +1,6 @@
-name: Tank
-cyclesPerSecond: 10
-quirks:
+name: Tank!
+description: A two player artillery game.
+cyclesPerSecond: 200
+author: Rectus
+year: 2018
+category: octojam 5

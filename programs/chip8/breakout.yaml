@@ -5,3 +5,4 @@ description: |
 
 quirks:
 cyclesPerSecond: 10
+category: classic chip8

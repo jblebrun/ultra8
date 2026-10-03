@@ -21,10 +21,11 @@ class CatalogViewModel(
         println("Storing new program: $name")
         programStore.add(
             Program(
-                name,
-                programWithData.cyclesPerSecond,
-                programWithData.quirks,
-                programWithData.data
+                name = name,
+                cyclesPerTick = programWithData.cyclesPerSecond,
+                quirks = programWithData.quirks,
+                data = programWithData.data,
+                category = programWithData.category
             )
         )
     }

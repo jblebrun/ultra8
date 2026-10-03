@@ -1,0 +1,6 @@
+name: RPS
+description: Classic "Rock Paper Scissors" game for the Chip8.
+cyclesPerSecond: 7
+author: SystemLogoff
+year: 2015
+category: octojam 1

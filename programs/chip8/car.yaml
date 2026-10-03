@@ -1,2 +1,4 @@
 name: Car
+description: Avoid oncoming traffic and obstacles as you drive down the road in this classic reaction game.
 cyclesPerSecond: 20
+category: classic chip8

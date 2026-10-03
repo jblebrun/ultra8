@@ -1,0 +1,6 @@
+name: Snake
+description: Classic Snake game without walls.
+cyclesPerSecond: 15
+author: TimoTriisa
+year: 2014
+category: octojam 1

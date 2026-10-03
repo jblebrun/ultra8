@@ -1,3 +1,4 @@
 name: Puzzle
+description: A sliding tile puzzle game where you arrange numbers or pieces in order.
 cyclesPerSecond: 10
-quirks: 
+category: classic chip8

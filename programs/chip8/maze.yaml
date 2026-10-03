@@ -1,3 +1,5 @@
 name: Maze
-cyclesPerSecond: 10
-quirks:
+description: The classic David Churchill random maze generator for CHIP-8. Watch as the program continuously draws a complex maze path.
+cyclesPerSecond: 20
+author: David Churchill
+category: classic chip8

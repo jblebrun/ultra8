@@ -1,0 +1,6 @@
+name: Mondri8
+description: Draw random compositions in the style of Piet Mondrian.
+cyclesPerSecond: 100
+author: JohnEarnest
+year: 2014
+category: octo

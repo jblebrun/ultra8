@@ -1,2 +1,4 @@
-name: Connect4
-cyclesPerSecond: 5
+name: Connect 4
+description: Connect four of your colored pieces in a row horizontally, vertically, or diagonally before your opponent.
+cyclesPerSecond: 10
+category: classic chip8

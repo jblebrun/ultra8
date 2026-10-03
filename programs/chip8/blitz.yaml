@@ -1,2 +1,6 @@
 name: Blitz!
-cyclesPerSecond: 10
+description: Based on the classic Commodore 64 game by David Nowotny (1990). Pilot a bomber plane and drop bombs to flatten buildings before crashing.
+cyclesPerSecond: 15
+author: David Nowotny
+year: 1990
+category: classic chip8

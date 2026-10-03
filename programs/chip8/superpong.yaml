@@ -1,0 +1,6 @@
+name: Super Pong
+description: A fast pong-like.
+cyclesPerSecond: 30
+author: offstatic
+year: 2021
+category: octojam 8

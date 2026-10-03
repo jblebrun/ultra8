@@ -1,3 +1,5 @@
 name: Tetris
-cyclesPerSecond: 10
-quirks:
+description: A CHIP-8 port of the legendary block-stacking puzzle game created by Alexey Pajitnov. Rotate and fit falling tetriminos to clear complete lines.
+cyclesPerSecond: 15
+author: Alexey Pajitnov
+category: classic chip8

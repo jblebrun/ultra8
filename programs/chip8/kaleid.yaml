@@ -1,3 +1,4 @@
 name: Kaleid
-cyclesPerSecond: 10
-quirks:
+description: A mesmerizing kaleidoscope visual demo and generator for CHIP-8, creating intricate geometric patterns.
+cyclesPerSecond: 20
+category: classic chip8

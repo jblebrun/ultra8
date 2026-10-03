@@ -1,4 +1,4 @@
 name: Merlin
-cyclesPerSecond: 10
-quirks:
-
+description: A memory and pattern-matching game inspired by the classic electronic handheld game. Repeat the sequence of lights and sounds.
+cyclesPerSecond: 15
+category: classic chip8

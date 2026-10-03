@@ -1,2 +1,6 @@
-Name: Blinky
+name: Blinky
+description: A classic ghost-chase game written by Paul Vervalin (1991). Avoid the ghosts and navigate the maze.
 cyclesPerSecond: 20
+author: Paul Vervalin
+year: 1991
+category: classic chip8

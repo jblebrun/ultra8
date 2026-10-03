@@ -1,0 +1,6 @@
+name: Sw8 Copter
+description: An adaptation of "Swing Copters" for the Super Chip8.
+cyclesPerSecond: 100
+author: JohnEarnest
+year: 2014
+category: octo

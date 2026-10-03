@@ -1,0 +1,6 @@
+name: Space Racer
+description: Based on the classic 2-player 'Space Race' video game.
+cyclesPerSecond: 20
+author: WilliamDonnelly
+year: 2017
+category: octojam 4

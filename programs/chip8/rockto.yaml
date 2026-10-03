@@ -1,0 +1,6 @@
+name: Rockto
+description: An adaptation of "Boulder Dash" for the Chip8.
+cyclesPerSecond: 15
+author: SupSuper
+year: 2014
+category: octojam 1

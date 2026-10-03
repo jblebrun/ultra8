@@ -1,3 +1,5 @@
 name: Super-Blinky
+description: An expanded, more challenging version of Blinky with faster action and more complex maze layouts.
 cyclesPerSecond: 20
-quirks: 
+author: Paul Vervalin
+category: classic s-chip8

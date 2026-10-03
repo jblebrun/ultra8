@@ -1,0 +1,6 @@
+name: Squad
+description: Interpreter for a regular-sized Forth.
+cyclesPerSecond: 500
+author: JohnEarnest
+year: 2020
+category: octojam 7

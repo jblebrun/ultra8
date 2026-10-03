@@ -1,0 +1,6 @@
+name: Tick
+description: Rhythm one button game for Chip-8
+cyclesPerSecond: 12
+author: StanislavDidus
+year: 2026
+category: octo

@@ -1,3 +1,4 @@
 name: Squash
-cyclesPerSecond: 10
-quirks:
+description: A single-player wall-bounce squash/tennis game for CHIP-8. Hit the ball against the wall repeatedly without missing.
+cyclesPerSecond: 15
+category: classic chip8

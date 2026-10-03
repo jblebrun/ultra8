@@ -1,2 +1,4 @@
 name: Hidden
+description: A hidden object and memory puzzle game for CHIP-8.
 cyclesPerSecond: 10
+category: classic chip8

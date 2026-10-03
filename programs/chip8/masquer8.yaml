@@ -1,0 +1,6 @@
+name: Masquer8
+description: Cuttlefish pattern matching game for chip8.
+cyclesPerSecond: 15
+author: Chromatophore
+year: 2015
+category: octojam 2

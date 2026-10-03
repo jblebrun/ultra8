@@ -1,3 +1,4 @@
 name: Syzygy
-cyclesPerSecond: 10
-quirks: 
+description: An abstract geometric graphics demo and game for CHIP-8 showcasing advanced screen routines.
+cyclesPerSecond: 15
+category: classic chip8

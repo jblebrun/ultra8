@@ -1,0 +1,6 @@
+name: Dino Run
+description: An endless runner game for Chip-8.
+cyclesPerSecond: 15
+author: Andrezinrc
+year: 2026
+category: octo

@@ -1,3 +1,4 @@
 name: Pong 2
-cyclesPerSecond: 10
-quirks: 
+description: An enhanced two-player version of Pong with refined physics and scoring for CHIP-8.
+cyclesPerSecond: 15
+category: classic chip8

@@ -1,0 +1,6 @@
+name: Snek
+description: Minimalist Snake in 65 bytes.
+cyclesPerSecond: 1000
+author: JohnEarnest
+year: 2021
+category: octojam 8

@@ -1,2 +1,6 @@
 name: Space Invaders
-cyclesPerSecond: 10
+description: The classic arcade shooter written by David Winter (1978). Defend Earth from waves of descending alien invaders.
+cyclesPerSecond: 15
+author: David Winter
+year: 1978
+category: classic chip8

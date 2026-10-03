@@ -1,2 +1,4 @@
 name: Guess
+description: A number-guessing game where the computer picks a random number and you attempt to guess it using hints.
 cyclesPerSecond: 10
+category: classic chip8

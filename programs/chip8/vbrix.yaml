@@ -1,3 +1,5 @@
 name: V-Brix
-cyclesPerSecond: 10
-quirks:
+description: A vertical variant or variation of Brix / Breakout designed for CHIP-8.
+cyclesPerSecond: 15
+author: Andreas Gustafsson
+category: classic chip8

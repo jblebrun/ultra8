@@ -32,11 +32,14 @@ class Program(
 
     /** The Chip-8 byte code. */
     val data: ByteArray? = null,
+
+    /** The category of the program. */
+    val category: String = "games",
 )
 
 @Dao
 interface ProgramDao {
-    @Query("SELECT name, cyclesPerTick, quirks, NULL as data from program ORDER BY name")
+    @Query("SELECT name, cyclesPerTick, quirks, NULL as data, category from program ORDER BY name")
     fun allFlow(): Flow<List<Program>>
 
     @Query("SELECT * from program where name == :name limit 1")
@@ -91,7 +94,7 @@ class ProgramStore(
             val data = context.contentResolver.openInputStream(uri)!!.use {
                 it.readBytes()
             }
-            Program(name, 10, quirks, data).also {
+            Program(name, 10, quirks, data, "custom").also {
                 programDao.add(it)
             }
         }

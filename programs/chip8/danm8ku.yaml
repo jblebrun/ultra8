@@ -1,0 +1,6 @@
+name: Danm8ku
+description: Bullet hell for the Chip-8! Survive 8 waves of exciting bullet patterns!
+cyclesPerSecond: 1000
+author: buffi
+year: 2015
+category: octojam 2

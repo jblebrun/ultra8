@@ -1,4 +1,5 @@
 name: Tic-Tac-Toe
+description: The classic 3x3 grid paper-and-pencil game for two players. Get three in a row to win.
 cyclesPerSecond: 10
-quirks:
-
+author: Paul Vervalin
+category: classic chip8

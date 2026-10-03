@@ -1,0 +1,6 @@
+name: Applejak
+description: Interpreter for a subset of APL/K.
+cyclesPerSecond: 100
+author: JohnEarnest
+year: 2020
+category: octojam 7

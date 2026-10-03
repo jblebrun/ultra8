@@ -1,0 +1,6 @@
+name: Mr Worm
+description: A snake game with more degrees of freedom, inspired by the TI-89 game.
+cyclesPerSecond: 20
+author: rmmh
+year: 2014
+category: octo

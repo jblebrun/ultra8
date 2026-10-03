@@ -1,3 +1,4 @@
 name: Supermaze
-cyclesPerSecond: 10
-quirks:
+description: An advanced, larger maze generator and solver program for CHIP-8.
+cyclesPerSecond: 20
+category: classic s-chip8

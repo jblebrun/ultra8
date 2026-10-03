@@ -26,12 +26,15 @@ class CatalogProgram(
 
         /** The Chip-8 byte code. */
         val data: ByteArray? = null,
+
+        /** The category of the program. */
+        val category: String = "games",
 )
 
 @Dao
 interface CatalogDao {
     @Query(
-            "SELECT name, description, cyclesPerSecond, quirks, NULL as data from catalogProgram ORDER BY name"
+            "SELECT name, description, cyclesPerSecond, quirks, NULL as data, category from catalogProgram ORDER BY name"
     )
     fun allFlow(): Flow<List<CatalogProgram>>
 

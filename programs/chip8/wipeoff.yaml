@@ -1,3 +1,4 @@
 name: WipeOff
-cyclesPerSecond: 10
-quirks:
+description: Another classic breakout/paddle game variant where you wipe out all blocks on the screen.
+cyclesPerSecond: 15
+category: classic chip8

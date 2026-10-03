@@ -1,0 +1,6 @@
+name: Flight Runner
+description: A simple flight runner for the Chip8.
+cyclesPerSecond: 15
+author: TodPunk
+year: 2014
+category: octojam 1

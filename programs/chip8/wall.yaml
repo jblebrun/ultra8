@@ -1,3 +1,4 @@
 name: Wall
-cyclesPerSecond: 10
-quirks:
+description: A ball-and-wall deflection game testing reflexes and coordination.
+cyclesPerSecond: 15
+category: classic chip8

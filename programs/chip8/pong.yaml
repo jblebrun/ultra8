@@ -1,3 +1,6 @@
 name: Pong
-cyclesPerSecond: 10
-quirks:
+description: The quintessential table tennis video game originally written by Ted Hoff for CHIP-8 (1978). Control your paddle to rally the ball past your opponent.
+cyclesPerSecond: 15
+author: Ted Hoff
+year: 1978
+category: classic chip8

@@ -1,0 +1,6 @@
+name: 1D Cellular Automata
+description: An implementation of 1D Cellular Automata.
+cyclesPerSecond: 1000
+author: SharpenedSpoon
+year: 2014
+category: octojam 1

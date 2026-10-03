@@ -1,0 +1,6 @@
+name: Chipquarium
+description: A CHIP-8 fish tank simulator.
+cyclesPerSecond: 15
+author: mattmik
+year: 2016
+category: octojam 3
